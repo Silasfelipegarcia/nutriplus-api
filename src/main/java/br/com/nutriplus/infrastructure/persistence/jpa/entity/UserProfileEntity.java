@@ -11,6 +11,7 @@ public class UserProfileEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
     private String name;
     private String sex;
     private Integer age;
@@ -20,6 +21,13 @@ public class UserProfileEntity {
     private String dislikes;
     private String style;
     private OffsetDateTime createdAt;
+
+    @PrePersist
+    public void prePersist() {
+        if (createdAt == null) {
+            createdAt = OffsetDateTime.now();
+        }
+    }
 
     public UUID getId() {
         return id;
@@ -100,4 +108,6 @@ public class UserProfileEntity {
     public void setCreatedAt(OffsetDateTime createdAt) {
         this.createdAt = createdAt;
     }
+
+
 }

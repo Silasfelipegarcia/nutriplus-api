@@ -1,0 +1,142 @@
+{
+  "_type": "export",
+  "__export_format": 4,
+  "__export_date": "2025-09-13T12:36:08.864342",
+  "__export_source": "chatgpt-nutriapp/insomnia",
+  "resources": [
+    {
+      "_id": "wrk_c1a2c8c13869",
+      "_type": "workspace",
+      "name": "Nutri+App (RESTful desacoplado)",
+      "description": "Coleção Insomnia com controllers sem acoplamento de path base. Paths: /plans/users/{id}/..., /adherence/users/{id}/..., /bio/users/{id}/..."
+    },
+    {
+      "_id": "env_8209c19b611e",
+      "_type": "environment",
+      "parentId": "wrk_c1a2c8c13869",
+      "name": "Base Environment",
+      "data": {
+        "base_url": "http://localhost:8080",
+        "user_id": "00000000-0000-0000-0000-000000000000"
+      }
+    },
+    {
+      "_id": "fld_689441f5c55f",
+      "_type": "request_group",
+      "parentId": "wrk_c1a2c8c13869",
+      "name": "Nutri+App API",
+      "description": "Endpoints principais (RESTful)"
+    },
+    {
+      "_id": "req_e6d0520e8bfa",
+      "_type": "request",
+      "parentId": "fld_689441f5c55f",
+      "name": "Health Check",
+      "method": "GET",
+      "url": "{{ _.base_url }}/healthz",
+      "body": {},
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {}
+    },
+    {
+      "_id": "req_dc368e0ebc90",
+      "_type": "request",
+      "parentId": "fld_689441f5c55f",
+      "name": "Onboarding - POST /onboarding",
+      "method": "POST",
+      "url": "{{ _.base_url }}/onboarding",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"name\": \"Silas\",\n  \"sex\": \"M\",\n  \"age\": 34,\n  \"heightCm\": 178,\n  \"weightKg\": 82.5,\n  \"trainingDaysPerWeek\": 4,\n  \"dislikes\": [\n    \"lactose\"\n  ],\n  \"style\": [\n    \"low-carb\"\n  ],\n  \"goalType\": \"fat_loss\",\n  \"pace\": \"moderate\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {}
+    },
+    {
+      "_id": "req_3ed0ad4e5b5d",
+      "_type": "request",
+      "parentId": "fld_689441f5c55f",
+      "name": "Plan - GET /plans/users/{userId}/current",
+      "method": "GET",
+      "url": "{{ _.base_url }}/plans/users/{{ _.user_id }}/current",
+      "body": {},
+      "headers": [
+        {
+          "name": "Accept",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {}
+    },
+    {
+      "_id": "req_d4fbb88a7520",
+      "_type": "request",
+      "parentId": "fld_689441f5c55f",
+      "name": "Plan - POST /plans/users/{userId}/generate",
+      "method": "POST",
+      "url": "{{ _.base_url }}/plans/users/{{ _.user_id }}/generate",
+      "body": {},
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {}
+    },
+    {
+      "_id": "req_cb3758f5a2da",
+      "_type": "request",
+      "parentId": "fld_689441f5c55f",
+      "name": "Adherence - POST /adherence/users/{userId}/daily",
+      "method": "POST",
+      "url": "{{ _.base_url }}/adherence/users/{{ _.user_id }}/daily",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"date\": \"2025-09-13\",\n  \"mealBreakfast\": true,\n  \"mealLunch\": true,\n  \"mealDinner\": false,\n  \"workout\": true,\n  \"waterMl\": 2000\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {}
+    },
+    {
+      "_id": "req_58e6f9afecd6",
+      "_type": "request",
+      "parentId": "fld_689441f5c55f",
+      "name": "Bio (Manual) - POST /bio/users/{userId}/manual",
+      "method": "POST",
+      "url": "{{ _.base_url }}/bio/users/{{ _.user_id }}/manual",
+      "body": {
+        "mimeType": "application/json",
+        "text": "{\n  \"reportDate\": \"2025-09-13\",\n  \"weightKg\": 82.1,\n  \"bodyFatPercent\": 18.9,\n  \"skeletalMuscleMassKg\": 37.2,\n  \"phaseAngleDeg\": 6.8,\n  \"notes\": \"Relatório de bioimpedância importado via PDF.\"\n}"
+      },
+      "headers": [
+        {
+          "name": "Content-Type",
+          "value": "application/json"
+        }
+      ],
+      "parameters": [],
+      "authentication": {}
+    }
+  ]
+}
