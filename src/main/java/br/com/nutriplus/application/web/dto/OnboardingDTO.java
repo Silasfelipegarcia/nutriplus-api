@@ -1,0 +1,3 @@
+package br.com.nutriplus.application.web.dto;
+import jakarta.validation.constraints.*; import java.util.List;
+public record OnboardingDTO(@NotBlank String name, @NotBlank String sex, @NotNull @Min(10) @Max(120) Integer age, @NotNull @Min(100) @Max(250) Integer heightCm, @NotNull @Min(30) @Max(300) Double weightKg, @NotNull @Min(1) @Max(7) Integer trainingDaysPerWeek, List<String> dislikes, List<String> style, @NotBlank String goalType, @NotBlank String pace) { }

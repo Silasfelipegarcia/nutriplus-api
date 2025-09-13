@@ -1,0 +1,19 @@
+
+<configuration>
+  <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder class="net.logstash.logback.encoder.LoggingEventCompositeJsonEncoder">
+      <providers>
+        <timestamp />
+        <pattern>
+          <pattern>
+            {"level":"%level","logger":"%logger","thread":"%thread","message":"%message","correlationId":"%X{correlationId}"}
+          </pattern>
+        </pattern>
+        <mdc />
+        <stackTrace />
+      </providers>
+    </encoder>
+  </appender>
+  <root level="INFO"><appender-ref ref="CONSOLE"/></root>
+  <logger name="br.com.nutriplus" level="DEBUG"/>
+</configuration>
