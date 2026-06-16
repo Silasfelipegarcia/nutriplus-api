@@ -1,37 +1,31 @@
-
-spring:
-  datasource:
-    url: jdbc:h2:mem:nutriapp;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    driverClassName: org.h2.Driver
-    username: sa
-    password: ''
-  jpa:
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        format_sql: true
-    open-in-view: false
-  h2:
-    console:
-      enabled: true
-      path: /h2
 server:
   port: 8080
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics,loggers,threaddump,env
+
+spring:
+  application:
+    name: nutriplus-backend
+  datasource:
+    url: ${DB_URL:jdbc:mysql://127.0.0.1:3306/nutriplus?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&createDatabaseIfNotExist=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+
+nutriplus:
+  jwt:
+    secret: ${JWT_SECRET:nutriplus-dev-secret-key-change-in-production-min-32-chars}
+    expiration-ms: 86400000
+  ai-agent:
+    base-url: ${AI_AGENT_URL:http://localhost:8000}
+  disclaimer: "As recomendações são geradas por IA para fins de apoio e organização alimentar. Consulte um nutricionista para orientação profissional individualizada."
+
 logging:
   level:
-    root: INFO
-    br.com.nutriplus: DEBUG
-app:
-  cors:
-    allowed-origins: "*"
-  llm:
-    provider: mock
-    openai:
-      apiKey: ${OPENAI_API_KEY:}
-      model: gpt-4o-mini
+    br.com.nutriplus: INFO

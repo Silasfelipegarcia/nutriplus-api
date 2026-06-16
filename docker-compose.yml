@@ -1,0 +1,16 @@
+services:
+  mysql:
+    image: mysql:8
+    container_name: nutriplus-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: nutriplus
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./docs/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
