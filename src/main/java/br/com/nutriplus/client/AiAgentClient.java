@@ -2,12 +2,15 @@ package br.com.nutriplus.client;
 
 import br.com.nutriplus.client.dto.AiMealPlanGenerateResponse;
 import br.com.nutriplus.client.dto.AiNutritionCalculateResponse;
-import br.com.nutriplus.config.AiAgentProperties;
 import br.com.nutriplus.domain.entity.NutritionProfile;
 import br.com.nutriplus.exception.AiAgentException;
+import br.com.nutriplus.infrastructure.config.AiAgentProperties;
+import br.com.nutriplus.infrastructure.web.TraceContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
@@ -19,16 +22,24 @@ import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 
-@Slf4j
 @Component
-@RequiredArgsConstructor
 public class AiAgentClient {
+
+    private static final Logger log = LoggerFactory.getLogger(AiAgentClient.class);
 
     private final AiAgentProperties aiAgentProperties;
     private final ObjectMapper objectMapper;
-    private final HttpClient httpClient = HttpClient.newBuilder()
-            .connectTimeout(Duration.ofSeconds(10))
-            .build();
+    private final MeterRegistry meterRegistry;
+    private final HttpClient httpClient;
+
+    public AiAgentClient(AiAgentProperties aiAgentProperties, ObjectMapper objectMapper, MeterRegistry meterRegistry) {
+        this.aiAgentProperties = aiAgentProperties;
+        this.objectMapper = objectMapper;
+        this.meterRegistry = meterRegistry;
+        this.httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(aiAgentProperties.connectTimeoutSeconds()))
+                .build();
+    }
 
     public AiNutritionCalculateResponse calculateMacros(NutritionProfile profile) {
         Map<String, Object> body = profileToMap(profile);
@@ -58,28 +69,59 @@ public class AiAgentClient {
     }
 
     private <T> T post(String path, Object body, Class<T> responseType) {
+        Timer.Sample sample = Timer.start(meterRegistry);
+        String statusTag = "success";
+        int maxAttempts = aiAgentProperties.maxRetries() + 1;
+        Exception lastException = null;
+
         try {
             String json = objectMapper.writeValueAsString(body);
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(aiAgentProperties.getBaseUrl() + path))
-                    .timeout(Duration.ofSeconds(120))
-                    .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
-                    .POST(HttpRequest.BodyPublishers.ofString(json))
-                    .build();
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+                try {
+                    HttpRequest.Builder builder = HttpRequest.newBuilder()
+                            .uri(URI.create(aiAgentProperties.baseUrl() + path))
+                            .timeout(Duration.ofSeconds(aiAgentProperties.readTimeoutSeconds()))
+                            .header("Content-Type", MediaType.APPLICATION_JSON_VALUE)
+                            .POST(HttpRequest.BodyPublishers.ofString(json));
 
-            if (response.statusCode() >= 400) {
-                log.error("AI agent error {}: {}", response.statusCode(), response.body());
-                throw new AiAgentException("Erro ao comunicar com agente de IA: " + response.statusCode());
+                    TraceContext.currentHeaders().forEach(builder::header);
+
+                    HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+
+                    if (response.statusCode() >= 400) {
+                        statusTag = "error";
+                        log.error("AI agent error {}: {}", response.statusCode(), response.body());
+                        throw new AiAgentException("Erro ao comunicar com agente de IA: " + response.statusCode());
+                    }
+
+                    return objectMapper.readValue(response.body(), responseType);
+                } catch (AiAgentException e) {
+                    throw e;
+                } catch (Exception e) {
+                    lastException = e;
+                    if (attempt < maxAttempts) {
+                        log.warn("AI agent call failed (attempt {}/{}), retrying: {}", attempt, maxAttempts, e.getMessage());
+                    }
+                }
             }
 
-            return objectMapper.readValue(response.body(), responseType);
+            statusTag = "error";
+            log.error("Failed to call AI agent after {} attempts", maxAttempts, lastException);
+            throw new AiAgentException("Falha na comunicação com agente de IA", lastException);
         } catch (AiAgentException e) {
+            statusTag = "error";
             throw e;
         } catch (Exception e) {
+            statusTag = "error";
             log.error("Failed to call AI agent", e);
             throw new AiAgentException("Falha na comunicação com agente de IA", e);
+        } finally {
+            sample.stop(Timer.builder("nutriplus.ai.agent.duration")
+                    .tag("path", path)
+                    .tag("status", statusTag)
+                    .register(meterRegistry));
+            meterRegistry.counter("nutriplus.ai.agent.calls", "path", path, "status", statusTag).increment();
         }
     }
 }

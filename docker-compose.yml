@@ -3,14 +3,65 @@ services:
     image: mysql:8
     container_name: nutriplus-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
       MYSQL_DATABASE: nutriplus
     ports:
       - "3306:3306"
     volumes:
-      - ./docs/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - nutriplus-mysql-data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-root}"]
       interval: 5s
       timeout: 5s
       retries: 10
+
+  agent:
+    build:
+      context: ../nutriplus-agentes
+      dockerfile: Dockerfile
+    container_name: nutriplus-agent
+    environment:
+      USE_MOCK_LLM: ${USE_MOCK_LLM:-true}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      HOST: 0.0.0.0
+      PORT: 8000
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nutriplus-api
+    depends_on:
+      mysql:
+        condition: service_healthy
+      agent:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: local,dev
+      DB_URL: jdbc:mysql://mysql:3306/nutriplus?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&createDatabaseIfNotExist=true
+      DB_USERNAME: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root}
+      JWT_SECRET: ${JWT_SECRET:-bnV0cmlwbHVzLWRldi1zZWNyZXQta2V5LW1pbmltdW0tMzItYnl0ZXM=}
+      AI_AGENT_URL: http://agent:8000
+      SERVER_PORT: 8080
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health/liveness"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+volumes:
+  nutriplus-mysql-data:

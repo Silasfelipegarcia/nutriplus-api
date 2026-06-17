@@ -1,17 +1,9 @@
 package br.com.nutriplus.dto.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class ShoppingListItemResponse {
-    private Long id;
-    private String itemName;
-    private String quantity;
-    private String category;
+public record ShoppingListItemResponse(
+        Long id,
+        String itemName,
+        String quantity,
+        String category
+) {
 }

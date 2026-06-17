@@ -2,16 +2,18 @@ package br.com.nutriplus.controller;
 
 import br.com.nutriplus.dto.response.MealPlanResponse;
 import br.com.nutriplus.service.MealPlanService;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/meal-plans")
-@RequiredArgsConstructor
 public class MealPlanController {
 
     private final MealPlanService mealPlanService;
+
+    public MealPlanController(MealPlanService mealPlanService) {
+        this.mealPlanService = mealPlanService;
+    }
 
     @PostMapping("/generate")
     @ResponseStatus(HttpStatus.CREATED)

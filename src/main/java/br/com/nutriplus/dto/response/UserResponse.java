@@ -1,20 +1,13 @@
 package br.com.nutriplus.dto.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.time.LocalDateTime;
 
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class UserResponse {
-    private Long id;
-    private String name;
-    private String email;
-    private LocalDateTime createdAt;
-    private boolean hasNutritionProfile;
+public record UserResponse(
+        Long id,
+        String name,
+        String email,
+        LocalDateTime createdAt,
+        boolean hasNutritionProfile,
+        String photoThumbnailUrl
+) {
 }

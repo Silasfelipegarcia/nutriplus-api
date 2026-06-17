@@ -1,15 +1,10 @@
 package br.com.nutriplus.dto.response;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class AuthResponse {
-    private String token;
-    private UserResponse user;
+public record AuthResponse(
+        String token,
+        String refreshToken,
+        String tokenType,
+        Long expiresIn,
+        UserResponse user
+) {
 }

@@ -1,4 +1,8 @@
--- Nutri+ Database Schema
+-- DEPRECATED: schema is managed exclusively by Flyway migrations in
+-- src/main/resources/db/migration/. Do not use this file for new environments.
+-- MySQL init should start empty; Flyway runs on application startup.
+--
+-- Nutri+ Database Schema (historical reference)
 -- MySQL 8.0+
 
 CREATE DATABASE IF NOT EXISTS nutriplus CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

@@ -1,6 +1,7 @@
 package br.com.nutriplus.mapper;
 
 import br.com.nutriplus.domain.entity.*;
+import br.com.nutriplus.domain.model.User;
 import br.com.nutriplus.dto.response.*;
 import org.springframework.stereotype.Component;
 
@@ -9,36 +10,55 @@ import java.util.List;
 @Component
 public class ResponseMapper {
 
+    public UserResponse toUserResponse(br.com.nutriplus.domain.entity.User user, boolean hasNutritionProfile) {
+        return new UserResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                user.getCreatedAt(),
+                hasNutritionProfile,
+                photoForClient(user.getPhotoThumbnailUrl())
+        );
+    }
+
     public UserResponse toUserResponse(User user, boolean hasNutritionProfile) {
-        return UserResponse.builder()
-                .id(user.getId())
-                .name(user.getName())
-                .email(user.getEmail())
-                .createdAt(user.getCreatedAt())
-                .hasNutritionProfile(hasNutritionProfile)
-                .build();
+        return new UserResponse(
+                user.id(),
+                user.name(),
+                user.email(),
+                user.createdAt(),
+                hasNutritionProfile,
+                user.photoForClient()
+        );
+    }
+
+    private static String photoForClient(String photoThumbnailUrl) {
+        if (photoThumbnailUrl != null && !photoThumbnailUrl.isBlank()) {
+            return photoThumbnailUrl;
+        }
+        return null;
     }
 
     public NutritionProfileResponse toNutritionProfileResponse(NutritionProfile profile) {
-        return NutritionProfileResponse.builder()
-                .id(profile.getId())
-                .age(profile.getAge())
-                .sex(profile.getSex())
-                .heightCm(profile.getHeightCm())
-                .currentWeightKg(profile.getCurrentWeightKg())
-                .targetWeightKg(profile.getTargetWeightKg())
-                .goal(profile.getGoal())
-                .activityLevel(profile.getActivityLevel())
-                .dietaryPreference(profile.getDietaryPreference())
-                .restriction(profile.getRestriction())
-                .bmrKcal(profile.getBmrKcal())
-                .tdeeKcal(profile.getTdeeKcal())
-                .targetCalories(profile.getTargetCalories())
-                .targetProteinG(profile.getTargetProteinG())
-                .targetCarbsG(profile.getTargetCarbsG())
-                .targetFatG(profile.getTargetFatG())
-                .updatedAt(profile.getUpdatedAt())
-                .build();
+        return new NutritionProfileResponse(
+                profile.getId(),
+                profile.getAge(),
+                profile.getSex(),
+                profile.getHeightCm(),
+                profile.getCurrentWeightKg(),
+                profile.getTargetWeightKg(),
+                profile.getGoal(),
+                profile.getActivityLevel(),
+                profile.getDietaryPreference(),
+                profile.getRestriction(),
+                profile.getBmrKcal(),
+                profile.getTdeeKcal(),
+                profile.getTargetCalories(),
+                profile.getTargetProteinG(),
+                profile.getTargetCarbsG(),
+                profile.getTargetFatG(),
+                profile.getUpdatedAt()
+        );
     }
 
     public MealPlanResponse toMealPlanResponse(MealPlan plan) {
@@ -46,56 +66,56 @@ public class ResponseMapper {
                 .map(this::toMealResponse)
                 .toList();
 
-        return MealPlanResponse.builder()
-                .id(plan.getId())
-                .planDate(plan.getPlanDate())
-                .totalCalories(plan.getTotalCalories())
-                .totalProteinG(plan.getTotalProteinG())
-                .totalCarbsG(plan.getTotalCarbsG())
-                .totalFatG(plan.getTotalFatG())
-                .disclaimer(plan.getDisclaimer())
-                .meals(meals)
-                .createdAt(plan.getCreatedAt())
-                .build();
+        return new MealPlanResponse(
+                plan.getId(),
+                plan.getPlanDate(),
+                plan.getTotalCalories(),
+                plan.getTotalProteinG(),
+                plan.getTotalCarbsG(),
+                plan.getTotalFatG(),
+                plan.getDisclaimer(),
+                meals,
+                plan.getCreatedAt()
+        );
     }
 
     private MealResponse toMealResponse(Meal meal) {
         List<MealItemResponse> items = meal.getItems().stream()
-                .map(item -> MealItemResponse.builder()
-                        .id(item.getId())
-                        .foodName(item.getFoodName())
-                        .quantityG(item.getQuantityG())
-                        .calories(item.getCalories())
-                        .proteinG(item.getProteinG())
-                        .carbsG(item.getCarbsG())
-                        .fatG(item.getFatG())
-                        .build())
+                .map(item -> new MealItemResponse(
+                        item.getId(),
+                        item.getFoodName(),
+                        item.getQuantityG(),
+                        item.getCalories(),
+                        item.getProteinG(),
+                        item.getCarbsG(),
+                        item.getFatG()
+                ))
                 .toList();
 
-        return MealResponse.builder()
-                .id(meal.getId())
-                .mealType(meal.getMealType())
-                .name(meal.getName())
-                .items(items)
-                .build();
+        return new MealResponse(
+                meal.getId(),
+                meal.getMealType(),
+                meal.getName(),
+                items
+        );
     }
 
     public ShoppingListResponse toShoppingListResponse(ShoppingList list) {
         List<ShoppingListItemResponse> items = list.getItems().stream()
-                .map(item -> ShoppingListItemResponse.builder()
-                        .id(item.getId())
-                        .itemName(item.getItemName())
-                        .quantity(item.getQuantity())
-                        .category(item.getCategory())
-                        .build())
+                .map(item -> new ShoppingListItemResponse(
+                        item.getId(),
+                        item.getItemName(),
+                        item.getQuantity(),
+                        item.getCategory()
+                ))
                 .toList();
 
-        return ShoppingListResponse.builder()
-                .id(list.getId())
-                .weekStart(list.getWeekStart())
-                .weekEnd(list.getWeekEnd())
-                .items(items)
-                .createdAt(list.getCreatedAt())
-                .build();
+        return new ShoppingListResponse(
+                list.getId(),
+                list.getWeekStart(),
+                list.getWeekEnd(),
+                items,
+                list.getCreatedAt()
+        );
     }
 }

@@ -2,18 +2,12 @@ package br.com.nutriplus.domain.entity;
 
 import br.com.nutriplus.domain.enums.MealType;
 import jakarta.persistence.*;
-import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Table(name = "meals")
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
 public class Meal {
 
     @Id
@@ -32,10 +26,115 @@ public class Meal {
     private String name;
 
     @Column(name = "sort_order", nullable = false)
-    @Builder.Default
     private Integer sortOrder = 0;
 
     @OneToMany(mappedBy = "meal", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
     private List<MealItem> items = new ArrayList<>();
+
+    protected Meal() {
+    }
+
+    private Meal(Builder builder) {
+        this.id = builder.id;
+        this.mealPlan = builder.mealPlan;
+        this.mealType = builder.mealType;
+        this.name = builder.name;
+        this.sortOrder = builder.sortOrder != null ? builder.sortOrder : 0;
+        this.items = builder.items != null ? builder.items : new ArrayList<>();
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public MealPlan getMealPlan() {
+        return mealPlan;
+    }
+
+    public void setMealPlan(MealPlan mealPlan) {
+        this.mealPlan = mealPlan;
+    }
+
+    public MealType getMealType() {
+        return mealType;
+    }
+
+    public void setMealType(MealType mealType) {
+        this.mealType = mealType;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Integer getSortOrder() {
+        return sortOrder;
+    }
+
+    public void setSortOrder(Integer sortOrder) {
+        this.sortOrder = sortOrder;
+    }
+
+    public List<MealItem> getItems() {
+        return items;
+    }
+
+    public void setItems(List<MealItem> items) {
+        this.items = items;
+    }
+
+    public static class Builder {
+        private Long id;
+        private MealPlan mealPlan;
+        private MealType mealType;
+        private String name;
+        private Integer sortOrder;
+        private List<MealItem> items;
+
+        public Builder id(Long id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder mealPlan(MealPlan mealPlan) {
+            this.mealPlan = mealPlan;
+            return this;
+        }
+
+        public Builder mealType(MealType mealType) {
+            this.mealType = mealType;
+            return this;
+        }
+
+        public Builder name(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder sortOrder(Integer sortOrder) {
+            this.sortOrder = sortOrder;
+            return this;
+        }
+
+        public Builder items(List<MealItem> items) {
+            this.items = items;
+            return this;
+        }
+
+        public Meal build() {
+            return new Meal(this);
+        }
+    }
 }

@@ -13,12 +13,10 @@ import br.com.nutriplus.mapper.ResponseMapper;
 import br.com.nutriplus.repository.NutritionProfileRepository;
 import br.com.nutriplus.security.CurrentUser;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-@RequiredArgsConstructor
 public class NutritionProfileService {
 
     private final CurrentUser currentUser;
@@ -27,6 +25,20 @@ public class NutritionProfileService {
     private final AiRequestLogService aiRequestLogService;
     private final ResponseMapper responseMapper;
     private final ObjectMapper objectMapper;
+
+    public NutritionProfileService(CurrentUser currentUser,
+                                   NutritionProfileRepository nutritionProfileRepository,
+                                   AiAgentClient aiAgentClient,
+                                   AiRequestLogService aiRequestLogService,
+                                   ResponseMapper responseMapper,
+                                   ObjectMapper objectMapper) {
+        this.currentUser = currentUser;
+        this.nutritionProfileRepository = nutritionProfileRepository;
+        this.aiAgentClient = aiAgentClient;
+        this.aiRequestLogService = aiRequestLogService;
+        this.responseMapper = responseMapper;
+        this.objectMapper = objectMapper;
+    }
 
     @Transactional
     public NutritionProfileResponse saveOrUpdate(NutritionProfileRequest request) {
@@ -41,12 +53,12 @@ public class NutritionProfileService {
         String requestJson = toJson(request);
         try {
             AiNutritionCalculateResponse macros = aiAgentClient.calculateMacros(profile);
-            profile.setBmrKcal(macros.getBmrKcal());
-            profile.setTdeeKcal(macros.getTdeeKcal());
-            profile.setTargetCalories(macros.getTargetCalories());
-            profile.setTargetProteinG(macros.getTargetProteinG());
-            profile.setTargetCarbsG(macros.getTargetCarbsG());
-            profile.setTargetFatG(macros.getTargetFatG());
+            profile.setBmrKcal(macros.bmrKcal());
+            profile.setTdeeKcal(macros.tdeeKcal());
+            profile.setTargetCalories(macros.targetCalories());
+            profile.setTargetProteinG(macros.targetProteinG());
+            profile.setTargetCarbsG(macros.targetCarbsG());
+            profile.setTargetFatG(macros.targetFatG());
 
             profile = nutritionProfileRepository.save(profile);
 
@@ -76,15 +88,15 @@ public class NutritionProfileService {
     }
 
     private void applyRequest(NutritionProfile profile, NutritionProfileRequest request) {
-        profile.setAge(request.getAge());
-        profile.setSex(request.getSex());
-        profile.setHeightCm(request.getHeightCm());
-        profile.setCurrentWeightKg(request.getCurrentWeightKg());
-        profile.setTargetWeightKg(request.getTargetWeightKg());
-        profile.setGoal(request.getGoal());
-        profile.setActivityLevel(request.getActivityLevel());
-        profile.setDietaryPreference(request.getDietaryPreference());
-        profile.setRestriction(request.getRestriction());
+        profile.setAge(request.age());
+        profile.setSex(request.sex());
+        profile.setHeightCm(request.heightCm());
+        profile.setCurrentWeightKg(request.currentWeightKg());
+        profile.setTargetWeightKg(request.targetWeightKg());
+        profile.setGoal(request.goal());
+        profile.setActivityLevel(request.activityLevel());
+        profile.setDietaryPreference(request.dietaryPreference());
+        profile.setRestriction(request.restriction());
     }
 
     private String toJson(Object obj) {

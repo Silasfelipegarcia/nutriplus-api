@@ -7,18 +7,24 @@ import br.com.nutriplus.exception.ResourceNotFoundException;
 import br.com.nutriplus.mapper.ResponseMapper;
 import br.com.nutriplus.repository.ShoppingListRepository;
 import br.com.nutriplus.security.CurrentUser;
-import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
-@RequiredArgsConstructor
 public class ShoppingListService {
 
     private final CurrentUser currentUser;
     private final ShoppingListRepository shoppingListRepository;
     private final ResponseMapper responseMapper;
+
+    public ShoppingListService(CurrentUser currentUser,
+                               ShoppingListRepository shoppingListRepository,
+                               ResponseMapper responseMapper) {
+        this.currentUser = currentUser;
+        this.shoppingListRepository = shoppingListRepository;
+        this.responseMapper = responseMapper;
+    }
 
     public ShoppingListResponse getLatest() {
         User user = currentUser.get();
