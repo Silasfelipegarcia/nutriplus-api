@@ -20,6 +20,7 @@ public class AiAgentHealthIndicator implements HealthIndicator {
     public AiAgentHealthIndicator(AiAgentProperties aiAgentProperties) {
         this.aiAgentProperties = aiAgentProperties;
         this.httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofSeconds(aiAgentProperties.connectTimeoutSeconds()))
                 .build();
     }

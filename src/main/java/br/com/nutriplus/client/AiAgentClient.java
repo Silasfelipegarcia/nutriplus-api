@@ -37,6 +37,7 @@ public class AiAgentClient {
         this.objectMapper = objectMapper;
         this.meterRegistry = meterRegistry;
         this.httpClient = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofSeconds(aiAgentProperties.connectTimeoutSeconds()))
                 .build();
     }
