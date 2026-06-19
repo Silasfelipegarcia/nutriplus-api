@@ -109,11 +109,17 @@ Métricas Micrometer:
 - Incrementa `REQUEST_COUNT` e `REQUEST_LATENCY` (Prometheus).
 - Ecoa `X-Correlation-Id` e `X-Trace-Id` na resposta.
 
+### Personas e LLM
+
+- Registry: `config/agents.yaml` — **Luna** e **Bruno**
+- Provider padrão: **Groq** (`LLM_PROVIDER=groq`, `GROQ_API_KEY`)
+- Métrica `LLM_CALLS` — labels: `groq`, `openai`, `mock`, `guardrail_fallback`
+
 ### Limitações atuais
 
 1. **Logs do `MealPlanGenerator`** não incluem cid/trace (thread worker via `asyncio.to_thread`).
 2. **Formato texto plano** — não há JSON estruturado como na API em prod.
-3. **Chamadas OpenAI** não propagam trace para a OpenAI (sem OTel).
+3. **Chamadas Groq/OpenAI** não propagam trace externo (sem OTel).
 
 ---
 

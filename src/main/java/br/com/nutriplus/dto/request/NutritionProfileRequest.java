@@ -14,6 +14,10 @@ public record NutritionProfileRequest(
         @NotNull Goal goal,
         @NotNull ActivityLevel activityLevel,
         @NotNull DietaryPreference dietaryPreference,
-        @NotNull Restriction restriction
+        @NotNull Restriction restriction,
+        @NotNull AgentPersona agentPersona,
+        @Size(max = 2000) String foodLikes,
+        @Size(max = 2000) String foodDislikes,
+        @Size(max = 2000) String mealNotes
 ) {
 }

@@ -61,10 +61,23 @@ public class AiAgentClient {
         body.put("sex", profile.getSex().name());
         body.put("heightCm", profile.getHeightCm());
         body.put("currentWeightKg", profile.getCurrentWeightKg());
+        body.put("targetWeightKg", profile.getTargetWeightKg());
         body.put("goal", profile.getGoal().name());
         body.put("activityLevel", profile.getActivityLevel().name());
         body.put("dietaryPreference", profile.getDietaryPreference().name());
         body.put("restriction", profile.getRestriction().name());
+        if (profile.getAgentPersona() != null) {
+            body.put("agentId", profile.getAgentPersona().toAgentId());
+        }
+        if (profile.getFoodLikes() != null && !profile.getFoodLikes().isBlank()) {
+            body.put("foodLikes", profile.getFoodLikes());
+        }
+        if (profile.getFoodDislikes() != null && !profile.getFoodDislikes().isBlank()) {
+            body.put("foodDislikes", profile.getFoodDislikes());
+        }
+        if (profile.getMealNotes() != null && !profile.getMealNotes().isBlank()) {
+            body.put("mealNotes", profile.getMealNotes());
+        }
         return body;
     }
 

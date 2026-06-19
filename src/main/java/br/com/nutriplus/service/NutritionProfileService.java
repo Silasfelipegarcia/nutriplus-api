@@ -97,6 +97,10 @@ public class NutritionProfileService {
         profile.setActivityLevel(request.activityLevel());
         profile.setDietaryPreference(request.dietaryPreference());
         profile.setRestriction(request.restriction());
+        profile.setAgentPersona(request.agentPersona());
+        profile.setFoodLikes(request.foodLikes());
+        profile.setFoodDislikes(request.foodDislikes());
+        profile.setMealNotes(request.mealNotes());
     }
 
     private String toJson(Object obj) {

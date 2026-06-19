@@ -52,6 +52,19 @@ public class NutritionProfile {
     @Column(nullable = false)
     private Restriction restriction;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "agent_persona", nullable = false)
+    private AgentPersona agentPersona = AgentPersona.LUNA;
+
+    @Column(name = "food_likes", columnDefinition = "TEXT")
+    private String foodLikes;
+
+    @Column(name = "food_dislikes", columnDefinition = "TEXT")
+    private String foodDislikes;
+
+    @Column(name = "meal_notes", columnDefinition = "TEXT")
+    private String mealNotes;
+
     @Column(name = "bmr_kcal", precision = 8, scale = 2)
     private BigDecimal bmrKcal;
 
@@ -93,6 +106,10 @@ public class NutritionProfile {
         this.activityLevel = builder.activityLevel;
         this.dietaryPreference = builder.dietaryPreference;
         this.restriction = builder.restriction;
+        this.agentPersona = builder.agentPersona != null ? builder.agentPersona : AgentPersona.LUNA;
+        this.foodLikes = builder.foodLikes;
+        this.foodDislikes = builder.foodDislikes;
+        this.mealNotes = builder.mealNotes;
         this.bmrKcal = builder.bmrKcal;
         this.tdeeKcal = builder.tdeeKcal;
         this.targetCalories = builder.targetCalories;
@@ -195,6 +212,38 @@ public class NutritionProfile {
         this.restriction = restriction;
     }
 
+    public AgentPersona getAgentPersona() {
+        return agentPersona;
+    }
+
+    public void setAgentPersona(AgentPersona agentPersona) {
+        this.agentPersona = agentPersona;
+    }
+
+    public String getFoodLikes() {
+        return foodLikes;
+    }
+
+    public void setFoodLikes(String foodLikes) {
+        this.foodLikes = foodLikes;
+    }
+
+    public String getFoodDislikes() {
+        return foodDislikes;
+    }
+
+    public void setFoodDislikes(String foodDislikes) {
+        this.foodDislikes = foodDislikes;
+    }
+
+    public String getMealNotes() {
+        return mealNotes;
+    }
+
+    public void setMealNotes(String mealNotes) {
+        this.mealNotes = mealNotes;
+    }
+
     public BigDecimal getBmrKcal() {
         return bmrKcal;
     }
@@ -271,6 +320,10 @@ public class NutritionProfile {
         private ActivityLevel activityLevel;
         private DietaryPreference dietaryPreference;
         private Restriction restriction;
+        private AgentPersona agentPersona;
+        private String foodLikes;
+        private String foodDislikes;
+        private String mealNotes;
         private BigDecimal bmrKcal;
         private BigDecimal tdeeKcal;
         private BigDecimal targetCalories;
@@ -332,6 +385,26 @@ public class NutritionProfile {
 
         public Builder restriction(Restriction restriction) {
             this.restriction = restriction;
+            return this;
+        }
+
+        public Builder agentPersona(AgentPersona agentPersona) {
+            this.agentPersona = agentPersona;
+            return this;
+        }
+
+        public Builder foodLikes(String foodLikes) {
+            this.foodLikes = foodLikes;
+            return this;
+        }
+
+        public Builder foodDislikes(String foodDislikes) {
+            this.foodDislikes = foodDislikes;
+            return this;
+        }
+
+        public Builder mealNotes(String mealNotes) {
+            this.mealNotes = mealNotes;
             return this;
         }
 

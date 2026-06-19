@@ -13,12 +13,24 @@ Tests as Code (TaaC): CI runs `mvn verify` on every PR to `develop`, `homolog`, 
 
 ## Coverage gate
 
-JaCoCo enforces **50% line coverage** minimum (`mvn verify`). Exclusions: `NutriplusApplication`, DTO records. Raise the threshold over time as coverage grows.
+JaCoCo enforces **50% line coverage** minimum (`mvn verify`). Exclusions: `NutriplusApplication`, DTOs, entities, repositories, mappers, client, exception, legacy `security/**`, health/dev infra. Raise the threshold over time as coverage grows.
 
 ```bash
 mvn verify
 # report: target/site/jacoco/index.html
 ```
+
+## Dev test user (local / dev profile)
+
+With `SPRING_PROFILES_ACTIVE=local,dev`, the API seeds a ready-to-use account on first boot:
+
+| Field | Value |
+|-------|-------|
+| Email | `teste@nutriplus.local` |
+| Senha | `Nutri123!` |
+| Persona | Luna (perfil nutricional completo) |
+
+Use for manual testing of login → dashboard → gerar plano without re-onboarding.
 
 ## Integration tests
 
@@ -29,9 +41,7 @@ mvn test -Dtest='*IntegrationTest'
 ```
 
 - `AbstractIntegrationTest` — `@SpringBootTest`, profile `test`, dynamic datasource
-- `AuthIntegrationTest` — register → login → GET `/users/me`
-- `HealthIntegrationTest` — GET `/health`
-- `UserControllerIntegrationTest` — PUT `/users/me` with JWT
+- `NutriplusApiIntegrationTest` — health, register → login → GET `/users/me`, PUT `/users/me`
 
 ## Web slice tests
 

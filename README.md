@@ -118,5 +118,13 @@ Filtro em memória — adequado para **instância única**. Para múltiplas rép
 
 | Repositório | Função |
 |-------------|--------|
-| [nutriplus-agentes](../nutriplus-agentes) | Agente Python |
+| [nutriplus-agentes](../nutriplus-agentes) | Agente Python (Luna/Bruno, Groq) |
 | [nutriplus-frontend](../nutriplus-frontend) | App Flutter |
+
+## Usuário de teste (local/dev)
+
+| Email | Senha |
+|-------|-------|
+| `teste@nutriplus.local` | `Nutri123!` |
+
+Criado automaticamente pelo `DevDataLoader` — ver [docs/TESTING.md](docs/TESTING.md).

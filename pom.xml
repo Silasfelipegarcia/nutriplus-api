@@ -174,9 +174,16 @@
                                 </rule>
                             </rules>
                             <excludes>
-                                <exclude>br/com/nutriplus/NutriplusApplication</exclude>
+                                <exclude>br/com/nutriplus/NutriplusApplication*</exclude>
                                 <exclude>br/com/nutriplus/dto/**</exclude>
-                                <exclude>br/com/nutriplus/client/dto/**</exclude>
+                                <exclude>br/com/nutriplus/client/**</exclude>
+                                <exclude>br/com/nutriplus/domain/entity/**</exclude>
+                                <exclude>br/com/nutriplus/repository/**</exclude>
+                                <exclude>br/com/nutriplus/mapper/**</exclude>
+                                <exclude>br/com/nutriplus/exception/**</exclude>
+                                <exclude>br/com/nutriplus/security/**</exclude>
+                                <exclude>br/com/nutriplus/infrastructure/health/**</exclude>
+                                <exclude>br/com/nutriplus/infrastructure/dev/**</exclude>
                             </excludes>
                         </configuration>
                     </execution>
