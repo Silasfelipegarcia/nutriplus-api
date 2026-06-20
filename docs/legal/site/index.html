@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="description" content="Nutri+ — Luna e Bruno organizam sua alimentação com IA. Upgrade opcional: nutricionista humano online ou presencial."/>
+  <title>Nutri+ — Organize sua alimentação com IA</title>
+  <style>
+    :root {
+      --emerald-50: #ecfdf5;
+      --emerald-600: #059669;
+      --emerald-700: #047857;
+      --emerald-900: #064e3b;
+      --slate-600: #475569;
+      --slate-800: #1e293b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      margin: 0;
+      line-height: 1.6;
+      color: var(--slate-800);
+      background: #fff;
+    }
+    a { color: var(--emerald-700); }
+    .hero {
+      background: linear-gradient(160deg, var(--emerald-50) 0%, #fff 60%);
+      padding: 3rem 1.25rem 4rem;
+      text-align: center;
+    }
+    .hero h1 {
+      font-size: clamp(1.75rem, 5vw, 2.5rem);
+      color: var(--emerald-900);
+      margin: 0 0 1rem;
+      max-width: 640px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .hero p.lead {
+      font-size: 1.125rem;
+      color: var(--slate-600);
+      max-width: 560px;
+      margin: 0 auto 1.5rem;
+    }
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      justify-content: center;
+    }
+    .btn {
+      display: inline-block;
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.5rem;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .btn-primary { background: var(--emerald-600); color: #fff; }
+    .btn-outline { border: 2px solid var(--emerald-600); color: var(--emerald-700); }
+    .disclaimer {
+      font-size: 0.875rem;
+      color: var(--slate-600);
+      max-width: 520px;
+      margin: 1.5rem auto 0;
+    }
+    section {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem;
+    }
+    section h2 {
+      color: var(--emerald-900);
+      font-size: 1.375rem;
+      margin-top: 0;
+    }
+    .card-grid {
+      display: grid;
+      gap: 1rem;
+      margin-top: 1.25rem;
+    }
+    @media (min-width: 600px) {
+      .card-grid { grid-template-columns: 1fr 1fr; }
+      .card-grid.three { grid-template-columns: repeat(3, 1fr); }
+    }
+    .card {
+      border: 1px solid #e2e8f0;
+      border-radius: 0.75rem;
+      padding: 1.25rem;
+      background: #fff;
+    }
+    .card h3 { margin: 0 0 0.5rem; color: var(--emerald-700); font-size: 1.1rem; }
+    .card p { margin: 0; font-size: 0.95rem; color: var(--slate-600); }
+    .badge {
+      display: inline-block;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.2rem 0.5rem;
+      border-radius: 999px;
+      background: var(--emerald-50);
+      color: var(--emerald-700);
+      margin-bottom: 0.5rem;
+    }
+    .steps { counter-reset: step; list-style: none; padding: 0; }
+    .steps li {
+      counter-increment: step;
+      padding-left: 2.5rem;
+      position: relative;
+      margin-bottom: 1rem;
+    }
+    .steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      width: 1.75rem;
+      height: 1.75rem;
+      background: var(--emerald-600);
+      color: #fff;
+      border-radius: 50%;
+      text-align: center;
+      line-height: 1.75rem;
+      font-size: 0.875rem;
+      font-weight: 700;
+    }
+    .faq dt { font-weight: 600; margin-top: 1rem; }
+    .faq dd { margin: 0.25rem 0 0; color: var(--slate-600); }
+    footer {
+      background: var(--emerald-900);
+      color: #ecfdf5;
+      padding: 2rem 1.25rem;
+      text-align: center;
+      font-size: 0.9rem;
+    }
+    footer a { color: #a7f3d0; }
+    .alt-bg { background: var(--emerald-50); }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <h1>Luna e Bruno organizam seu dia a dia. Quer ir além?</h1>
+    <p class="lead">
+      O Nutri+ é gratuito com inteligência artificial. Quando quiser especializar ainda mais,
+      contrate um nutricionista (CRN) para revisar seu plano, conversar com você e atender
+      <strong>online ou presencial</strong> — perto ou longe.
+    </p>
+    <div class="cta-row">
+      <a href="#" class="btn btn-primary" aria-label="Baixar app (em breve)">Baixar o app</a>
+      <a href="#nutricionista" class="btn btn-outline">Conhecer nutricionista</a>
+    </div>
+    <p class="disclaimer">
+      Sugestões por IA têm caráter informativo e não substituem consulta com nutricionista ou médico.
+      O serviço clínico é prestado pelo profissional habilitado (CRN).
+    </p>
+  </header>
+
+  <section id="ia">
+    <h2>Luna &amp; Bruno — seus assistentes no dia a dia</h2>
+    <p>Escolha a persona que combina com você e use o app <strong>grátis</strong>:</p>
+    <div class="card-grid">
+      <div class="card">
+        <span class="badge">Grátis</span>
+        <h3>Luna</h3>
+        <p>Tom acolhedor e motivador — ideal para quem prefere leveza no acompanhamento.</p>
+      </div>
+      <div class="card">
+        <span class="badge">Grátis</span>
+        <h3>Bruno</h3>
+        <p>Tom objetivo e prático — ideal para quem quer ir direto ao ponto.</p>
+      </div>
+    </div>
+    <p style="margin-top:1rem;color:var(--slate-600);">
+      Plano alimentar sugerido, horários de refeição, check-ins, evolução corporal e lista de compras —
+      tudo com IA, sem precisar contratar ninguém.
+    </p>
+  </section>
+
+  <section id="atleta" class="alt-bg">
+    <h2>Modo atleta (em breve)</h2>
+    <p>
+      Para quem treina com regularidade: macros alinhados ao gasto energético, integração com rotina de treino
+      e recursos extras. Assinatura acessível, pensada para quem já investe em fitness.
+    </p>
+  </section>
+
+  <section id="nutricionista">
+    <h2>Nutricionista humano — quando a IA não basta</h2>
+    <p>
+      A Luna e o Bruno <strong>auxiliam</strong> na organização. Para conduta clínica personalizada,
+      especialidades (esportiva, clínica, etc.) e acompanhamento humano, você pode contratar
+      um nutricionista pelo app ou aceitar o convite de quem já te acompanha.
+    </p>
+    <ul class="steps">
+      <li><strong>Marketplace ou convite</strong> — encontre um profissional ou use o link do seu nutricionista.</li>
+      <li><strong>Dossiê pronto</strong> — seu histórico no app (peso, check-ins, plano IA) chega antes da consulta.</li>
+      <li><strong>Revisão do plano</strong> — versão assinada por nutricionista, com badge no app.</li>
+      <li><strong>Chat no app</strong> — conversa assíncrona durante o período de acompanhamento.</li>
+    </ul>
+  </section>
+
+  <section id="modalidade" class="alt-bg">
+    <h2>Como você prefere ser atendido?</h2>
+    <div class="card-grid three">
+      <div class="card">
+        <h3>100% online</h3>
+        <p>Mora longe? Atendimento por chat, videochamada (Meet/Zoom) ou combinação — sem precisar ir ao consultório.</p>
+      </div>
+      <div class="card">
+        <h3>Presencial</h3>
+        <p>Prefere ir pessoalmente? Filtre nutricionistas na sua cidade e combine a consulta no consultório.</p>
+      </div>
+      <div class="card">
+        <h3>Híbrido</h3>
+        <p>Primeira consulta presencial e retornos online — muitos profissionais oferecem os dois modos.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="canais" class="alt-bg">
+    <h2>Lembretes no celular e no relógio</h2>
+    <p>
+      Ative lembretes de refeição no app. Os avisos chegam no <strong>iPhone/Android</strong> e,
+      se pareado, no <strong>Apple Watch</strong> ou relógio <strong>Wear OS</strong>.
+      Toque em <strong>OK — feita</strong> na notificação para marcar o check-in sem abrir o app.
+    </p>
+  </section>
+
+  <section id="canais-nutri">
+    <h2>Canais de conversa</h2>
+    <p>
+      O <strong>chat seguro no app</strong> é o canal oficial durante o acompanhamento (histórico e LGPD).
+      Você e seu nutricionista também podem combinar <strong>videochamada</strong> ou
+      <strong>WhatsApp</strong> para retornos rápidos — conforme a preferência de vocês.
+    </p>
+  </section>
+
+  <section id="faq" class="alt-bg">
+    <h2>Perguntas frequentes</h2>
+    <dl class="faq">
+      <dt>O app é gratuito?</dt>
+      <dd>Sim. Luna, Bruno, plano IA, check-ins e evolução básica são gratuitos. Modo atleta e consulta com nutricionista são opcionais e pagos.</dd>
+      <dt>Preciso de nutricionista para usar o app?</dt>
+      <dd>Não. O nutricionista é um upgrade explícito para quem quer revisão humana e acompanhamento clínico.</dd>
+      <dt>Quanto custa a consulta?</dt>
+      <dd>Cada nutricionista define o preço dentro de uma faixa acessível (tipicamente R$ 49 a R$ 149). Você vê o valor antes de contratar.</dd>
+      <dt>Meus dados de saúde são compartilhados?</dt>
+      <dd>Só com seu consentimento explícito e apenas com o nutricionista vinculado, enquanto o acompanhamento estiver ativo.</dd>
+      <dt>Sou nutricionista. Como entro?</dt>
+      <dd>Acesse o portal Nutri+ Pro para cadastro, convites e acompanhamento de pacientes.</dd>
+    </dl>
+  </section>
+
+  <footer>
+    <p>
+      <a href="privacidade.html">Privacidade</a> ·
+      <a href="termos.html">Termos</a> ·
+      <a href="https://pro.nutriplus.com" rel="noopener">Portal nutricionista</a>
+    </p>
+    <p style="margin-top:0.75rem;opacity:0.85;">© Nutri+ — organização alimentar com IA</p>
+  </footer>
+</body>
+</html>

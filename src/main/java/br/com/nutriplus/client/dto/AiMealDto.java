@@ -6,6 +6,7 @@ public record AiMealDto(
         String mealType,
         String name,
         Integer sortOrder,
+        String scheduledTime,
         List<AiMealItemDto> items
 ) {
 }

@@ -4,6 +4,7 @@ import br.com.nutriplus.application.port.PasswordHasherPort;
 import br.com.nutriplus.application.port.TokenPort;
 import br.com.nutriplus.application.port.UserQueryPort;
 import br.com.nutriplus.application.port.UserUpdatePort;
+import br.com.nutriplus.domain.enums.UserRole;
 import br.com.nutriplus.domain.model.User;
 import br.com.nutriplus.exception.AccountLockedException;
 import br.com.nutriplus.exception.InvalidCredentialsException;
@@ -42,11 +43,15 @@ class LoginUseCaseImplTest {
             1L,
             "Test User",
             "test@nutriplus.com",
+            UserRole.PATIENT,
             "hash",
             null,
             null,
             0,
             false,
+            null,
+            null,
+            null,
             LocalDateTime.now(),
             LocalDateTime.now()
     );
@@ -87,8 +92,8 @@ class LoginUseCaseImplTest {
     @Test
     void lockedAccountRejected() {
         User locked = new User(
-                1L, "Test", "test@nutriplus.com", "hash",
-                null, null, 3, false, LocalDateTime.now(), LocalDateTime.now());
+                1L, "Test", "test@nutriplus.com", UserRole.PATIENT, "hash",
+                null, null, 3, false, null, null, null, LocalDateTime.now(), LocalDateTime.now());
         when(userQueryPort.findByEmail("test@nutriplus.com")).thenReturn(Optional.of(locked));
 
         assertThatThrownBy(() -> loginUseCase.execute(new LoginUseCase.Request("test@nutriplus.com", "secret123")))

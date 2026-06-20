@@ -11,6 +11,7 @@ public record NutritionProfileRequest(
         @NotNull @DecimalMin("100.0") @DecimalMax("250.0") BigDecimal heightCm,
         @NotNull @DecimalMin("30.0") @DecimalMax("300.0") BigDecimal currentWeightKg,
         @NotNull @DecimalMin("30.0") @DecimalMax("300.0") BigDecimal targetWeightKg,
+        @Min(4) @Max(104) Integer goalTargetWeeks,
         @NotNull Goal goal,
         @NotNull ActivityLevel activityLevel,
         @NotNull DietaryPreference dietaryPreference,
@@ -18,6 +19,18 @@ public record NutritionProfileRequest(
         @NotNull AgentPersona agentPersona,
         @Size(max = 2000) String foodLikes,
         @Size(max = 2000) String foodDislikes,
-        @Size(max = 2000) String mealNotes
+        @Size(max = 2000) String mealNotes,
+        CalculationMethod calculationMethod,
+        @DecimalMin("5.0") @DecimalMax("60.0") BigDecimal bodyFatPercent,
+        @DecimalMin("20.0") @DecimalMax("200.0") BigDecimal muscleMassKg,
+        @Pattern(regexp = "^([01]\\d|2[0-3]):[0-5]\\d$") String wakeTime,
+        @Pattern(regexp = "^([01]\\d|2[0-3]):[0-5]\\d$") String sleepTime,
+        @Size(max = 2000) String healthConditions,
+        @Size(max = 2000) String medications,
+        @Size(max = 2000) String allergies,
+        @Size(max = 2000) String healthNotes
 ) {
+    public CalculationMethod resolvedCalculationMethod() {
+        return calculationMethod != null ? calculationMethod : CalculationMethod.ESTIMATE;
+    }
 }

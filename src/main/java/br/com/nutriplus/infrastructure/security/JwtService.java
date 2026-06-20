@@ -36,7 +36,7 @@ public class JwtService implements TokenPort {
                 .subject(String.valueOf(user.id()))
                 .claim(TOKEN_TYPE_CLAIM, TYPE_ACCESS)
                 .claim("email", user.email())
-                .claim("roles", List.of("USER"))
+                .claim("roles", List.of(user.role() != null ? user.role().name() : "PATIENT"))
                 .claim("passwordMustChange", user.passwordMustChange())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiresAt))

@@ -30,4 +30,9 @@ target/
 .env
 
 # IDE
-.idea/
+.idea/*
+!.idea/compiler.xml
+!.idea/misc.xml
+!.idea/encodings.xml
+!.idea/vcs.xml
+!.idea/jarRepositories.xml

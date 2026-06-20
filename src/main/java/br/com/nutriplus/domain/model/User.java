@@ -1,16 +1,22 @@
 package br.com.nutriplus.domain.model;
 
+import br.com.nutriplus.domain.enums.UserRole;
+
 import java.time.LocalDateTime;
 
 public record User(
         Long id,
         String name,
         String email,
+        UserRole role,
         String passwordHash,
         String photoUrl,
         String photoThumbnailUrl,
         int failedLoginAttempts,
         boolean passwordMustChange,
+        LocalDateTime termsAcceptedAt,
+        String termsVersion,
+        LocalDateTime privacyPolicyAcceptedAt,
         LocalDateTime createdAt,
         LocalDateTime updatedAt
 ) {

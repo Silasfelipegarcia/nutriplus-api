@@ -1,6 +1,7 @@
 package br.com.nutriplus.security;
 
 import br.com.nutriplus.domain.entity.User;
+import br.com.nutriplus.domain.enums.UserRole;
 import br.com.nutriplus.repository.UserRepository;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -36,7 +37,7 @@ public class CustomUserDetailsService implements UserDetailsService {
         return new org.springframework.security.core.userdetails.User(
                 user.getEmail(),
                 user.getPasswordHash(),
-                List.of(new SimpleGrantedAuthority("ROLE_USER"))
+                List.of(new SimpleGrantedAuthority("ROLE_" + (user.getRole() != null ? user.getRole() : UserRole.PATIENT).name()))
         );
     }
 }

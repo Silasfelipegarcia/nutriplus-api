@@ -1,5 +1,6 @@
 package br.com.nutriplus.infrastructure.security;
 
+import br.com.nutriplus.domain.enums.UserRole;
 import br.com.nutriplus.domain.model.User;
 import org.junit.jupiter.api.Test;
 
@@ -20,11 +21,15 @@ class JwtServiceTest {
                 1L,
                 "Test",
                 "test@nutriplus.com",
+                UserRole.PATIENT,
                 "hash",
                 null,
                 null,
                 0,
                 false,
+                null,
+                null,
+                null,
                 null,
                 null
         );
@@ -47,11 +52,15 @@ class JwtServiceTest {
                 42L,
                 "User",
                 "user@nutriplus.com",
+                UserRole.PATIENT,
                 "hash",
                 null,
                 null,
                 0,
                 false,
+                null,
+                null,
+                null,
                 null,
                 null
         );

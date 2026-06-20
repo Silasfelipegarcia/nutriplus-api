@@ -16,6 +16,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+
 @Service
 public class NutritionProfileService {
 
@@ -59,6 +62,9 @@ public class NutritionProfileService {
             profile.setTargetProteinG(macros.targetProteinG());
             profile.setTargetCarbsG(macros.targetCarbsG());
             profile.setTargetFatG(macros.targetFatG());
+            if (macros.leanMassKg() != null) {
+                profile.setLeanMassKg(macros.leanMassKg());
+            }
 
             profile = nutritionProfileRepository.save(profile);
 
@@ -93,6 +99,7 @@ public class NutritionProfileService {
         profile.setHeightCm(request.heightCm());
         profile.setCurrentWeightKg(request.currentWeightKg());
         profile.setTargetWeightKg(request.targetWeightKg());
+        profile.setGoalTargetWeeks(request.goalTargetWeeks());
         profile.setGoal(request.goal());
         profile.setActivityLevel(request.activityLevel());
         profile.setDietaryPreference(request.dietaryPreference());
@@ -101,6 +108,23 @@ public class NutritionProfileService {
         profile.setFoodLikes(request.foodLikes());
         profile.setFoodDislikes(request.foodDislikes());
         profile.setMealNotes(request.mealNotes());
+        profile.setCalculationMethod(request.resolvedCalculationMethod());
+        profile.setBodyFatPercent(request.bodyFatPercent());
+        profile.setMuscleMassKg(request.muscleMassKg());
+        profile.setLeanMassKg(null);
+        profile.setWakeTime(parseTime(request.wakeTime()));
+        profile.setSleepTime(parseTime(request.sleepTime()));
+        profile.setHealthConditions(request.healthConditions());
+        profile.setMedications(request.medications());
+        profile.setAllergies(request.allergies());
+        profile.setHealthNotes(request.healthNotes());
+    }
+
+    private LocalTime parseTime(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        return LocalTime.parse(value, DateTimeFormatter.ofPattern("HH:mm"));
     }
 
     private String toJson(Object obj) {

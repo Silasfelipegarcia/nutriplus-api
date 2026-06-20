@@ -3,6 +3,7 @@ package br.com.nutriplus.support;
 import br.com.nutriplus.infrastructure.security.PasswordMustChangeFilter;
 import br.com.nutriplus.infrastructure.security.RateLimitFilter;
 import br.com.nutriplus.infrastructure.web.CorrelationIdFilter;
+import br.com.nutriplus.infrastructure.web.IdempotencyFilter;
 import br.com.nutriplus.infrastructure.web.MdcUserFilter;
 import br.com.nutriplus.infrastructure.web.RequestPerformanceFilter;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -27,4 +28,7 @@ public abstract class WebMvcTestSupport {
 
     @MockBean
     private PasswordMustChangeFilter passwordMustChangeFilter;
+
+    @MockBean
+    private IdempotencyFilter idempotencyFilter;
 }

@@ -1,5 +1,6 @@
 package br.com.nutriplus.controller;
 
+import br.com.nutriplus.dto.response.MealPlanGenerationStatusResponse;
 import br.com.nutriplus.dto.response.MealPlanResponse;
 import br.com.nutriplus.service.MealPlanService;
 import org.springframework.http.HttpStatus;
@@ -16,9 +17,14 @@ public class MealPlanController {
     }
 
     @PostMapping("/generate")
-    @ResponseStatus(HttpStatus.CREATED)
-    public MealPlanResponse generate() {
-        return mealPlanService.generate();
+    @ResponseStatus(HttpStatus.ACCEPTED)
+    public MealPlanGenerationStatusResponse generate() {
+        return mealPlanService.enqueueGeneration();
+    }
+
+    @GetMapping("/generation-status")
+    public MealPlanGenerationStatusResponse getGenerationStatus() {
+        return mealPlanService.getGenerationStatus();
     }
 
     @GetMapping("/latest")

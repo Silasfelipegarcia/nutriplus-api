@@ -7,6 +7,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "nutrition_profiles")
@@ -35,6 +36,9 @@ public class NutritionProfile {
 
     @Column(name = "target_weight_kg", nullable = false, precision = 5, scale = 2)
     private BigDecimal targetWeightKg;
+
+    @Column(name = "goal_target_weeks")
+    private Integer goalTargetWeeks;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -65,6 +69,28 @@ public class NutritionProfile {
     @Column(name = "meal_notes", columnDefinition = "TEXT")
     private String mealNotes;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "calculation_method", nullable = false)
+    private CalculationMethod calculationMethod = CalculationMethod.ESTIMATE;
+
+    @Column(name = "body_fat_percent", precision = 5, scale = 2)
+    private BigDecimal bodyFatPercent;
+
+    @Column(name = "lean_mass_kg", precision = 5, scale = 2)
+    private BigDecimal leanMassKg;
+
+    @Column(name = "muscle_mass_kg", precision = 5, scale = 2)
+    private BigDecimal muscleMassKg;
+
+    @Column(name = "progress_review_interval_days", nullable = false)
+    private Integer progressReviewIntervalDays = 15;
+
+    @Column(name = "athlete_mode_enabled", nullable = false)
+    private boolean athleteModeEnabled = false;
+
+    @Column(name = "training_daily_extra_kcal", precision = 8, scale = 2)
+    private BigDecimal trainingDailyExtraKcal;
+
     @Column(name = "bmr_kcal", precision = 8, scale = 2)
     private BigDecimal bmrKcal;
 
@@ -82,6 +108,24 @@ public class NutritionProfile {
 
     @Column(name = "target_fat_g", precision = 8, scale = 2)
     private BigDecimal targetFatG;
+
+    @Column(name = "wake_time")
+    private LocalTime wakeTime;
+
+    @Column(name = "sleep_time")
+    private LocalTime sleepTime;
+
+    @Column(name = "health_conditions", columnDefinition = "TEXT")
+    private String healthConditions;
+
+    @Column(columnDefinition = "TEXT")
+    private String medications;
+
+    @Column(columnDefinition = "TEXT")
+    private String allergies;
+
+    @Column(name = "health_notes", columnDefinition = "TEXT")
+    private String healthNotes;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -102,6 +146,7 @@ public class NutritionProfile {
         this.heightCm = builder.heightCm;
         this.currentWeightKg = builder.currentWeightKg;
         this.targetWeightKg = builder.targetWeightKg;
+        this.goalTargetWeeks = builder.goalTargetWeeks;
         this.goal = builder.goal;
         this.activityLevel = builder.activityLevel;
         this.dietaryPreference = builder.dietaryPreference;
@@ -110,12 +155,26 @@ public class NutritionProfile {
         this.foodLikes = builder.foodLikes;
         this.foodDislikes = builder.foodDislikes;
         this.mealNotes = builder.mealNotes;
+        this.calculationMethod = builder.calculationMethod != null ? builder.calculationMethod : CalculationMethod.ESTIMATE;
+        this.bodyFatPercent = builder.bodyFatPercent;
+        this.leanMassKg = builder.leanMassKg;
+        this.muscleMassKg = builder.muscleMassKg;
+        this.progressReviewIntervalDays = builder.progressReviewIntervalDays != null
+                ? builder.progressReviewIntervalDays : 15;
+        this.athleteModeEnabled = builder.athleteModeEnabled;
+        this.trainingDailyExtraKcal = builder.trainingDailyExtraKcal;
         this.bmrKcal = builder.bmrKcal;
         this.tdeeKcal = builder.tdeeKcal;
         this.targetCalories = builder.targetCalories;
         this.targetProteinG = builder.targetProteinG;
         this.targetCarbsG = builder.targetCarbsG;
         this.targetFatG = builder.targetFatG;
+        this.wakeTime = builder.wakeTime;
+        this.sleepTime = builder.sleepTime;
+        this.healthConditions = builder.healthConditions;
+        this.medications = builder.medications;
+        this.allergies = builder.allergies;
+        this.healthNotes = builder.healthNotes;
         this.createdAt = builder.createdAt;
         this.updatedAt = builder.updatedAt;
     }
@@ -178,6 +237,14 @@ public class NutritionProfile {
 
     public void setTargetWeightKg(BigDecimal targetWeightKg) {
         this.targetWeightKg = targetWeightKg;
+    }
+
+    public Integer getGoalTargetWeeks() {
+        return goalTargetWeeks;
+    }
+
+    public void setGoalTargetWeeks(Integer goalTargetWeeks) {
+        this.goalTargetWeeks = goalTargetWeeks;
     }
 
     public Goal getGoal() {
@@ -244,6 +311,62 @@ public class NutritionProfile {
         this.mealNotes = mealNotes;
     }
 
+    public CalculationMethod getCalculationMethod() {
+        return calculationMethod;
+    }
+
+    public void setCalculationMethod(CalculationMethod calculationMethod) {
+        this.calculationMethod = calculationMethod;
+    }
+
+    public BigDecimal getBodyFatPercent() {
+        return bodyFatPercent;
+    }
+
+    public void setBodyFatPercent(BigDecimal bodyFatPercent) {
+        this.bodyFatPercent = bodyFatPercent;
+    }
+
+    public BigDecimal getLeanMassKg() {
+        return leanMassKg;
+    }
+
+    public void setLeanMassKg(BigDecimal leanMassKg) {
+        this.leanMassKg = leanMassKg;
+    }
+
+    public BigDecimal getMuscleMassKg() {
+        return muscleMassKg;
+    }
+
+    public void setMuscleMassKg(BigDecimal muscleMassKg) {
+        this.muscleMassKg = muscleMassKg;
+    }
+
+    public Integer getProgressReviewIntervalDays() {
+        return progressReviewIntervalDays != null ? progressReviewIntervalDays : 15;
+    }
+
+    public void setProgressReviewIntervalDays(Integer progressReviewIntervalDays) {
+        this.progressReviewIntervalDays = progressReviewIntervalDays;
+    }
+
+    public boolean isAthleteModeEnabled() {
+        return athleteModeEnabled;
+    }
+
+    public void setAthleteModeEnabled(boolean athleteModeEnabled) {
+        this.athleteModeEnabled = athleteModeEnabled;
+    }
+
+    public BigDecimal getTrainingDailyExtraKcal() {
+        return trainingDailyExtraKcal;
+    }
+
+    public void setTrainingDailyExtraKcal(BigDecimal trainingDailyExtraKcal) {
+        this.trainingDailyExtraKcal = trainingDailyExtraKcal;
+    }
+
     public BigDecimal getBmrKcal() {
         return bmrKcal;
     }
@@ -292,6 +415,54 @@ public class NutritionProfile {
         this.targetFatG = targetFatG;
     }
 
+    public LocalTime getWakeTime() {
+        return wakeTime;
+    }
+
+    public void setWakeTime(LocalTime wakeTime) {
+        this.wakeTime = wakeTime;
+    }
+
+    public LocalTime getSleepTime() {
+        return sleepTime;
+    }
+
+    public void setSleepTime(LocalTime sleepTime) {
+        this.sleepTime = sleepTime;
+    }
+
+    public String getHealthConditions() {
+        return healthConditions;
+    }
+
+    public void setHealthConditions(String healthConditions) {
+        this.healthConditions = healthConditions;
+    }
+
+    public String getMedications() {
+        return medications;
+    }
+
+    public void setMedications(String medications) {
+        this.medications = medications;
+    }
+
+    public String getAllergies() {
+        return allergies;
+    }
+
+    public void setAllergies(String allergies) {
+        this.allergies = allergies;
+    }
+
+    public String getHealthNotes() {
+        return healthNotes;
+    }
+
+    public void setHealthNotes(String healthNotes) {
+        this.healthNotes = healthNotes;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -316,6 +487,7 @@ public class NutritionProfile {
         private BigDecimal heightCm;
         private BigDecimal currentWeightKg;
         private BigDecimal targetWeightKg;
+        private Integer goalTargetWeeks;
         private Goal goal;
         private ActivityLevel activityLevel;
         private DietaryPreference dietaryPreference;
@@ -324,12 +496,25 @@ public class NutritionProfile {
         private String foodLikes;
         private String foodDislikes;
         private String mealNotes;
+        private CalculationMethod calculationMethod;
+        private BigDecimal bodyFatPercent;
+        private BigDecimal leanMassKg;
+        private BigDecimal muscleMassKg;
+        private Integer progressReviewIntervalDays;
+        private boolean athleteModeEnabled;
+        private BigDecimal trainingDailyExtraKcal;
         private BigDecimal bmrKcal;
         private BigDecimal tdeeKcal;
         private BigDecimal targetCalories;
         private BigDecimal targetProteinG;
         private BigDecimal targetCarbsG;
         private BigDecimal targetFatG;
+        private LocalTime wakeTime;
+        private LocalTime sleepTime;
+        private String healthConditions;
+        private String medications;
+        private String allergies;
+        private String healthNotes;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
 
@@ -365,6 +550,11 @@ public class NutritionProfile {
 
         public Builder targetWeightKg(BigDecimal targetWeightKg) {
             this.targetWeightKg = targetWeightKg;
+            return this;
+        }
+
+        public Builder goalTargetWeeks(Integer goalTargetWeeks) {
+            this.goalTargetWeeks = goalTargetWeeks;
             return this;
         }
 
@@ -405,6 +595,41 @@ public class NutritionProfile {
 
         public Builder mealNotes(String mealNotes) {
             this.mealNotes = mealNotes;
+            return this;
+        }
+
+        public Builder calculationMethod(CalculationMethod calculationMethod) {
+            this.calculationMethod = calculationMethod;
+            return this;
+        }
+
+        public Builder bodyFatPercent(BigDecimal bodyFatPercent) {
+            this.bodyFatPercent = bodyFatPercent;
+            return this;
+        }
+
+        public Builder leanMassKg(BigDecimal leanMassKg) {
+            this.leanMassKg = leanMassKg;
+            return this;
+        }
+
+        public Builder muscleMassKg(BigDecimal muscleMassKg) {
+            this.muscleMassKg = muscleMassKg;
+            return this;
+        }
+
+        public Builder progressReviewIntervalDays(Integer progressReviewIntervalDays) {
+            this.progressReviewIntervalDays = progressReviewIntervalDays;
+            return this;
+        }
+
+        public Builder athleteModeEnabled(boolean athleteModeEnabled) {
+            this.athleteModeEnabled = athleteModeEnabled;
+            return this;
+        }
+
+        public Builder trainingDailyExtraKcal(BigDecimal trainingDailyExtraKcal) {
+            this.trainingDailyExtraKcal = trainingDailyExtraKcal;
             return this;
         }
 

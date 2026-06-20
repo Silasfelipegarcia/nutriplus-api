@@ -16,6 +16,7 @@ public final class TraceContext {
         put(headers, CorrelationIdFilter.TRACE_HEADER, MDC.get(CorrelationIdFilter.MDC_TRACE));
         put(headers, CorrelationIdFilter.FLOW_HEADER, MDC.get(CorrelationIdFilter.MDC_FLOW));
         put(headers, CorrelationIdFilter.SESSION_HEADER, MDC.get(CorrelationIdFilter.MDC_SESSION));
+        put(headers, IdempotencySupport.HEADER, MDC.get(IdempotencySupport.MDC_KEY));
         return headers;
     }
 

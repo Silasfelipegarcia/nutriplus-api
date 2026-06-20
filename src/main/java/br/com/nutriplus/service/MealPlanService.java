@@ -1,180 +1,162 @@
 package br.com.nutriplus.service;
 
-import br.com.nutriplus.client.AiAgentClient;
-import br.com.nutriplus.client.dto.*;
-import br.com.nutriplus.infrastructure.config.AppProperties;
-import br.com.nutriplus.domain.entity.*;
-import br.com.nutriplus.domain.enums.AiRequestStatus;
-import br.com.nutriplus.domain.enums.AiRequestType;
-import br.com.nutriplus.domain.enums.MealType;
+import br.com.nutriplus.domain.entity.Meal;
+import br.com.nutriplus.domain.entity.MealPlan;
+import br.com.nutriplus.domain.entity.MealPlanGenerationJob;
+import br.com.nutriplus.domain.entity.User;
+import br.com.nutriplus.domain.enums.MealPlanGenerationStatus;
+import br.com.nutriplus.dto.response.MealPlanGenerationStatusResponse;
 import br.com.nutriplus.dto.response.MealPlanResponse;
 import br.com.nutriplus.exception.ResourceNotFoundException;
 import br.com.nutriplus.mapper.ResponseMapper;
+import br.com.nutriplus.repository.MealPlanGenerationJobRepository;
 import br.com.nutriplus.repository.MealPlanRepository;
-import br.com.nutriplus.repository.ShoppingListRepository;
 import br.com.nutriplus.security.CurrentUser;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Timer;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.time.DayOfWeek;
-import java.time.LocalDate;
-import java.time.temporal.TemporalAdjusters;
-import java.util.ArrayList;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 public class MealPlanService {
 
+    private static final List<MealPlanGenerationStatus> ACTIVE_STATUSES = List.of(
+            MealPlanGenerationStatus.PENDING,
+            MealPlanGenerationStatus.RUNNING
+    );
+
+    private static final String[] PROGRESS_HINTS = {
+            "Analisando suas metas nutricionais…",
+            "Montando refeições personalizadas…",
+            "Ajustando macros e porções…",
+            "Preparando lista de compras…",
+            "Quase lá — finalizando seu plano…"
+    };
+
+    private static final Duration STALE_JOB_MAX_AGE = Duration.ofMinutes(15);
+
     private final CurrentUser currentUser;
     private final NutritionProfileService nutritionProfileService;
     private final MealPlanRepository mealPlanRepository;
-    private final ShoppingListRepository shoppingListRepository;
-    private final AiAgentClient aiAgentClient;
-    private final AiRequestLogService aiRequestLogService;
-    private final AppProperties appProperties;
+    private final MealLoader mealLoader;
+    private final MealPlanGenerationJobRepository jobRepository;
+    private final MealPlanGenerationWorker generationWorker;
     private final ResponseMapper responseMapper;
-    private final ObjectMapper objectMapper;
-    private final AuditLogService auditLogService;
-    private final MeterRegistry meterRegistry;
 
     public MealPlanService(CurrentUser currentUser,
                            NutritionProfileService nutritionProfileService,
                            MealPlanRepository mealPlanRepository,
-                           ShoppingListRepository shoppingListRepository,
-                           AiAgentClient aiAgentClient,
-                           AiRequestLogService aiRequestLogService,
-                           AppProperties appProperties,
-                           ResponseMapper responseMapper,
-                           ObjectMapper objectMapper,
-                           AuditLogService auditLogService,
-                           MeterRegistry meterRegistry) {
+                           MealLoader mealLoader,
+                           MealPlanGenerationJobRepository jobRepository,
+                           MealPlanGenerationWorker generationWorker,
+                           ResponseMapper responseMapper) {
         this.currentUser = currentUser;
         this.nutritionProfileService = nutritionProfileService;
         this.mealPlanRepository = mealPlanRepository;
-        this.shoppingListRepository = shoppingListRepository;
-        this.aiAgentClient = aiAgentClient;
-        this.aiRequestLogService = aiRequestLogService;
-        this.appProperties = appProperties;
+        this.mealLoader = mealLoader;
+        this.jobRepository = jobRepository;
+        this.generationWorker = generationWorker;
         this.responseMapper = responseMapper;
-        this.objectMapper = objectMapper;
-        this.auditLogService = auditLogService;
-        this.meterRegistry = meterRegistry;
     }
 
     @Transactional
-    public MealPlanResponse generate() {
-        Timer.Sample sample = Timer.start(meterRegistry);
+    public MealPlanGenerationStatusResponse enqueueGeneration() {
         User user = currentUser.get();
-        NutritionProfile profile = nutritionProfileService.getEntityForUser(user);
-        long start = System.currentTimeMillis();
-        String requestJson = "{}";
+        nutritionProfileService.getEntityForUser(user);
 
-        try {
-            requestJson = objectMapper.writeValueAsString(profile.getId());
-            AiMealPlanGenerateResponse aiResponse = aiAgentClient.generateMealPlan(profile);
-
-            MealPlan mealPlan = MealPlan.builder()
-                    .user(user)
-                    .nutritionProfile(profile)
-                    .planDate(LocalDate.now())
-                    .totalCalories(aiResponse.totalCalories())
-                    .totalProteinG(aiResponse.totalProteinG())
-                    .totalCarbsG(aiResponse.totalCarbsG())
-                    .totalFatG(aiResponse.totalFatG())
-                    .disclaimer(appProperties.disclaimer())
-                    .aiModel(aiResponse.aiModel())
-                    .meals(new ArrayList<>())
-                    .build();
-
-            if (aiResponse.meals() != null) {
-                for (AiMealDto aiMeal : aiResponse.meals()) {
-                    Meal meal = Meal.builder()
-                            .mealPlan(mealPlan)
-                            .mealType(MealType.valueOf(aiMeal.mealType()))
-                            .name(aiMeal.name())
-                            .sortOrder(aiMeal.sortOrder() != null ? aiMeal.sortOrder() : 0)
-                            .items(new ArrayList<>())
-                            .build();
-
-                    if (aiMeal.items() != null) {
-                        for (AiMealItemDto aiItem : aiMeal.items()) {
-                            MealItem item = MealItem.builder()
-                                    .meal(meal)
-                                    .foodName(aiItem.foodName())
-                                    .quantityG(aiItem.quantityG())
-                                    .calories(aiItem.calories())
-                                    .proteinG(aiItem.proteinG())
-                                    .carbsG(aiItem.carbsG())
-                                    .fatG(aiItem.fatG())
-                                    .build();
-                            meal.getItems().add(item);
-                        }
-                    }
-                    mealPlan.getMeals().add(meal);
-                }
-            }
-
-            mealPlan = mealPlanRepository.save(mealPlan);
-            saveShoppingList(user, mealPlan, aiResponse.shoppingList());
-
-            aiRequestLogService.log(user, AiRequestType.GENERATE_MEAL_PLAN, requestJson,
-                    objectMapper.writeValueAsString(aiResponse), AiRequestStatus.SUCCESS, null,
-                    (int) (System.currentTimeMillis() - start));
-
-            auditLogService.log("MEAL_PLAN_GENERATED", "MEAL_PLAN", String.valueOf(mealPlan.getId()), user, null);
-
-            return responseMapper.toMealPlanResponse(mealPlan);
-        } catch (Exception e) {
-            aiRequestLogService.log(user, AiRequestType.GENERATE_MEAL_PLAN, requestJson,
-                    null, AiRequestStatus.ERROR, e.getMessage(),
-                    (int) (System.currentTimeMillis() - start));
-            if (e instanceof RuntimeException re) {
-                throw re;
-            }
-            throw new RuntimeException(e);
-        } finally {
-            sample.stop(Timer.builder("nutriplus.meal_plan.generation.duration")
-                    .register(meterRegistry));
+        List<MealPlanGenerationJob> active = jobRepository.findByUserIdAndStatusIn(user.getId(), ACTIVE_STATUSES);
+        failStaleJobs(active);
+        active = jobRepository.findByUserIdAndStatusIn(user.getId(), ACTIVE_STATUSES);
+        if (!active.isEmpty()) {
+            return toStatusResponse(active.getFirst());
         }
+
+        MealPlanGenerationJob job = MealPlanGenerationJob.builder()
+                .user(user)
+                .status(MealPlanGenerationStatus.PENDING)
+                .build();
+        job = jobRepository.save(job);
+
+        final Long jobId = job.getId();
+        final Long userId = user.getId();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                generationWorker.processAsync(jobId, userId);
+            }
+        });
+        return toStatusResponse(job);
+    }
+
+    public MealPlanGenerationStatusResponse getGenerationStatus() {
+        User user = currentUser.get();
+        failStaleJobs(jobRepository.findByUserIdAndStatusIn(user.getId(), ACTIVE_STATUSES));
+        return jobRepository.findTopByUserIdOrderByCreatedAtDesc(user.getId())
+                .map(this::toStatusResponse)
+                .orElse(new MealPlanGenerationStatusResponse(
+                        null,
+                        MealPlanGenerationStatus.NONE,
+                        null,
+                        null,
+                        null
+                ));
     }
 
     public MealPlanResponse getLatest() {
         User user = currentUser.get();
-        List<MealPlan> plans = mealPlanRepository.findByUserIdWithMealsOrderByCreatedAtDesc(user.getId());
+        List<MealPlan> plans = mealPlanRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
         if (plans.isEmpty()) {
             throw new ResourceNotFoundException("Nenhum plano alimentar encontrado");
         }
-        return responseMapper.toMealPlanResponse(plans.getFirst());
+        MealPlan plan = plans.getFirst();
+        List<Meal> meals = mealLoader.mealsForPlan(plan.getId());
+        return responseMapper.toMealPlanResponse(plan, meals, mealLoader.itemsByMealId(meals));
     }
 
-    private void saveShoppingList(User user, MealPlan mealPlan, List<AiShoppingItemDto> aiItems) {
-        LocalDate today = LocalDate.now();
-        LocalDate weekStart = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
-        LocalDate weekEnd = weekStart.plusDays(6);
+    private MealPlanGenerationStatusResponse toStatusResponse(MealPlanGenerationJob job) {
+        Long mealPlanId = job.getMealPlan() != null ? job.getMealPlan().getId() : null;
+        return new MealPlanGenerationStatusResponse(
+                job.getId(),
+                job.getStatus(),
+                mealPlanId,
+                job.getErrorMessage(),
+                progressHint(job)
+        );
+    }
 
-        ShoppingList shoppingList = ShoppingList.builder()
-                .user(user)
-                .mealPlan(mealPlan)
-                .weekStart(weekStart)
-                .weekEnd(weekEnd)
-                .items(new ArrayList<>())
-                .build();
+    private String progressHint(MealPlanGenerationJob job) {
+        if (job.getStatus() == MealPlanGenerationStatus.COMPLETED) {
+            return "Seu plano está pronto!";
+        }
+        if (job.getStatus() == MealPlanGenerationStatus.FAILED) {
+            return null;
+        }
+        LocalDateTime ref = job.getStartedAt() != null ? job.getStartedAt() : job.getCreatedAt();
+        long seconds = Duration.between(ref, LocalDateTime.now()).getSeconds();
+        int index = (int) Math.min(PROGRESS_HINTS.length - 1, seconds / 8);
+        return PROGRESS_HINTS[index];
+    }
 
-        if (aiItems != null) {
-            for (AiShoppingItemDto aiItem : aiItems) {
-                ShoppingListItem item = ShoppingListItem.builder()
-                        .shoppingList(shoppingList)
-                        .itemName(aiItem.itemName())
-                        .quantity(aiItem.quantity())
-                        .category(aiItem.category())
-                        .build();
-                shoppingList.getItems().add(item);
+    private void failStaleJobs(List<MealPlanGenerationJob> jobs) {
+        LocalDateTime now = LocalDateTime.now();
+        for (MealPlanGenerationJob job : jobs) {
+            LocalDateTime ref = job.getStartedAt() != null ? job.getStartedAt() : job.getCreatedAt();
+            if (ref == null) {
+                continue;
+            }
+            Duration maxAge = job.getStatus() == MealPlanGenerationStatus.PENDING && job.getStartedAt() == null
+                    ? Duration.ofMinutes(3)
+                    : STALE_JOB_MAX_AGE;
+            if (ref.isBefore(now.minus(maxAge))) {
+                job.setStatus(MealPlanGenerationStatus.FAILED);
+                job.setErrorMessage("A geração demorou demais. Tente novamente.");
+                job.setCompletedAt(now);
+                jobRepository.save(job);
             }
         }
-
-        shoppingListRepository.save(shoppingList);
     }
 }

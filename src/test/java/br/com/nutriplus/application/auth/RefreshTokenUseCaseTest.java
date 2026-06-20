@@ -2,6 +2,7 @@ package br.com.nutriplus.application.auth;
 
 import br.com.nutriplus.application.port.TokenPort;
 import br.com.nutriplus.application.port.UserQueryPort;
+import br.com.nutriplus.domain.enums.UserRole;
 import br.com.nutriplus.domain.model.User;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,8 +30,8 @@ class RefreshTokenUseCaseTest {
     private RefreshTokenUseCase refreshTokenUseCase;
 
     private static final User USER = new User(
-            1L, "Test", "test@nutriplus.com", "hash",
-            null, null, 0, false, LocalDateTime.now(), LocalDateTime.now());
+            1L, "Test", "test@nutriplus.com", UserRole.PATIENT, "hash",
+            null, null, 0, false, null, null, null, LocalDateTime.now(), LocalDateTime.now());
 
     @Test
     void refreshReturnsNewTokens() {

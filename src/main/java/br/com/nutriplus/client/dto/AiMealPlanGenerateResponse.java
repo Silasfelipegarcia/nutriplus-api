@@ -10,6 +10,9 @@ public record AiMealPlanGenerateResponse(
         BigDecimal totalCarbsG,
         BigDecimal totalFatG,
         List<AiMealDto> meals,
-        List<AiShoppingItemDto> shoppingList
+        List<AiShoppingItemDto> shoppingList,
+        AiShoppingGuidanceDto shoppingGuidance,
+        String medicalReviewStatus,
+        String medicalReviewNotes
 ) {
 }

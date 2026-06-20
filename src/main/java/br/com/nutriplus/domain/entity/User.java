@@ -1,5 +1,6 @@
 package br.com.nutriplus.domain.entity;
 
+import br.com.nutriplus.domain.enums.UserRole;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -20,6 +21,10 @@ public class User {
     @Column(nullable = false, unique = true, length = 255)
     private String email;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private UserRole role = UserRole.PATIENT;
+
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
 
@@ -34,6 +39,15 @@ public class User {
 
     @Column(name = "password_must_change", nullable = false)
     private boolean passwordMustChange = false;
+
+    @Column(name = "terms_accepted_at")
+    private LocalDateTime termsAcceptedAt;
+
+    @Column(name = "terms_version", length = 20)
+    private String termsVersion;
+
+    @Column(name = "privacy_policy_accepted_at")
+    private LocalDateTime privacyPolicyAcceptedAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -50,11 +64,15 @@ public class User {
         this.id = builder.id;
         this.name = builder.name;
         this.email = builder.email;
+        this.role = builder.role != null ? builder.role : UserRole.PATIENT;
         this.passwordHash = builder.passwordHash;
         this.photoUrl = builder.photoUrl;
         this.photoThumbnailUrl = builder.photoThumbnailUrl;
         this.failedLoginAttempts = builder.failedLoginAttempts;
         this.passwordMustChange = builder.passwordMustChange;
+        this.termsAcceptedAt = builder.termsAcceptedAt;
+        this.termsVersion = builder.termsVersion;
+        this.privacyPolicyAcceptedAt = builder.privacyPolicyAcceptedAt;
         this.createdAt = builder.createdAt;
         this.updatedAt = builder.updatedAt;
     }
@@ -85,6 +103,14 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public UserRole getRole() {
+        return role;
+    }
+
+    public void setRole(UserRole role) {
+        this.role = role;
     }
 
     public String getPasswordHash() {
@@ -127,6 +153,30 @@ public class User {
         this.passwordMustChange = passwordMustChange;
     }
 
+    public LocalDateTime getTermsAcceptedAt() {
+        return termsAcceptedAt;
+    }
+
+    public void setTermsAcceptedAt(LocalDateTime termsAcceptedAt) {
+        this.termsAcceptedAt = termsAcceptedAt;
+    }
+
+    public String getTermsVersion() {
+        return termsVersion;
+    }
+
+    public void setTermsVersion(String termsVersion) {
+        this.termsVersion = termsVersion;
+    }
+
+    public LocalDateTime getPrivacyPolicyAcceptedAt() {
+        return privacyPolicyAcceptedAt;
+    }
+
+    public void setPrivacyPolicyAcceptedAt(LocalDateTime privacyPolicyAcceptedAt) {
+        this.privacyPolicyAcceptedAt = privacyPolicyAcceptedAt;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -147,11 +197,15 @@ public class User {
         private Long id;
         private String name;
         private String email;
+        private UserRole role;
         private String passwordHash;
         private String photoUrl;
         private String photoThumbnailUrl;
         private int failedLoginAttempts;
         private boolean passwordMustChange;
+        private LocalDateTime termsAcceptedAt;
+        private String termsVersion;
+        private LocalDateTime privacyPolicyAcceptedAt;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
 
@@ -167,6 +221,11 @@ public class User {
 
         public Builder email(String email) {
             this.email = email;
+            return this;
+        }
+
+        public Builder role(UserRole role) {
+            this.role = role;
             return this;
         }
 
@@ -192,6 +251,21 @@ public class User {
 
         public Builder passwordMustChange(boolean passwordMustChange) {
             this.passwordMustChange = passwordMustChange;
+            return this;
+        }
+
+        public Builder termsAcceptedAt(LocalDateTime termsAcceptedAt) {
+            this.termsAcceptedAt = termsAcceptedAt;
+            return this;
+        }
+
+        public Builder termsVersion(String termsVersion) {
+            this.termsVersion = termsVersion;
+            return this;
+        }
+
+        public Builder privacyPolicyAcceptedAt(LocalDateTime privacyPolicyAcceptedAt) {
+            this.privacyPolicyAcceptedAt = privacyPolicyAcceptedAt;
             return this;
         }
 

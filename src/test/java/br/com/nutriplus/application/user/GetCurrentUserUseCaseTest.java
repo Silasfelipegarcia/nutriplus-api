@@ -2,6 +2,7 @@ package br.com.nutriplus.application.user;
 
 import br.com.nutriplus.application.port.UserQueryPort;
 import br.com.nutriplus.application.shared.ActingUserResolver;
+import br.com.nutriplus.domain.enums.UserRole;
 import br.com.nutriplus.domain.model.User;
 import br.com.nutriplus.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.Test;
@@ -30,8 +31,8 @@ class GetCurrentUserUseCaseTest {
     private GetCurrentUserUseCase getCurrentUserUseCase;
 
     private static final User USER = new User(
-            1L, "Test", "test@nutriplus.com", "hash",
-            null, null, 0, false, LocalDateTime.now(), LocalDateTime.now());
+            1L, "Test", "test@nutriplus.com", UserRole.PATIENT, "hash",
+            null, null, 0, false, null, null, null, LocalDateTime.now(), LocalDateTime.now());
 
     @Test
     void returnsCurrentUser() {

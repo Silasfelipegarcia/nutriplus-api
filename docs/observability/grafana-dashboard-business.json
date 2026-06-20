@@ -1,0 +1,75 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "datasource": "PostgreSQL",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 0 },
+      "id": 1,
+      "targets": [
+        {
+          "format": "table",
+          "rawSql": "SELECT step, COUNT(DISTINCT session_id) AS sessions FROM product_events WHERE event_name = 'onboarding_step_viewed' AND created_at >= NOW() - INTERVAL '7 days' GROUP BY step ORDER BY MIN(created_at)",
+          "refId": "A"
+        }
+      ],
+      "title": "Onboarding — views por step (7d)",
+      "type": "table"
+    },
+    {
+      "datasource": "PostgreSQL",
+      "gridPos": { "h": 10, "w": 24, "x": 0, "y": 10 },
+      "id": 2,
+      "targets": [
+        {
+          "format": "table",
+          "rawSql": "WITH viewed AS (SELECT step, COUNT(DISTINCT session_id) v FROM product_events WHERE event_name = 'onboarding_step_viewed' AND created_at >= NOW() - INTERVAL '7 days' GROUP BY step), completed AS (SELECT step, COUNT(DISTINCT session_id) c FROM product_events WHERE event_name = 'onboarding_step_completed' AND created_at >= NOW() - INTERVAL '7 days' GROUP BY step) SELECT viewed.step, viewed.v AS viewed, COALESCE(completed.c, 0) AS completed, ROUND(100.0 * COALESCE(completed.c, 0) / NULLIF(viewed.v, 0), 1) AS conversion_pct FROM viewed LEFT JOIN completed ON viewed.step = completed.step ORDER BY viewed.step",
+          "refId": "A"
+        }
+      ],
+      "title": "Onboarding — conversão step a step (7d)",
+      "type": "table"
+    },
+    {
+      "datasource": "PostgreSQL",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "id": 3,
+      "targets": [
+        {
+          "format": "table",
+          "rawSql": "SELECT event_name, COUNT(*) FROM product_events WHERE event_name LIKE 'meal_plan_%' AND created_at >= NOW() - INTERVAL '7 days' GROUP BY event_name ORDER BY event_name",
+          "refId": "A"
+        }
+      ],
+      "title": "Geração de plano — eventos (7d)",
+      "type": "table"
+    },
+    {
+      "datasource": "PostgreSQL",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "id": 4,
+      "targets": [
+        {
+          "format": "table",
+          "rawSql": "SELECT DATE_TRUNC('week', created_at) AS week, COUNT(*) FILTER (WHERE action = 'REGISTER') AS registers, COUNT(*) FILTER (WHERE action = 'MEAL_PLAN_GENERATED') AS plans FROM audit_log WHERE created_at >= NOW() - INTERVAL '8 weeks' GROUP BY 1 ORDER BY 1",
+          "refId": "A"
+        }
+      ],
+      "title": "Funil grosso — register vs plano (audit_log)",
+      "type": "table"
+    }
+  ],
+  "refresh": "5m",
+  "schemaVersion": 39,
+  "tags": ["nutriplus", "business"],
+  "time": { "from": "now-7d", "to": "now" },
+  "title": "Nutri+ Negócio — Funil",
+  "uid": "nutriplus-business",
+  "version": 1
+}

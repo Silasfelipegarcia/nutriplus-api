@@ -49,6 +49,22 @@ interfaces (REST) → application (use cases) → domain
 - **nutrition** — perfil nutricional (legado em `service/`)
 - **mealplan** — planos e listas (legado em `service/`)
 
+## Idempotência
+
+Mutações HTTP usam header `Idempotency-Key` (padrão Stripe). Implementação:
+
+| Camada | Artefato |
+|--------|----------|
+| Config | `IdempotencyProperties` — env `IDEMPOTENCY_*` |
+| Persistência | Flyway `V23__idempotency_keys.sql`, tabela `idempotency_keys` |
+| Port | `application/port/IdempotencyStore` |
+| Adapter | `infrastructure/persistence/IdempotencyJpaAdapter` |
+| HTTP | `infrastructure/web/IdempotencyFilter` |
+| Purge | `IdempotencyPurgeJob` (`@Scheduled`) |
+| Outbound | `TraceContext` propaga key para `AiAgentClient` |
+
+**Local/dev:** `idempotency.enabled=false` em `application-dev.properties` (mesmo padrão do rate limit).
+
 ## Records (Java 21)
 
 - DTOs HTTP e `@ConfigurationProperties` → `record`

@@ -8,6 +8,9 @@ public record UserResponse(
         String email,
         LocalDateTime createdAt,
         boolean hasNutritionProfile,
-        String photoThumbnailUrl
+        String photoThumbnailUrl,
+        LocalDateTime termsAcceptedAt,
+        String termsVersion,
+        LocalDateTime privacyPolicyAcceptedAt
 ) {
 }

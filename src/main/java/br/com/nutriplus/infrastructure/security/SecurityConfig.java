@@ -4,6 +4,9 @@ import br.com.nutriplus.infrastructure.web.CorrelationIdFilter;
 import br.com.nutriplus.infrastructure.web.MdcUserFilter;
 import br.com.nutriplus.infrastructure.web.RequestPerformanceFilter;
 import br.com.nutriplus.infrastructure.config.CorsProperties;
+import br.com.nutriplus.infrastructure.config.IdempotencyProperties;
+import br.com.nutriplus.infrastructure.web.IdempotencyFilter;
+import br.com.nutriplus.infrastructure.web.IdempotencySupport;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -44,7 +47,7 @@ import java.util.stream.Collectors;
 
 @Configuration
 @EnableMethodSecurity
-@EnableConfigurationProperties({RateLimitProperties.class, CorsProperties.class})
+@EnableConfigurationProperties({RateLimitProperties.class, CorsProperties.class, IdempotencyProperties.class})
 public class SecurityConfig {
 
     @Bean
@@ -105,12 +108,16 @@ public class SecurityConfig {
             CorrelationIdFilter correlationIdFilter,
             RequestPerformanceFilter requestPerformanceFilter,
             RateLimitFilter rateLimitFilter,
+            IdempotencyFilter idempotencyFilter,
             JsonSecurityHandlers jsonSecurityHandlers
     ) throws Exception {
         http
                 .securityMatcher(
                         "/auth/**",
                         "/health",
+                        "/legal/**",
+                        "/pricing/guidelines",
+                        "/webhooks/**",
                         "/actuator/health",
                         "/actuator/health/**",
                         "/actuator/info")
@@ -125,6 +132,7 @@ public class SecurityConfig {
                         .accessDeniedHandler(jsonSecurityHandlers))
                 .addFilterBefore(correlationIdFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(requestPerformanceFilter, CorrelationIdFilter.class)
+                .addFilterAfter(idempotencyFilter, RequestPerformanceFilter.class)
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
@@ -139,6 +147,7 @@ public class SecurityConfig {
             RateLimitFilter rateLimitFilter,
             MdcUserFilter mdcUserFilter,
             PasswordMustChangeFilter passwordMustChangeFilter,
+            IdempotencyFilter idempotencyFilter,
             JsonSecurityHandlers jsonSecurityHandlers
     ) throws Exception {
         http
@@ -158,7 +167,8 @@ public class SecurityConfig {
                 .addFilterAfter(requestPerformanceFilter, CorrelationIdFilter.class)
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(mdcUserFilter, BearerTokenAuthenticationFilter.class)
-                .addFilterAfter(passwordMustChangeFilter, BearerTokenAuthenticationFilter.class);
+                .addFilterAfter(passwordMustChangeFilter, BearerTokenAuthenticationFilter.class)
+                .addFilterAfter(idempotencyFilter, PasswordMustChangeFilter.class);
         return http.build();
     }
 
@@ -175,7 +185,8 @@ public class SecurityConfig {
         configuration.setExposedHeaders(List.of(
                 CorrelationIdFilter.HEADER,
                 CorrelationIdFilter.TRACE_HEADER,
-                CorrelationIdFilter.FLOW_HEADER));
+                CorrelationIdFilter.FLOW_HEADER,
+                IdempotencySupport.REPLAYED_HEADER));
         configuration.setAllowCredentials(true);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();

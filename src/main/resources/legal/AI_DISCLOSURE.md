@@ -1,0 +1,1 @@
+As sugestões do Nutri+ são geradas por inteligência artificial com base nas informações que você informa no app. Podem conter imprecisões e **não constituem aconselhamento médico, nutricional clínico nem diagnóstico**. Para decisões sobre sua saúde, consulte nutricionista ou médico.

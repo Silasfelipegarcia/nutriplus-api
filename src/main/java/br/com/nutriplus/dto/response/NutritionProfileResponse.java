@@ -12,6 +12,7 @@ public record NutritionProfileResponse(
         BigDecimal heightCm,
         BigDecimal currentWeightKg,
         BigDecimal targetWeightKg,
+        Integer goalTargetWeeks,
         Goal goal,
         ActivityLevel activityLevel,
         DietaryPreference dietaryPreference,
@@ -20,12 +21,23 @@ public record NutritionProfileResponse(
         String foodLikes,
         String foodDislikes,
         String mealNotes,
+        CalculationMethod calculationMethod,
+        BigDecimal bodyFatPercent,
+        BigDecimal leanMassKg,
+        BigDecimal muscleMassKg,
         BigDecimal bmrKcal,
         BigDecimal tdeeKcal,
         BigDecimal targetCalories,
         BigDecimal targetProteinG,
         BigDecimal targetCarbsG,
         BigDecimal targetFatG,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        boolean athleteModeEnabled,
+        String wakeTime,
+        String sleepTime,
+        String healthConditions,
+        String medications,
+        String allergies,
+        String healthNotes
 ) {
 }

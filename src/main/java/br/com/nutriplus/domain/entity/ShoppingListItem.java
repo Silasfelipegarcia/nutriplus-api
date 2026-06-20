@@ -1,6 +1,8 @@
 package br.com.nutriplus.domain.entity;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 @Entity
 @Table(name = "shopping_list_items")
@@ -23,6 +25,22 @@ public class ShoppingListItem {
     @Column(length = 100)
     private String category;
 
+    @Column(name = "food_type", length = 64)
+    private String foodType;
+
+    @Column(name = "protein_leanness", length = 32)
+    private String proteinLeanness;
+
+    @Column(name = "kcal_estimate")
+    private Integer kcalEstimate;
+
+    @Column(columnDefinition = "TEXT")
+    private String explanation;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "alternatives_json", columnDefinition = "json")
+    private String alternativesJson;
+
     protected ShoppingListItem() {
     }
 
@@ -32,6 +50,11 @@ public class ShoppingListItem {
         this.itemName = builder.itemName;
         this.quantity = builder.quantity;
         this.category = builder.category;
+        this.foodType = builder.foodType;
+        this.proteinLeanness = builder.proteinLeanness;
+        this.kcalEstimate = builder.kcalEstimate;
+        this.explanation = builder.explanation;
+        this.alternativesJson = builder.alternativesJson;
     }
 
     public static Builder builder() {
@@ -78,12 +101,57 @@ public class ShoppingListItem {
         this.category = category;
     }
 
+    public String getFoodType() {
+        return foodType;
+    }
+
+    public void setFoodType(String foodType) {
+        this.foodType = foodType;
+    }
+
+    public String getProteinLeanness() {
+        return proteinLeanness;
+    }
+
+    public void setProteinLeanness(String proteinLeanness) {
+        this.proteinLeanness = proteinLeanness;
+    }
+
+    public Integer getKcalEstimate() {
+        return kcalEstimate;
+    }
+
+    public void setKcalEstimate(Integer kcalEstimate) {
+        this.kcalEstimate = kcalEstimate;
+    }
+
+    public String getExplanation() {
+        return explanation;
+    }
+
+    public void setExplanation(String explanation) {
+        this.explanation = explanation;
+    }
+
+    public String getAlternativesJson() {
+        return alternativesJson;
+    }
+
+    public void setAlternativesJson(String alternativesJson) {
+        this.alternativesJson = alternativesJson;
+    }
+
     public static class Builder {
         private Long id;
         private ShoppingList shoppingList;
         private String itemName;
         private String quantity;
         private String category;
+        private String foodType;
+        private String proteinLeanness;
+        private Integer kcalEstimate;
+        private String explanation;
+        private String alternativesJson;
 
         public Builder id(Long id) {
             this.id = id;
@@ -107,6 +175,31 @@ public class ShoppingListItem {
 
         public Builder category(String category) {
             this.category = category;
+            return this;
+        }
+
+        public Builder foodType(String foodType) {
+            this.foodType = foodType;
+            return this;
+        }
+
+        public Builder proteinLeanness(String proteinLeanness) {
+            this.proteinLeanness = proteinLeanness;
+            return this;
+        }
+
+        public Builder kcalEstimate(Integer kcalEstimate) {
+            this.kcalEstimate = kcalEstimate;
+            return this;
+        }
+
+        public Builder explanation(String explanation) {
+            this.explanation = explanation;
+            return this;
+        }
+
+        public Builder alternativesJson(String alternativesJson) {
+            this.alternativesJson = alternativesJson;
             return this;
         }
 

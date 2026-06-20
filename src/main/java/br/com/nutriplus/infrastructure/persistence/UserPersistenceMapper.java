@@ -10,11 +10,15 @@ final class UserPersistenceMapper {
                 entity.getId(),
                 entity.getName(),
                 entity.getEmail(),
+                entity.getRole(),
                 entity.getPasswordHash(),
                 entity.getPhotoUrl(),
                 entity.getPhotoThumbnailUrl(),
                 entity.getFailedLoginAttempts(),
                 entity.isPasswordMustChange(),
+                entity.getTermsAcceptedAt(),
+                entity.getTermsVersion(),
+                entity.getPrivacyPolicyAcceptedAt(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt()
         );
@@ -34,6 +38,7 @@ final class UserPersistenceMapper {
         return br.com.nutriplus.domain.entity.User.builder()
                 .name(domain.name())
                 .email(domain.email())
+                .role(domain.role())
                 .passwordHash(domain.passwordHash())
                 .photoUrl(domain.photoUrl())
                 .photoThumbnailUrl(domain.photoThumbnailUrl())

@@ -1,13 +1,12 @@
 package br.com.nutriplus.domain.entity;
 
+import br.com.nutriplus.domain.enums.PlanSource;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "meal_plans")
@@ -46,9 +45,19 @@ public class MealPlan {
     @Column(name = "ai_model", length = 100)
     private String aiModel;
 
-    @OneToMany(mappedBy = "mealPlan", cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("sortOrder ASC")
-    private List<Meal> meals = new ArrayList<>();
+    @Column(name = "medical_review_status", length = 20)
+    private String medicalReviewStatus;
+
+    @Column(name = "medical_review_notes", columnDefinition = "TEXT")
+    private String medicalReviewNotes;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "plan_source", nullable = false)
+    private PlanSource planSource = PlanSource.AI_ONLY;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "nutritionist_id")
+    private Nutritionist nutritionist;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -68,7 +77,8 @@ public class MealPlan {
         this.totalFatG = builder.totalFatG;
         this.disclaimer = builder.disclaimer;
         this.aiModel = builder.aiModel;
-        this.meals = builder.meals != null ? builder.meals : new ArrayList<>();
+        this.medicalReviewStatus = builder.medicalReviewStatus;
+        this.medicalReviewNotes = builder.medicalReviewNotes;
         this.createdAt = builder.createdAt;
     }
 
@@ -156,12 +166,36 @@ public class MealPlan {
         this.aiModel = aiModel;
     }
 
-    public List<Meal> getMeals() {
-        return meals;
+    public String getMedicalReviewStatus() {
+        return medicalReviewStatus;
     }
 
-    public void setMeals(List<Meal> meals) {
-        this.meals = meals;
+    public void setMedicalReviewStatus(String medicalReviewStatus) {
+        this.medicalReviewStatus = medicalReviewStatus;
+    }
+
+    public String getMedicalReviewNotes() {
+        return medicalReviewNotes;
+    }
+
+    public void setMedicalReviewNotes(String medicalReviewNotes) {
+        this.medicalReviewNotes = medicalReviewNotes;
+    }
+
+    public PlanSource getPlanSource() {
+        return planSource;
+    }
+
+    public void setPlanSource(PlanSource planSource) {
+        this.planSource = planSource;
+    }
+
+    public Nutritionist getNutritionist() {
+        return nutritionist;
+    }
+
+    public void setNutritionist(Nutritionist nutritionist) {
+        this.nutritionist = nutritionist;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -183,7 +217,8 @@ public class MealPlan {
         private BigDecimal totalFatG;
         private String disclaimer;
         private String aiModel;
-        private List<Meal> meals;
+        private String medicalReviewStatus;
+        private String medicalReviewNotes;
         private LocalDateTime createdAt;
 
         public Builder id(Long id) {
@@ -236,8 +271,13 @@ public class MealPlan {
             return this;
         }
 
-        public Builder meals(List<Meal> meals) {
-            this.meals = meals;
+        public Builder medicalReviewStatus(String medicalReviewStatus) {
+            this.medicalReviewStatus = medicalReviewStatus;
+            return this;
+        }
+
+        public Builder medicalReviewNotes(String medicalReviewNotes) {
+            this.medicalReviewNotes = medicalReviewNotes;
             return this;
         }
 

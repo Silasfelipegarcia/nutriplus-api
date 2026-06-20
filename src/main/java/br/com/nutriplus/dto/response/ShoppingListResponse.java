@@ -9,6 +9,7 @@ public record ShoppingListResponse(
         LocalDate weekStart,
         LocalDate weekEnd,
         List<ShoppingListItemResponse> items,
+        ShoppingGuidanceResponse guidance,
         LocalDateTime createdAt
 ) {
 }

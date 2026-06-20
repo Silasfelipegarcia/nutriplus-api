@@ -5,13 +5,19 @@ import br.com.nutriplus.application.shared.ActingUserResolver;
 import br.com.nutriplus.application.user.ChangePasswordUseCase;
 import br.com.nutriplus.application.user.GetCurrentUserUseCase;
 import br.com.nutriplus.application.user.UpdateUserProfileUseCase;
+import br.com.nutriplus.dto.request.AcceptTermsRequest;
 import br.com.nutriplus.dto.request.ChangePasswordRequest;
 import br.com.nutriplus.dto.request.UpdateUserProfileRequest;
 import br.com.nutriplus.dto.response.AuthResponse;
 import br.com.nutriplus.dto.response.UserResponse;
 import br.com.nutriplus.mapper.ResponseMapper;
 import br.com.nutriplus.repository.NutritionProfileRepository;
+import br.com.nutriplus.repository.UserRepository;
+import br.com.nutriplus.security.CurrentUser;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Service
 public class UserService {
@@ -22,19 +28,25 @@ public class UserService {
     private final ChangePasswordUseCase changePasswordUseCase;
     private final NutritionProfileRepository nutritionProfileRepository;
     private final ResponseMapper responseMapper;
+    private final CurrentUser currentUser;
+    private final UserRepository userRepository;
 
     public UserService(ActingUserResolver actingUserResolver,
                        GetCurrentUserUseCase getCurrentUserUseCase,
                        UpdateUserProfileUseCase updateUserProfileUseCase,
                        ChangePasswordUseCase changePasswordUseCase,
                        NutritionProfileRepository nutritionProfileRepository,
-                       ResponseMapper responseMapper) {
+                       ResponseMapper responseMapper,
+                       CurrentUser currentUser,
+                       UserRepository userRepository) {
         this.actingUserResolver = actingUserResolver;
         this.getCurrentUserUseCase = getCurrentUserUseCase;
         this.updateUserProfileUseCase = updateUserProfileUseCase;
         this.changePasswordUseCase = changePasswordUseCase;
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.responseMapper = responseMapper;
+        this.currentUser = currentUser;
+        this.userRepository = userRepository;
     }
 
     public UserResponse getMe() {
@@ -61,5 +73,23 @@ public class UserService {
                 result.expiresInSeconds(),
                 responseMapper.toUserResponse(result.user(), hasProfile)
         );
+    }
+
+    @Transactional
+    public UserResponse acceptTerms(AcceptTermsRequest request) {
+        var entity = currentUser.get();
+        LocalDateTime now = LocalDateTime.now();
+        entity.setTermsAcceptedAt(now);
+        entity.setTermsVersion(request.termsVersion());
+        entity.setPrivacyPolicyAcceptedAt(now);
+        userRepository.save(entity);
+        boolean hasProfile = nutritionProfileRepository.findByUserId(entity.getId()).isPresent();
+        return responseMapper.toUserResponse(entity, hasProfile);
+    }
+
+    @Transactional
+    public void deleteAccount() {
+        var entity = currentUser.get();
+        userRepository.delete(entity);
     }
 }

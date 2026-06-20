@@ -1,7 +1,10 @@
 package br.com.nutriplus.client;
 
+import br.com.nutriplus.client.dto.AiFoodExtraEstimateResponse;
 import br.com.nutriplus.client.dto.AiMealPlanGenerateResponse;
 import br.com.nutriplus.client.dto.AiNutritionCalculateResponse;
+import br.com.nutriplus.client.dto.AiProgressAnalyzeResponse;
+import br.com.nutriplus.domain.entity.BodyMeasurementSession;
 import br.com.nutriplus.domain.entity.NutritionProfile;
 import br.com.nutriplus.exception.AiAgentException;
 import br.com.nutriplus.infrastructure.config.AiAgentProperties;
@@ -56,6 +59,61 @@ public class AiAgentClient {
         return post("/api/v1/meal-plan/generate", body, AiMealPlanGenerateResponse.class);
     }
 
+    public AiProgressAnalyzeResponse analyzeProgress(NutritionProfile profile,
+                                                     BodyMeasurementSession current,
+                                                     BodyMeasurementSession previous,
+                                                     Integer weekAdherencePercent) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("agentId", profile.getAgentPersona().toAgentId());
+        body.put("goal", profile.getGoal().name());
+        body.put("weekAdherencePercent", weekAdherencePercent);
+        body.put("current", sessionToMap(current));
+        if (previous != null) {
+            body.put("previous", sessionToMap(previous));
+        }
+        return post("/api/v1/progress/analyze", body, AiProgressAnalyzeResponse.class);
+    }
+
+    public AiFoodExtraEstimateResponse estimateFoodExtra(NutritionProfile profile,
+                                                         String description,
+                                                         int consumedCalories,
+                                                         int extraCalories,
+                                                         Integer targetCalories) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("agentId", profile.getAgentPersona().toAgentId());
+        body.put("goal", profile.getGoal().name());
+        body.put("description", description);
+        body.put("consumedCalories", consumedCalories);
+        body.put("extraCalories", extraCalories);
+        if (targetCalories != null) {
+            body.put("targetCalories", targetCalories);
+        }
+        return post("/api/v1/food-extra/estimate", body, AiFoodExtraEstimateResponse.class);
+    }
+
+    private Map<String, Object> sessionToMap(BodyMeasurementSession session) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("measuredOn", session.getMeasuredOn().toString());
+        map.put("weightKg", session.getWeightKg());
+        putIfPresent(map, "bodyFatPercent", session.getBodyFatPercent());
+        putIfPresent(map, "muscleMassKg", session.getMuscleMassKg());
+        putIfPresent(map, "waistCm", session.getWaistCm());
+        putIfPresent(map, "hipCm", session.getHipCm());
+        putIfPresent(map, "chestCm", session.getChestCm());
+        putIfPresent(map, "neckCm", session.getNeckCm());
+        putIfPresent(map, "armRightCm", session.getArmRightCm());
+        putIfPresent(map, "armLeftCm", session.getArmLeftCm());
+        putIfPresent(map, "thighRightCm", session.getThighRightCm());
+        putIfPresent(map, "thighLeftCm", session.getThighLeftCm());
+        return map;
+    }
+
+    private void putIfPresent(Map<String, Object> map, String key, Object value) {
+        if (value != null) {
+            map.put(key, value);
+        }
+    }
+
     private Map<String, Object> profileToMap(NutritionProfile profile) {
         Map<String, Object> body = new HashMap<>();
         body.put("age", profile.getAge());
@@ -63,6 +121,9 @@ public class AiAgentClient {
         body.put("heightCm", profile.getHeightCm());
         body.put("currentWeightKg", profile.getCurrentWeightKg());
         body.put("targetWeightKg", profile.getTargetWeightKg());
+        if (profile.getGoalTargetWeeks() != null) {
+            body.put("goalTargetWeeks", profile.getGoalTargetWeeks());
+        }
         body.put("goal", profile.getGoal().name());
         body.put("activityLevel", profile.getActivityLevel().name());
         body.put("dietaryPreference", profile.getDietaryPreference().name());
@@ -78,6 +139,40 @@ public class AiAgentClient {
         }
         if (profile.getMealNotes() != null && !profile.getMealNotes().isBlank()) {
             body.put("mealNotes", profile.getMealNotes());
+        }
+        if (profile.getCalculationMethod() != null) {
+            body.put("calculationMethod", profile.getCalculationMethod().name());
+        }
+        if (profile.getBodyFatPercent() != null) {
+            body.put("bodyFatPercent", profile.getBodyFatPercent());
+        }
+        if (profile.getMuscleMassKg() != null) {
+            body.put("muscleMassKg", profile.getMuscleMassKg());
+        }
+        if (profile.getLeanMassKg() != null) {
+            body.put("leanMassKg", profile.getLeanMassKg());
+        }
+        if (profile.isAthleteModeEnabled() && profile.getTrainingDailyExtraKcal() != null) {
+            body.put("trainingDailyExtraKcal", profile.getTrainingDailyExtraKcal());
+            body.put("athleteModeEnabled", true);
+        }
+        if (profile.getWakeTime() != null) {
+            body.put("wakeTime", profile.getWakeTime().toString().substring(0, 5));
+        }
+        if (profile.getSleepTime() != null) {
+            body.put("sleepTime", profile.getSleepTime().toString().substring(0, 5));
+        }
+        if (profile.getHealthConditions() != null && !profile.getHealthConditions().isBlank()) {
+            body.put("healthConditions", profile.getHealthConditions());
+        }
+        if (profile.getMedications() != null && !profile.getMedications().isBlank()) {
+            body.put("medications", profile.getMedications());
+        }
+        if (profile.getAllergies() != null && !profile.getAllergies().isBlank()) {
+            body.put("allergies", profile.getAllergies());
+        }
+        if (profile.getHealthNotes() != null && !profile.getHealthNotes().isBlank()) {
+            body.put("healthNotes", profile.getHealthNotes());
         }
         return body;
     }

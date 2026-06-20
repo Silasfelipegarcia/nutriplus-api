@@ -14,6 +14,9 @@ public record MealPlanResponse(
         BigDecimal totalFatG,
         String disclaimer,
         List<MealResponse> meals,
-        LocalDateTime createdAt
+        LocalDateTime createdAt,
+        String medicalReviewStatus,
+        String medicalReviewNotes,
+        String planSource
 ) {
 }

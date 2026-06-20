@@ -1,0 +1,65 @@
+groups:
+  - name: nutriplus-sync-slo
+    rules:
+      - alert: NutriplusSyncHttpP95Slow
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le, flow) (
+              rate(nutriplus_http_server_duration_seconds_bucket{sync="true"}[5m])
+            )
+          ) > 0.3
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Endpoint sync acima de 300ms (p95)"
+          description: "flow={{ $labels.flow }} p95={{ $value | humanizeDuration }}"
+
+      - alert: NutriplusSyncHttpErrorRate
+        expr: |
+          sum(rate(nutriplus_http_server_duration_seconds_count{sync="true",status=~"5.."}[5m]))
+          /
+          sum(rate(nutriplus_http_server_duration_seconds_count{sync="true"}[5m]))
+          > 0.05
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Taxa de erro 5xx em endpoints sync > 5%"
+
+  - name: nutriplus-ai-slo
+    rules:
+      - alert: NutriplusAiAgentP95Slow
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le, path) (
+              rate(nutriplus_ai_agent_duration_seconds_bucket[5m])
+            )
+          ) > 30
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Chamada IA lenta (p95 > 30s)"
+          description: "path={{ $labels.path }}"
+
+      - alert: NutriplusAgentLlmP95Slow
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le, provider) (
+              rate(nutriplus_agent_llm_duration_seconds_bucket[5m])
+            )
+          ) > 30
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "LLM no agente lento (p95 > 30s)"
+          description: "provider={{ $labels.provider }}"

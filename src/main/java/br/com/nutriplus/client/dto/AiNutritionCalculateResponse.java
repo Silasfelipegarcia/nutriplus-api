@@ -8,6 +8,8 @@ public record AiNutritionCalculateResponse(
         BigDecimal targetCalories,
         BigDecimal targetProteinG,
         BigDecimal targetCarbsG,
-        BigDecimal targetFatG
+        BigDecimal targetFatG,
+        String calculationMethodUsed,
+        BigDecimal leanMassKg
 ) {
 }

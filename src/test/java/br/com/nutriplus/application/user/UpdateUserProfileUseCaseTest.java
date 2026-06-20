@@ -2,6 +2,7 @@ package br.com.nutriplus.application.user;
 
 import br.com.nutriplus.application.port.UserQueryPort;
 import br.com.nutriplus.application.port.UserUpdatePort;
+import br.com.nutriplus.domain.enums.UserRole;
 import br.com.nutriplus.domain.model.User;
 import br.com.nutriplus.dto.request.UpdateUserProfileRequest;
 import org.junit.jupiter.api.Test;
@@ -73,11 +74,15 @@ class UpdateUserProfileUseCaseTest {
                 1L,
                 name,
                 "user@test.com",
+                UserRole.PATIENT,
                 "hash",
                 photoUrl,
                 photoThumbnailUrl,
                 0,
                 false,
+                null,
+                null,
+                null,
                 LocalDateTime.now(),
                 LocalDateTime.now()
         );

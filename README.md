@@ -114,12 +114,48 @@ Ver [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md). Resumo: MDC nos logs, propag
 
 Filtro em memória — adequado para **instância única**. Para múltiplas réplicas, usar Redis ou rate limit no gateway.
 
+## Arquitetura (3 camadas)
+
+O app **não** fala com o agente diretamente. O fluxo principal de plano alimentar:
+
+```
+Flutter (:8080 client) → nutriplus-api (:8080) → nutriplus-agentes (:8000)
+```
+
+| Camada | Porta | Papel |
+|--------|-------|-------|
+| **Frontend** (Flutter) | client → API `8080` | Onboarding, polling de job, exibe plano e compras |
+| **API** (Spring Boot) | `8080` | Auth, perfil, job async, persistência MySQL |
+| **Agentes** (FastAPI) | `8000` | LLM: macros, geração de plano, guia de compras |
+
+O agente **não chama a API** — só recebe `POST /api/v1/meal-plan/generate` da API via `AI_AGENT_URL`.
+
+`GET /meal-plans/latest` e `GET /shopping-list/latest` retornam **404** quando o usuário ainda não tem plano (não indica rota inexistente).
+
+### Checklist dev local
+
+1. MySQL em `127.0.0.1:3306` + Flyway (incl. migration `V25__shopping_guidance_and_goal_timeline.sql`)
+2. **API** — `mvn spring-boot:run` → `http://localhost:8080`
+3. **Agente** — no repo `nutriplus-agentes`: `uvicorn app.main:app --reload --port 8000`
+4. **Flutter** — `AppEnvironment.apiBaseUrl` apontando para `8080`
+5. Login com usuário seed: `teste@nutriplus.local` / `Nutri123!` (profile `local,dev`)
+6. Fluxo: onboarding → medidas → `POST /meal-plans/generate` → poll `GET /meal-plans/generation-status` → `GET /meal-plans/latest` = **200**
+
+Verificação rápida:
+
+```bash
+curl -s http://localhost:8000/health    # agente
+curl -s http://localhost:8080/health    # API
+```
+
+Detalhes de testes e k6: [docs/TESTING.md](docs/TESTING.md).
+
 ## Repositórios relacionados
 
 | Repositório | Função |
 |-------------|--------|
-| [nutriplus-agentes](../nutriplus-agentes) | Agente Python (Luna/Bruno, Groq) |
-| [nutriplus-frontend](../nutriplus-frontend) | App Flutter |
+| [nutriplus-agentes](../nutriplus-agentes) | Agente Python (Luna/Bruno, Groq) — porta **8000** |
+| [nutriplus-frontend](../nutriplus-frontend) | App Flutter — consome API **8080** |
 
 ## Usuário de teste (local/dev)
 

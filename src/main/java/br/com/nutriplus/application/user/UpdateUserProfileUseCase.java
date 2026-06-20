@@ -46,11 +46,15 @@ public class UpdateUserProfileUseCase {
                 current.id(),
                 name,
                 current.email(),
+                current.role(),
                 current.passwordHash(),
                 photoUrl,
                 photoThumbnailUrl,
                 current.failedLoginAttempts(),
                 current.passwordMustChange(),
+                current.termsAcceptedAt(),
+                current.termsVersion(),
+                current.privacyPolicyAcceptedAt(),
                 current.createdAt(),
                 current.updatedAt()
         );

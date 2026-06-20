@@ -2,6 +2,8 @@ package br.com.nutriplus.domain.entity;
 
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -33,6 +35,10 @@ public class ShoppingList {
     @OneToMany(mappedBy = "shoppingList", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ShoppingListItem> items = new ArrayList<>();
 
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "guidance_json", columnDefinition = "json")
+    private String guidanceJson;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -47,6 +53,7 @@ public class ShoppingList {
         this.weekStart = builder.weekStart;
         this.weekEnd = builder.weekEnd;
         this.items = builder.items != null ? builder.items : new ArrayList<>();
+        this.guidanceJson = builder.guidanceJson;
         this.createdAt = builder.createdAt;
     }
 
@@ -102,6 +109,14 @@ public class ShoppingList {
         this.items = items;
     }
 
+    public String getGuidanceJson() {
+        return guidanceJson;
+    }
+
+    public void setGuidanceJson(String guidanceJson) {
+        this.guidanceJson = guidanceJson;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -117,6 +132,7 @@ public class ShoppingList {
         private LocalDate weekStart;
         private LocalDate weekEnd;
         private List<ShoppingListItem> items;
+        private String guidanceJson;
         private LocalDateTime createdAt;
 
         public Builder id(Long id) {
@@ -146,6 +162,11 @@ public class ShoppingList {
 
         public Builder items(List<ShoppingListItem> items) {
             this.items = items;
+            return this;
+        }
+
+        public Builder guidanceJson(String guidanceJson) {
+            this.guidanceJson = guidanceJson;
             return this;
         }
 

@@ -3,8 +3,7 @@ package br.com.nutriplus.domain.entity;
 import br.com.nutriplus.domain.enums.MealType;
 import jakarta.persistence.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.time.LocalTime;
 
 @Entity
 @Table(name = "meals")
@@ -28,8 +27,8 @@ public class Meal {
     @Column(name = "sort_order", nullable = false)
     private Integer sortOrder = 0;
 
-    @OneToMany(mappedBy = "meal", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<MealItem> items = new ArrayList<>();
+    @Column(name = "scheduled_time")
+    private LocalTime scheduledTime;
 
     protected Meal() {
     }
@@ -40,7 +39,7 @@ public class Meal {
         this.mealType = builder.mealType;
         this.name = builder.name;
         this.sortOrder = builder.sortOrder != null ? builder.sortOrder : 0;
-        this.items = builder.items != null ? builder.items : new ArrayList<>();
+        this.scheduledTime = builder.scheduledTime;
     }
 
     public static Builder builder() {
@@ -87,12 +86,12 @@ public class Meal {
         this.sortOrder = sortOrder;
     }
 
-    public List<MealItem> getItems() {
-        return items;
+    public LocalTime getScheduledTime() {
+        return scheduledTime;
     }
 
-    public void setItems(List<MealItem> items) {
-        this.items = items;
+    public void setScheduledTime(LocalTime scheduledTime) {
+        this.scheduledTime = scheduledTime;
     }
 
     public static class Builder {
@@ -101,7 +100,7 @@ public class Meal {
         private MealType mealType;
         private String name;
         private Integer sortOrder;
-        private List<MealItem> items;
+        private LocalTime scheduledTime;
 
         public Builder id(Long id) {
             this.id = id;
@@ -128,8 +127,8 @@ public class Meal {
             return this;
         }
 
-        public Builder items(List<MealItem> items) {
-            this.items = items;
+        public Builder scheduledTime(LocalTime scheduledTime) {
+            this.scheduledTime = scheduledTime;
             return this;
         }
 

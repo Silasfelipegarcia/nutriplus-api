@@ -1,15 +1,27 @@
 package br.com.nutriplus.mapper;
 
+import br.com.nutriplus.client.dto.AiShoppingGuidanceDto;
 import br.com.nutriplus.domain.entity.*;
+import br.com.nutriplus.domain.enums.PlanSource;
 import br.com.nutriplus.domain.model.User;
 import br.com.nutriplus.dto.response.*;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class ResponseMapper {
 
+    private final ObjectMapper objectMapper;
+
+    public ResponseMapper(ObjectMapper objectMapper) {
+        this.objectMapper = objectMapper;
+    }
     public UserResponse toUserResponse(br.com.nutriplus.domain.entity.User user, boolean hasNutritionProfile) {
         return new UserResponse(
                 user.getId(),
@@ -17,7 +29,10 @@ public class ResponseMapper {
                 user.getEmail(),
                 user.getCreatedAt(),
                 hasNutritionProfile,
-                photoForClient(user.getPhotoThumbnailUrl())
+                photoForClient(user.getPhotoThumbnailUrl()),
+                user.getTermsAcceptedAt(),
+                user.getTermsVersion(),
+                user.getPrivacyPolicyAcceptedAt()
         );
     }
 
@@ -28,7 +43,10 @@ public class ResponseMapper {
                 user.email(),
                 user.createdAt(),
                 hasNutritionProfile,
-                user.photoForClient()
+                user.photoForClient(),
+                user.termsAcceptedAt(),
+                user.termsVersion(),
+                user.privacyPolicyAcceptedAt()
         );
     }
 
@@ -47,6 +65,7 @@ public class ResponseMapper {
                 profile.getHeightCm(),
                 profile.getCurrentWeightKg(),
                 profile.getTargetWeightKg(),
+                profile.getGoalTargetWeeks(),
                 profile.getGoal(),
                 profile.getActivityLevel(),
                 profile.getDietaryPreference(),
@@ -55,19 +74,30 @@ public class ResponseMapper {
                 profile.getFoodLikes(),
                 profile.getFoodDislikes(),
                 profile.getMealNotes(),
+                profile.getCalculationMethod(),
+                profile.getBodyFatPercent(),
+                profile.getLeanMassKg(),
+                profile.getMuscleMassKg(),
                 profile.getBmrKcal(),
                 profile.getTdeeKcal(),
                 profile.getTargetCalories(),
                 profile.getTargetProteinG(),
                 profile.getTargetCarbsG(),
                 profile.getTargetFatG(),
-                profile.getUpdatedAt()
+                profile.getUpdatedAt(),
+                profile.isAthleteModeEnabled(),
+                formatTime(profile.getWakeTime()),
+                formatTime(profile.getSleepTime()),
+                profile.getHealthConditions(),
+                profile.getMedications(),
+                profile.getAllergies(),
+                profile.getHealthNotes()
         );
     }
 
-    public MealPlanResponse toMealPlanResponse(MealPlan plan) {
-        List<MealResponse> meals = plan.getMeals().stream()
-                .map(this::toMealResponse)
+    public MealPlanResponse toMealPlanResponse(MealPlan plan, List<Meal> meals, Map<Long, List<MealItem>> itemsByMealId) {
+        List<MealResponse> mealResponses = meals.stream()
+                .map(meal -> toMealResponse(meal, itemsByMealId.getOrDefault(meal.getId(), List.of())))
                 .toList();
 
         return new MealPlanResponse(
@@ -78,13 +108,23 @@ public class ResponseMapper {
                 plan.getTotalCarbsG(),
                 plan.getTotalFatG(),
                 plan.getDisclaimer(),
-                meals,
-                plan.getCreatedAt()
+                mealResponses,
+                plan.getCreatedAt(),
+                plan.getMedicalReviewStatus(),
+                plan.getMedicalReviewNotes(),
+                plan.getPlanSource() != null ? plan.getPlanSource().name() : PlanSource.AI_ONLY.name()
         );
     }
 
-    private MealResponse toMealResponse(Meal meal) {
-        List<MealItemResponse> items = meal.getItems().stream()
+    private static String formatTime(LocalTime time) {
+        if (time == null) {
+            return null;
+        }
+        return time.format(DateTimeFormatter.ofPattern("HH:mm"));
+    }
+
+    private MealResponse toMealResponse(Meal meal, List<MealItem> items) {
+        List<MealItemResponse> itemResponses = items.stream()
                 .map(item -> new MealItemResponse(
                         item.getId(),
                         item.getFoodName(),
@@ -100,7 +140,8 @@ public class ResponseMapper {
                 meal.getId(),
                 meal.getMealType(),
                 meal.getName(),
-                items
+                formatTime(meal.getScheduledTime()),
+                itemResponses
         );
     }
 
@@ -110,7 +151,12 @@ public class ResponseMapper {
                         item.getId(),
                         item.getItemName(),
                         item.getQuantity(),
-                        item.getCategory()
+                        item.getCategory(),
+                        item.getFoodType(),
+                        item.getProteinLeanness(),
+                        item.getKcalEstimate(),
+                        item.getExplanation(),
+                        parseAlternatives(item.getAlternativesJson())
                 ))
                 .toList();
 
@@ -119,7 +165,39 @@ public class ResponseMapper {
                 list.getWeekStart(),
                 list.getWeekEnd(),
                 items,
+                parseGuidance(list.getGuidanceJson()),
                 list.getCreatedAt()
         );
+    }
+
+    private List<String> parseAlternatives(String json) {
+        if (json == null || json.isBlank()) {
+            return List.of();
+        }
+        try {
+            return objectMapper.readValue(json, new TypeReference<List<String>>() {});
+        } catch (Exception e) {
+            return List.of();
+        }
+    }
+
+    private ShoppingGuidanceResponse parseGuidance(String json) {
+        if (json == null || json.isBlank()) {
+            return null;
+        }
+        try {
+            AiShoppingGuidanceDto dto = objectMapper.readValue(json, AiShoppingGuidanceDto.class);
+            List<SatietyTipResponse> tips = dto.satietyTips() == null ? List.of() : dto.satietyTips().stream()
+                    .map(t -> new SatietyTipResponse(t.title(), t.description(), t.category()))
+                    .toList();
+            List<FlexibleOptionResponse> flex = dto.flexibleOptions() == null ? List.of() : dto.flexibleOptions().stream()
+                    .map(o -> new FlexibleOptionResponse(
+                            o.id(), o.label(), o.kcalEstimate(), o.impactSummary(),
+                            o.deficitPercent(), o.daysDelay(), o.evandroStatus(), o.evandroNote()))
+                    .toList();
+            return new ShoppingGuidanceResponse(tips, flex, dto.weeklyImpactSummary());
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

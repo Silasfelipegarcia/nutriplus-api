@@ -8,6 +8,7 @@ public record MealResponse(
         Long id,
         MealType mealType,
         String name,
+        String scheduledTime,
         List<MealItemResponse> items
 ) {
 }

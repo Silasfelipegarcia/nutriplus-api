@@ -27,12 +27,31 @@ A equipe interna consegue:
 | `X-Trace-Id` | 1 request HTTP | Cliente (novo por call) | `traceId` | Não (apenas logs) |
 | `X-Flow-Id` | Ação de negócio | Cliente | `flowId` | Não |
 | `X-Session-Id` | Sessão do app | Cliente (persistido) | `sessionId` | Não |
+| `Idempotency-Key` | 1 gesto / retry | Cliente (UUID por ação) | `idempotencyKey` | `idempotency_keys` (API) |
 
-### Resposta HTTP
+### Idempotência (`Idempotency-Key`)
+
+| Ambiente | Comportamento |
+|----------|---------------|
+| `local`, `dev`, `test` | `idempotency.enabled=false` — pass-through, **localhost não trava** |
+| `homolog`, `prod` | Obrigatória em mutações (`POST`/`PUT`/`PATCH`/`DELETE`), exceto login/refresh/webhooks |
+
+| Código HTTP | Significado |
+|-------------|-------------|
+| `400` + `IDEMPOTENCY_KEY_REQUIRED` | Header ausente em mutação |
+| `409` + `IDEMPOTENCY_IN_PROGRESS` | Mesma key ainda processando |
+| `422` + `IDEMPOTENCY_KEY_BODY_MISMATCH` | Mesma key, body diferente |
+| `2xx/4xx` replay | Header `Idempotency-Replayed: true` + body cacheado |
+
+Excluídos: `GET`, `HEAD`, `OPTIONS`, `/health`, `/actuator/**`, `/webhooks/**`, `/auth/login`, `/auth/refresh`.
+
+Config (12-factor): `IDEMPOTENCY_ENABLED`, `IDEMPOTENCY_REQUIRE_KEY`, `IDEMPOTENCY_TTL_HOURS`, `IDEMPOTENCY_IN_PROGRESS_TIMEOUT`.
+
 
 | Situação | O que volta |
 |----------|-------------|
 | Qualquer resposta da API | Headers `X-Correlation-Id`, `X-Trace-Id` |
+| Replay idempotente | Header `Idempotency-Replayed: true` |
 | Erro JSON (`4xx`/`5xx`) | Body com `correlationId`, `traceId`, `message`, `code` |
 | Resposta do agente | Headers `X-Correlation-Id`, `X-Trace-Id` |
 
@@ -46,7 +65,8 @@ A equipe interna consegue:
 
 1. `CorrelationIdFilter` — MDC trace
 2. `RequestPerformanceFilter` — duração
-3. `RateLimitFilter`
+3. `IdempotencyFilter` — dedup mutações (desligado em `dev`)
+4. `RateLimitFilter`
 
 **Rotas autenticadas**:
 
@@ -56,6 +76,7 @@ A equipe interna consegue:
 4. OAuth2 Bearer JWT
 5. `MdcUserFilter` — `userId` no MDC
 6. `PasswordMustChangeFilter`
+7. `IdempotencyFilter` — após auth (escopo por `userId`)
 
 ### Formato de log
 
@@ -97,6 +118,7 @@ Métricas Micrometer:
 |--------|-----------------|---------|
 | `audit_log` | `correlation_id` | LOGIN, REGISTER, TOKEN_REFRESH, MEAL_PLAN_GENERATED, … |
 | `ai_requests_log` | `correlation_id` | CALCULATE_MACROS, GENERATE_MEAL_PLAN |
+| `product_events` | `correlation_id`, `session_id` | onboarding_step_*, meal_plan_* (funil) |
 
 ---
 
@@ -117,9 +139,11 @@ Métricas Micrometer:
 
 ### Limitações atuais
 
-1. **Logs do `MealPlanGenerator`** não incluem cid/trace (thread worker via `asyncio.to_thread`).
+1. ~~**Logs do `MealPlanGenerator`** não incluem cid/trace~~ — corrigido via `contextvars` + `asyncio.copy_context()` em `to_thread`.
 2. **Formato texto plano** — não há JSON estruturado como na API em prod.
 3. **Chamadas Groq/OpenAI** não propagam trace externo (sem OTel).
+
+Métricas LLM: `nutriplus_agent_llm_duration_seconds` (histogram por `provider`, `agent`).
 
 ---
 
@@ -141,7 +165,13 @@ Cada método define `flowId` explícito (ex.: `generate-meal-plan`).
 
 ### Gap conhecido: retry 401
 
-Em `_authorized`, após `refreshToken()`, a segunda tentativa chama `_headers()` de novo e **gera novos** cid/trace, quebrando a correlação do request original.
+~~Em `_authorized`, após `refreshToken()`, a segunda tentativa chama `_headers()` de novo e **gera novos** cid/trace~~ — corrigido: headers são reutilizados no retry.
+
+### Product analytics
+
+- `POST /analytics/events` — batch de eventos (`sessionId`, `events[]`)
+- App Flutter: `ProductAnalyticsService` + mixin `OnboardingStepAnalytics`
+- Dashboards: [`docs/observability/README.md`](./observability/README.md)
 
 ---
 
@@ -187,22 +217,29 @@ SELECT * FROM audit_log WHERE correlation_id = '<cid>' ORDER BY created_at DESC;
 | FE → API, mesmo request | Sim (cid + trace + flow + session no MDC) |
 | API → Agente, mesmo request | Sim (TraceContext) |
 | Log HTTP do agente com ids | Sim (TraceMiddleware) |
-| Log LLM dentro do agente | Não |
-| Jornada multi-tela (vários requests) | Parcial (`sessionId` + `flowId` diferentes) |
-| Retry 401 no app | Não (novos ids) |
+| Log LLM dentro do agente | Sim (contextvars + logging filter) |
+| Jornada multi-tela (vários requests) | Parcial (`sessionId` + `flowId` + `product_events`) |
+| Retry 401 no app | Sim (headers reutilizados) |
 | Erro no app com cid | Sim |
-| Erro no app com traceId | Não (não parseado no Flutter) |
-| Auditoria DB com trace completo | Parcial (só correlationId) |
+| Erro no app com traceId | Sim (`ApiException.traceId`) |
+| Auditoria DB com trace completo | Parcial (correlationId; product_events tem session) |
+| SLO 300ms endpoints sync | Sim (WARN + Prometheus histogram) |
+| Idempotency-Key em mutações (homolog/prod) | Sim |
+| Localhost sem bloqueio de idempotência | Sim (`dev`: `idempotency.enabled=false`) |
+| Replay seguro (retry / duplo clique) | Sim (`idempotency_keys` + header replay) |
 
 ---
 
 ## Roadmap
 
-| Prioridade | Item | Repositório |
-|------------|------|-------------|
-| P1 | Reutilizar cid/trace no retry `_authorized` | frontend |
-| P1 | `contextvars` + logging filter no agente (incl. `to_thread`) | agentes |
-| P2 | Colunas `trace_id`, `flow_id`, `session_id` em `ai_requests_log` | api |
+| Prioridade | Item | Repositório | Status |
+|------------|------|-------------|--------|
+| P1 | Reutilizar cid/trace no retry `_authorized` | frontend | Feito |
+| P1 | `contextvars` + logging filter no agente (incl. `to_thread`) | agentes | Feito |
+| P1 | SLO sync 300ms (WARN + histogram) | api | Feito |
+| P1 | `product_events` + `/analytics/events` | api + frontend | Feito |
+| P1 | `Idempotency-Key` API + Flutter + agente | todos | Feito |
+| P2 | Colunas `trace_id`, `flow_id`, `session_id` em `ai_requests_log` | api | Pendente |
 | P2 | Log INFO estruturado no agente (JSON em prod) | agentes |
 | P2 | Expor `traceId` no `ApiException` | frontend |
 | P3 | `traceId` estável por sessão de app (opcional) | frontend |
