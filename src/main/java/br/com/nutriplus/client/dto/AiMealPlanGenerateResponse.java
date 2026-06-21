@@ -13,6 +13,10 @@ public record AiMealPlanGenerateResponse(
         List<AiShoppingItemDto> shoppingList,
         AiShoppingGuidanceDto shoppingGuidance,
         String medicalReviewStatus,
-        String medicalReviewNotes
+        String medicalReviewNotes,
+        String dietReviewStatus,
+        String dietReviewNotes,
+        String seniorReviewStatus,
+        String seniorReviewNotes
 ) {
 }

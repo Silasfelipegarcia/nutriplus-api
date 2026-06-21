@@ -5,19 +5,21 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.slf4j.MDC;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import br.com.nutriplus.infrastructure.web.CorrelationIdFilter;
 
 import java.io.IOException;
 import java.time.Instant;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * In-memory rate limiter — suitable for single-instance deployments only.
- * For horizontal scaling, replace with Redis or gateway-level rate limiting.
+ * In-memory IP rate limiter. For multi-replica deployments, enable Redis via {@code spring.data.redis.host}.
  */
 @Component
 public class RateLimitFilter extends OncePerRequestFilter {
@@ -43,7 +45,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
         boolean isAuthPath = path.startsWith("/auth");
         int requestLimit = isAuthPath ? properties.authRequestsPerWindow() : properties.generalRequestsPerWindow();
 
-        String key = request.getRemoteAddr() + ":" + (isAuthPath ? "AUTH" : "GENERAL");
+        String clientIp = ClientIpResolver.resolve(request, properties.trustedProxyIps());
+        String key = clientIp + ":" + (isAuthPath ? "AUTH" : "GENERAL");
         long now = Instant.now().getEpochSecond();
         evictExpiredCounters(now);
 
@@ -55,13 +58,28 @@ public class RateLimitFilter extends OncePerRequestFilter {
         });
 
         if (counter.count() > requestLimit) {
-            response.setStatus(429);
-            response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            response.getWriter().write(objectMapper.writeValueAsString(Map.of("message", "Muitas requisições. Tente novamente em instantes.")));
+            writeTooManyRequests(response, "Muitas requisições. Tente novamente em instantes.");
             return;
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    static void writeTooManyRequests(HttpServletResponse response, String message) throws IOException {
+        response.setStatus(429);
+        response.setContentType(MediaType.APPLICATION_JSON_VALUE);
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("message", message);
+        body.put("code", "RATE_LIMIT_EXCEEDED");
+        String correlationId = MDC.get(CorrelationIdFilter.MDC_KEY);
+        if (correlationId != null && !correlationId.isBlank()) {
+            body.put("correlationId", correlationId);
+        }
+        String traceId = MDC.get(CorrelationIdFilter.MDC_TRACE);
+        if (traceId != null && !traceId.isBlank()) {
+            body.put("traceId", traceId);
+        }
+        response.getWriter().write(new ObjectMapper().writeValueAsString(body));
     }
 
     private void evictExpiredCounters(long now) {

@@ -2,9 +2,12 @@ package br.com.nutriplus.support;
 
 import br.com.nutriplus.infrastructure.security.PasswordMustChangeFilter;
 import br.com.nutriplus.infrastructure.security.RateLimitFilter;
+import br.com.nutriplus.infrastructure.security.RiskEvaluationFilter;
+import br.com.nutriplus.infrastructure.security.UserRateLimitFilter;
 import br.com.nutriplus.infrastructure.web.CorrelationIdFilter;
 import br.com.nutriplus.infrastructure.web.IdempotencyFilter;
 import br.com.nutriplus.infrastructure.web.MdcUserFilter;
+import br.com.nutriplus.infrastructure.web.MetricsTokenFilter;
 import br.com.nutriplus.infrastructure.web.RequestPerformanceFilter;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
@@ -16,6 +19,15 @@ public abstract class WebMvcTestSupport {
 
     @MockBean
     private RateLimitFilter rateLimitFilter;
+
+    @MockBean
+    private UserRateLimitFilter userRateLimitFilter;
+
+    @MockBean
+    private RiskEvaluationFilter riskEvaluationFilter;
+
+    @MockBean
+    private MetricsTokenFilter metricsTokenFilter;
 
     @MockBean
     private CorrelationIdFilter correlationIdFilter;

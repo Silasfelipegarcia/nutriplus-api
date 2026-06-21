@@ -3,11 +3,18 @@ package br.com.nutriplus.dto.response;
 import br.com.nutriplus.domain.enums.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public record NutritionProfileResponse(
         Long id,
         Integer age,
+        LocalDate birthDate,
+        String stateCode,
+        String city,
+        ChewingDifficulty chewingDifficulty,
+        boolean seniorWeightLossAck,
+        String lifeStage,
         Sex sex,
         BigDecimal heightCm,
         BigDecimal currentWeightKg,
@@ -21,6 +28,7 @@ public record NutritionProfileResponse(
         String foodLikes,
         String foodDislikes,
         String mealNotes,
+        FoodBudgetLevel foodBudgetLevel,
         CalculationMethod calculationMethod,
         BigDecimal bodyFatPercent,
         BigDecimal leanMassKg,
@@ -31,6 +39,7 @@ public record NutritionProfileResponse(
         BigDecimal targetProteinG,
         BigDecimal targetCarbsG,
         BigDecimal targetFatG,
+        BigDecimal trainingDailyExtraKcal,
         LocalDateTime updatedAt,
         boolean athleteModeEnabled,
         String wakeTime,

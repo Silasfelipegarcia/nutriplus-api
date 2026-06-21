@@ -5,6 +5,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 @ConfigurationProperties(prefix = "nutriplus.ai-agent")
 public record AiAgentProperties(
         String baseUrl,
+        String internalToken,
         int connectTimeoutSeconds,
         int readTimeoutSeconds,
         int healthTimeoutSeconds,

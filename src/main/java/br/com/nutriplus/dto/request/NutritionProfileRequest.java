@@ -4,9 +4,15 @@ import br.com.nutriplus.domain.enums.*;
 import jakarta.validation.constraints.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 public record NutritionProfileRequest(
         @NotNull @Min(10) @Max(120) Integer age,
+        LocalDate birthDate,
+        @Size(max = 2) String stateCode,
+        @Size(max = 120) String city,
+        ChewingDifficulty chewingDifficulty,
+        Boolean seniorWeightLossAck,
         @NotNull Sex sex,
         @NotNull @DecimalMin("100.0") @DecimalMax("250.0") BigDecimal heightCm,
         @NotNull @DecimalMin("30.0") @DecimalMax("300.0") BigDecimal currentWeightKg,
@@ -20,6 +26,7 @@ public record NutritionProfileRequest(
         @Size(max = 2000) String foodLikes,
         @Size(max = 2000) String foodDislikes,
         @Size(max = 2000) String mealNotes,
+        FoodBudgetLevel foodBudgetLevel,
         CalculationMethod calculationMethod,
         @DecimalMin("5.0") @DecimalMax("60.0") BigDecimal bodyFatPercent,
         @DecimalMin("20.0") @DecimalMax("200.0") BigDecimal muscleMassKg,
@@ -32,5 +39,9 @@ public record NutritionProfileRequest(
 ) {
     public CalculationMethod resolvedCalculationMethod() {
         return calculationMethod != null ? calculationMethod : CalculationMethod.ESTIMATE;
+    }
+
+    public FoodBudgetLevel resolvedFoodBudgetLevel() {
+        return foodBudgetLevel != null ? foodBudgetLevel : FoodBudgetLevel.MODERATE;
     }
 }

@@ -1,9 +1,11 @@
 package br.com.nutriplus.mapper;
 
 import br.com.nutriplus.client.dto.AiShoppingGuidanceDto;
+import br.com.nutriplus.client.dto.AiShoppingSwapOptionDto;
 import br.com.nutriplus.domain.entity.*;
 import br.com.nutriplus.domain.enums.PlanSource;
 import br.com.nutriplus.domain.model.User;
+import br.com.nutriplus.domain.util.LifeStageUtil;
 import br.com.nutriplus.dto.response.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -58,9 +60,19 @@ public class ResponseMapper {
     }
 
     public NutritionProfileResponse toNutritionProfileResponse(NutritionProfile profile) {
+        String lifeStage = profile.getBirthDate() != null
+                ? LifeStageUtil.resolveFromBirthDate(profile.getBirthDate()).name()
+                : LifeStageUtil.resolve(profile.getAge()).name();
+
         return new NutritionProfileResponse(
                 profile.getId(),
                 profile.getAge(),
+                profile.getBirthDate(),
+                profile.getStateCode(),
+                profile.getCity(),
+                profile.getChewingDifficulty(),
+                profile.isSeniorWeightLossAck(),
+                lifeStage,
                 profile.getSex(),
                 profile.getHeightCm(),
                 profile.getCurrentWeightKg(),
@@ -74,6 +86,7 @@ public class ResponseMapper {
                 profile.getFoodLikes(),
                 profile.getFoodDislikes(),
                 profile.getMealNotes(),
+                profile.getFoodBudgetLevel(),
                 profile.getCalculationMethod(),
                 profile.getBodyFatPercent(),
                 profile.getLeanMassKg(),
@@ -84,6 +97,7 @@ public class ResponseMapper {
                 profile.getTargetProteinG(),
                 profile.getTargetCarbsG(),
                 profile.getTargetFatG(),
+                profile.getTrainingDailyExtraKcal(),
                 profile.getUpdatedAt(),
                 profile.isAthleteModeEnabled(),
                 formatTime(profile.getWakeTime()),
@@ -112,6 +126,10 @@ public class ResponseMapper {
                 plan.getCreatedAt(),
                 plan.getMedicalReviewStatus(),
                 plan.getMedicalReviewNotes(),
+                plan.getDietReviewStatus(),
+                plan.getDietReviewNotes(),
+                plan.getSeniorReviewStatus(),
+                plan.getSeniorReviewNotes(),
                 plan.getPlanSource() != null ? plan.getPlanSource().name() : PlanSource.AI_ONLY.name()
         );
     }
@@ -156,21 +174,36 @@ public class ResponseMapper {
                         item.getProteinLeanness(),
                         item.getKcalEstimate(),
                         item.getExplanation(),
-                        parseAlternatives(item.getAlternativesJson())
+                        parseAlternatives(item.getAlternativesJson()),
+                        item.getSwapGroup(),
+                        parseSwapOptions(item.getSwapOptionsJson()),
+                        parseStringList(item.getMarketTipsJson()),
+                        item.getDefaultOptionId(),
+                        item.getRecommendedOptionId(),
+                        item.getSelectedSwapId()
                 ))
                 .toList();
 
+        boolean pendingSwapReview = list.getItems().stream()
+                .anyMatch(item -> hasSwapOptions(item) && (item.getSelectedSwapId() == null || item.getSelectedSwapId().isBlank()));
+
         return new ShoppingListResponse(
                 list.getId(),
+                list.getMealPlan() != null ? list.getMealPlan().getId() : null,
                 list.getWeekStart(),
                 list.getWeekEnd(),
                 items,
                 parseGuidance(list.getGuidanceJson()),
+                pendingSwapReview,
                 list.getCreatedAt()
         );
     }
 
     private List<String> parseAlternatives(String json) {
+        return parseStringList(json);
+    }
+
+    private List<String> parseStringList(String json) {
         if (json == null || json.isBlank()) {
             return List.of();
         }
@@ -179,6 +212,34 @@ public class ResponseMapper {
         } catch (Exception e) {
             return List.of();
         }
+    }
+
+    private List<ShoppingSwapOptionResponse> parseSwapOptions(String json) {
+        if (json == null || json.isBlank()) {
+            return List.of();
+        }
+        try {
+            List<AiShoppingSwapOptionDto> dtos = objectMapper.readValue(json, new TypeReference<List<AiShoppingSwapOptionDto>>() {});
+            return dtos.stream()
+                    .map(o -> new ShoppingSwapOptionResponse(
+                            o.id(),
+                            o.label(),
+                            o.costTier(),
+                            o.whyCheaper(),
+                            o.proteinLeanness(),
+                            o.kcalEstimate(),
+                            o.matchesMealFoods() != null ? o.matchesMealFoods() : List.of()
+                    ))
+                    .toList();
+        } catch (Exception e) {
+            return List.of();
+        }
+    }
+
+    private boolean hasSwapOptions(ShoppingListItem item) {
+        return item.getSwapOptionsJson() != null
+                && !item.getSwapOptionsJson().isBlank()
+                && !item.getSwapOptionsJson().equals("[]");
     }
 
     private ShoppingGuidanceResponse parseGuidance(String json) {
@@ -195,7 +256,7 @@ public class ResponseMapper {
                             o.id(), o.label(), o.kcalEstimate(), o.impactSummary(),
                             o.deficitPercent(), o.daysDelay(), o.evandroStatus(), o.evandroNote()))
                     .toList();
-            return new ShoppingGuidanceResponse(tips, flex, dto.weeklyImpactSummary());
+            return new ShoppingGuidanceResponse(tips, flex, dto.weeklyImpactSummary(), dto.budgetSummary());
         } catch (Exception e) {
             return null;
         }

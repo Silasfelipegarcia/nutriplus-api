@@ -17,6 +17,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalTime;
+import java.time.LocalDate;
+import java.time.Period;
 import java.time.format.DateTimeFormatter;
 
 @Service
@@ -94,7 +96,20 @@ public class NutritionProfileService {
     }
 
     private void applyRequest(NutritionProfile profile, NutritionProfileRequest request) {
-        profile.setAge(request.age());
+        if (request.birthDate() != null) {
+            profile.setBirthDate(request.birthDate());
+            profile.setAge(Period.between(request.birthDate(), LocalDate.now()).getYears());
+        } else {
+            profile.setAge(request.age());
+        }
+        profile.setStateCode(request.stateCode());
+        profile.setCity(request.city());
+        if (request.chewingDifficulty() != null) {
+            profile.setChewingDifficulty(request.chewingDifficulty());
+        }
+        if (request.seniorWeightLossAck() != null) {
+            profile.setSeniorWeightLossAck(request.seniorWeightLossAck());
+        }
         profile.setSex(request.sex());
         profile.setHeightCm(request.heightCm());
         profile.setCurrentWeightKg(request.currentWeightKg());
@@ -108,6 +123,7 @@ public class NutritionProfileService {
         profile.setFoodLikes(request.foodLikes());
         profile.setFoodDislikes(request.foodDislikes());
         profile.setMealNotes(request.mealNotes());
+        profile.setFoodBudgetLevel(request.resolvedFoodBudgetLevel());
         profile.setCalculationMethod(request.resolvedCalculationMethod());
         profile.setBodyFatPercent(request.bodyFatPercent());
         profile.setMuscleMassKg(request.muscleMassKg());

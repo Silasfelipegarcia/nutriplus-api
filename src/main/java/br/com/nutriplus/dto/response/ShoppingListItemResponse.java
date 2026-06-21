@@ -11,6 +11,12 @@ public record ShoppingListItemResponse(
         String proteinLeanness,
         Integer kcalEstimate,
         String explanation,
-        List<String> alternatives
+        List<String> alternatives,
+        String swapGroup,
+        List<ShoppingSwapOptionResponse> swapOptions,
+        List<String> marketTips,
+        String defaultOptionId,
+        String recommendedOptionId,
+        String selectedSwapId
 ) {
 }

@@ -63,3 +63,16 @@ groups:
         annotations:
           summary: "LLM no agente lento (p95 > 30s)"
           description: "provider={{ $labels.provider }}"
+
+  - name: nutriplus-security
+    rules:
+      - alert: NutriplusSecurityRiskSpike
+        expr: |
+          sum(rate(nutriplus_security_risk_evaluations_total{action="block"}[5m])) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: "Spike de requisições bloqueadas pelo motor de risco"
+          description: "Verifique security_events e logs 429/403"

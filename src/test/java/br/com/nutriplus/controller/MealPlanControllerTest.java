@@ -75,6 +75,10 @@ class MealPlanControllerTest extends WebMvcTestSupport {
                         LocalDateTime.now(),
                         "APPROVED",
                         null,
+                        null,
+                        null,
+                        null,
+                        null,
                         "AI"
                 )
         );

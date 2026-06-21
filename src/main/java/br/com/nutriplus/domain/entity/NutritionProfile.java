@@ -6,6 +6,7 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 
@@ -23,6 +24,22 @@ public class NutritionProfile {
 
     @Column(nullable = false)
     private Integer age;
+
+    @Column(name = "birth_date")
+    private LocalDate birthDate;
+
+    @Column(name = "state_code", length = 2)
+    private String stateCode;
+
+    @Column(length = 120)
+    private String city;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "chewing_difficulty", nullable = false)
+    private ChewingDifficulty chewingDifficulty = ChewingDifficulty.NONE;
+
+    @Column(name = "senior_weight_loss_ack", nullable = false)
+    private boolean seniorWeightLossAck = false;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -68,6 +85,10 @@ public class NutritionProfile {
 
     @Column(name = "meal_notes", columnDefinition = "TEXT")
     private String mealNotes;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "food_budget_level", nullable = false)
+    private FoodBudgetLevel foodBudgetLevel = FoodBudgetLevel.MODERATE;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "calculation_method", nullable = false)
@@ -142,6 +163,11 @@ public class NutritionProfile {
         this.id = builder.id;
         this.user = builder.user;
         this.age = builder.age;
+        this.birthDate = builder.birthDate;
+        this.stateCode = builder.stateCode;
+        this.city = builder.city;
+        this.chewingDifficulty = builder.chewingDifficulty != null ? builder.chewingDifficulty : ChewingDifficulty.NONE;
+        this.seniorWeightLossAck = builder.seniorWeightLossAck;
         this.sex = builder.sex;
         this.heightCm = builder.heightCm;
         this.currentWeightKg = builder.currentWeightKg;
@@ -155,6 +181,7 @@ public class NutritionProfile {
         this.foodLikes = builder.foodLikes;
         this.foodDislikes = builder.foodDislikes;
         this.mealNotes = builder.mealNotes;
+        this.foodBudgetLevel = builder.foodBudgetLevel != null ? builder.foodBudgetLevel : FoodBudgetLevel.MODERATE;
         this.calculationMethod = builder.calculationMethod != null ? builder.calculationMethod : CalculationMethod.ESTIMATE;
         this.bodyFatPercent = builder.bodyFatPercent;
         this.leanMassKg = builder.leanMassKg;
@@ -205,6 +232,46 @@ public class NutritionProfile {
 
     public void setAge(Integer age) {
         this.age = age;
+    }
+
+    public LocalDate getBirthDate() {
+        return birthDate;
+    }
+
+    public void setBirthDate(LocalDate birthDate) {
+        this.birthDate = birthDate;
+    }
+
+    public String getStateCode() {
+        return stateCode;
+    }
+
+    public void setStateCode(String stateCode) {
+        this.stateCode = stateCode;
+    }
+
+    public String getCity() {
+        return city;
+    }
+
+    public void setCity(String city) {
+        this.city = city;
+    }
+
+    public ChewingDifficulty getChewingDifficulty() {
+        return chewingDifficulty;
+    }
+
+    public void setChewingDifficulty(ChewingDifficulty chewingDifficulty) {
+        this.chewingDifficulty = chewingDifficulty != null ? chewingDifficulty : ChewingDifficulty.NONE;
+    }
+
+    public boolean isSeniorWeightLossAck() {
+        return seniorWeightLossAck;
+    }
+
+    public void setSeniorWeightLossAck(boolean seniorWeightLossAck) {
+        this.seniorWeightLossAck = seniorWeightLossAck;
     }
 
     public Sex getSex() {
@@ -309,6 +376,14 @@ public class NutritionProfile {
 
     public void setMealNotes(String mealNotes) {
         this.mealNotes = mealNotes;
+    }
+
+    public FoodBudgetLevel getFoodBudgetLevel() {
+        return foodBudgetLevel;
+    }
+
+    public void setFoodBudgetLevel(FoodBudgetLevel foodBudgetLevel) {
+        this.foodBudgetLevel = foodBudgetLevel != null ? foodBudgetLevel : FoodBudgetLevel.MODERATE;
     }
 
     public CalculationMethod getCalculationMethod() {
@@ -483,6 +558,11 @@ public class NutritionProfile {
         private Long id;
         private User user;
         private Integer age;
+        private LocalDate birthDate;
+        private String stateCode;
+        private String city;
+        private ChewingDifficulty chewingDifficulty = ChewingDifficulty.NONE;
+        private boolean seniorWeightLossAck;
         private Sex sex;
         private BigDecimal heightCm;
         private BigDecimal currentWeightKg;
@@ -496,6 +576,7 @@ public class NutritionProfile {
         private String foodLikes;
         private String foodDislikes;
         private String mealNotes;
+        private FoodBudgetLevel foodBudgetLevel = FoodBudgetLevel.MODERATE;
         private CalculationMethod calculationMethod;
         private BigDecimal bodyFatPercent;
         private BigDecimal leanMassKg;
@@ -530,6 +611,31 @@ public class NutritionProfile {
 
         public Builder age(Integer age) {
             this.age = age;
+            return this;
+        }
+
+        public Builder birthDate(LocalDate birthDate) {
+            this.birthDate = birthDate;
+            return this;
+        }
+
+        public Builder stateCode(String stateCode) {
+            this.stateCode = stateCode;
+            return this;
+        }
+
+        public Builder city(String city) {
+            this.city = city;
+            return this;
+        }
+
+        public Builder chewingDifficulty(ChewingDifficulty chewingDifficulty) {
+            this.chewingDifficulty = chewingDifficulty;
+            return this;
+        }
+
+        public Builder seniorWeightLossAck(boolean seniorWeightLossAck) {
+            this.seniorWeightLossAck = seniorWeightLossAck;
             return this;
         }
 
@@ -595,6 +701,11 @@ public class NutritionProfile {
 
         public Builder mealNotes(String mealNotes) {
             this.mealNotes = mealNotes;
+            return this;
+        }
+
+        public Builder foodBudgetLevel(FoodBudgetLevel foodBudgetLevel) {
+            this.foodBudgetLevel = foodBudgetLevel;
             return this;
         }
 

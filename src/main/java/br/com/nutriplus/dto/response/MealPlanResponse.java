@@ -17,6 +17,10 @@ public record MealPlanResponse(
         LocalDateTime createdAt,
         String medicalReviewStatus,
         String medicalReviewNotes,
+        String dietReviewStatus,
+        String dietReviewNotes,
+        String seniorReviewStatus,
+        String seniorReviewNotes,
         String planSource
 ) {
 }
