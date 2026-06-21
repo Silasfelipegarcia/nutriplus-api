@@ -45,6 +45,7 @@ public class ProgressService {
     private final AiAgentClient aiAgentClient;
     private final ObjectMapper objectMapper;
     private final EvolutionReportBuilder evolutionReportBuilder;
+    private final HealthReferenceService healthReferenceService;
 
     public ProgressService(CurrentUser currentUser,
                            NutritionProfileRepository nutritionProfileRepository,
@@ -54,7 +55,8 @@ public class ProgressService {
                            CheckinService checkinService,
                            AiAgentClient aiAgentClient,
                            ObjectMapper objectMapper,
-                           EvolutionReportBuilder evolutionReportBuilder) {
+                           EvolutionReportBuilder evolutionReportBuilder,
+                           HealthReferenceService healthReferenceService) {
         this.currentUser = currentUser;
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.measurementRepository = measurementRepository;
@@ -64,6 +66,7 @@ public class ProgressService {
         this.aiAgentClient = aiAgentClient;
         this.objectMapper = objectMapper;
         this.evolutionReportBuilder = evolutionReportBuilder;
+        this.healthReferenceService = healthReferenceService;
     }
 
     public ProgressScheduleResponse getSchedule() {
@@ -262,10 +265,13 @@ public class ProgressService {
                 good,
                 ok,
                 below,
-                buildHeadline(excellent, good, below, profile.getGoal().name()),
+                buildHeadline(excellent, good, below, profile.getGoal().name(), profile.isAthleteModeEnabled()),
                 stats.weekAdherencePercent(),
                 stats.streakDays(),
-                latestReview
+                latestReview,
+                profile.getHeightCm(),
+                healthReferenceService.buildHealthSnapshot(profile, baseline, latest),
+                HealthReferenceService.HEALTH_DISCLAIMER
         );
     }
 
@@ -288,7 +294,18 @@ public class ProgressService {
         );
     }
 
-    private String buildHeadline(int excellent, int good, int below, String goal) {
+    private String buildHeadline(int excellent, int good, int below, String goal, boolean athleteMode) {
+        if (athleteMode) {
+            if (excellent >= 4) {
+                return "Evolução excelente nos grupos medidos — padrão de sucesso!";
+            }
+            if (below >= 2) {
+                return "Alguns grupos musculares pedem reajuste — revise treino, proteína e recuperação.";
+            }
+            if (good + excellent >= 4) {
+                return "Boa evolução corporal — continue medindo peito, braços e coxas.";
+            }
+        }
         if (excellent >= 3) {
             return "Evolução excelente — você está no caminho certo!";
         }
@@ -303,6 +320,10 @@ public class ProgressService {
             case "GAIN_MASS" -> "Acompanhe braços e coxas para ver o músculo crescer.";
             default -> "Sua evolução no período, ponto a ponto.";
         };
+    }
+
+    private String buildHeadline(int excellent, int good, int below, String goal) {
+        return buildHeadline(excellent, good, below, goal, false);
     }
 
     private NutritionProfile requireProfile(Long userId) {

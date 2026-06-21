@@ -30,6 +30,7 @@ public class PatientDossierService {
     private final ProMapper proMapper;
     private final EvolutionReportBuilder evolutionReportBuilder;
     private final ProgressService progressService;
+    private final HealthReferenceService healthReferenceService;
 
     public PatientDossierService(AuthorizationService authorizationService,
                                  NutritionProfileRepository nutritionProfileRepository,
@@ -41,7 +42,8 @@ public class PatientDossierService {
                                  ResponseMapper responseMapper,
                                  ProMapper proMapper,
                                  EvolutionReportBuilder evolutionReportBuilder,
-                                 ProgressService progressService) {
+                                 ProgressService progressService,
+                                 HealthReferenceService healthReferenceService) {
         this.authorizationService = authorizationService;
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.measurementRepository = measurementRepository;
@@ -53,6 +55,7 @@ public class PatientDossierService {
         this.proMapper = proMapper;
         this.evolutionReportBuilder = evolutionReportBuilder;
         this.progressService = progressService;
+        this.healthReferenceService = healthReferenceService;
     }
 
     public PatientDossierResponse getDossier(Long patientId) {
@@ -131,7 +134,10 @@ public class PatientDossierService {
                 "Evolução do paciente",
                 stats.weekAdherencePercent(),
                 stats.streakDays(),
-                null
+                null,
+                profile.getHeightCm(),
+                healthReferenceService.buildHealthSnapshot(profile, baseline, latest),
+                HealthReferenceService.HEALTH_DISCLAIMER
         );
     }
 

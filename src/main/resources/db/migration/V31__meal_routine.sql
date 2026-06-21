@@ -1,0 +1,7 @@
+ALTER TABLE nutrition_profiles
+    ADD COLUMN eats_breakfast BOOLEAN NOT NULL DEFAULT TRUE,
+    ADD COLUMN eats_lunch BOOLEAN NOT NULL DEFAULT TRUE,
+    ADD COLUMN eats_afternoon_snack BOOLEAN NOT NULL DEFAULT FALSE,
+    ADD COLUMN eats_dinner BOOLEAN NOT NULL DEFAULT TRUE,
+    ADD COLUMN open_to_routine_adjustment BOOLEAN NOT NULL DEFAULT FALSE,
+    ADD COLUMN free_extras_json JSON NULL;

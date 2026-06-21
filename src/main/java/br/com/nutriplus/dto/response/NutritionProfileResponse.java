@@ -28,6 +28,12 @@ public record NutritionProfileResponse(
         String foodLikes,
         String foodDislikes,
         String mealNotes,
+        boolean eatsBreakfast,
+        boolean eatsLunch,
+        boolean eatsAfternoonSnack,
+        boolean eatsDinner,
+        boolean openToRoutineAdjustment,
+        java.util.List<String> freeExtras,
         FoodBudgetLevel foodBudgetLevel,
         CalculationMethod calculationMethod,
         BigDecimal bodyFatPercent,
@@ -47,6 +53,7 @@ public record NutritionProfileResponse(
         String healthConditions,
         String medications,
         String allergies,
-        String healthNotes
+        String healthNotes,
+        HealthIndicatorResponse bmiSnapshot
 ) {
 }

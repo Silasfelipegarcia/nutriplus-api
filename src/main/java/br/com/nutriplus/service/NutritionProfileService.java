@@ -123,6 +123,24 @@ public class NutritionProfileService {
         profile.setFoodLikes(request.foodLikes());
         profile.setFoodDislikes(request.foodDislikes());
         profile.setMealNotes(request.mealNotes());
+        if (request.eatsBreakfast() != null) {
+            profile.setEatsBreakfast(request.eatsBreakfast());
+        }
+        if (request.eatsLunch() != null) {
+            profile.setEatsLunch(request.eatsLunch());
+        }
+        if (request.eatsAfternoonSnack() != null) {
+            profile.setEatsAfternoonSnack(request.eatsAfternoonSnack());
+        }
+        if (request.eatsDinner() != null) {
+            profile.setEatsDinner(request.eatsDinner());
+        }
+        if (request.openToRoutineAdjustment() != null) {
+            profile.setOpenToRoutineAdjustment(request.openToRoutineAdjustment());
+        }
+        if (request.freeExtras() != null) {
+            profile.setFreeExtrasJson(toJson(request.freeExtras()));
+        }
         profile.setFoodBudgetLevel(request.resolvedFoodBudgetLevel());
         profile.setCalculationMethod(request.resolvedCalculationMethod());
         profile.setBodyFatPercent(request.bodyFatPercent());

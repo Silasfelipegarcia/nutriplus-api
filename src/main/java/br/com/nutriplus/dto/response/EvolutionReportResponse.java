@@ -18,6 +18,9 @@ public record EvolutionReportResponse(
         String headline,
         Integer weekAdherencePercent,
         Integer currentStreak,
-        ProgressReviewResponse latestReview
+        ProgressReviewResponse latestReview,
+        BigDecimal heightCm,
+        List<HealthIndicatorResponse> healthIndicators,
+        String healthDisclaimer
 ) {
 }

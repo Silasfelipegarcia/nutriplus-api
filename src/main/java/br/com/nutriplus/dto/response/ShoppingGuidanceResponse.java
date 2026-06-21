@@ -6,6 +6,9 @@ public record ShoppingGuidanceResponse(
         List<SatietyTipResponse> satietyTips,
         List<FlexibleOptionResponse> flexibleOptions,
         String weeklyImpactSummary,
-        String budgetSummary
+        String budgetSummary,
+        String routineCurrentSummary,
+        String routineSuggestedSummary,
+        String routineGentleNote
 ) {
 }

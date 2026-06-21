@@ -148,6 +148,24 @@ public class NutritionProfile {
     @Column(name = "health_notes", columnDefinition = "TEXT")
     private String healthNotes;
 
+    @Column(name = "eats_breakfast", nullable = false)
+    private boolean eatsBreakfast = true;
+
+    @Column(name = "eats_lunch", nullable = false)
+    private boolean eatsLunch = true;
+
+    @Column(name = "eats_afternoon_snack", nullable = false)
+    private boolean eatsAfternoonSnack = false;
+
+    @Column(name = "eats_dinner", nullable = false)
+    private boolean eatsDinner = true;
+
+    @Column(name = "open_to_routine_adjustment", nullable = false)
+    private boolean openToRoutineAdjustment = false;
+
+    @Column(name = "free_extras_json", columnDefinition = "json")
+    private String freeExtrasJson;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -202,6 +220,12 @@ public class NutritionProfile {
         this.medications = builder.medications;
         this.allergies = builder.allergies;
         this.healthNotes = builder.healthNotes;
+        this.eatsBreakfast = builder.eatsBreakfast;
+        this.eatsLunch = builder.eatsLunch;
+        this.eatsAfternoonSnack = builder.eatsAfternoonSnack;
+        this.eatsDinner = builder.eatsDinner;
+        this.openToRoutineAdjustment = builder.openToRoutineAdjustment;
+        this.freeExtrasJson = builder.freeExtrasJson;
         this.createdAt = builder.createdAt;
         this.updatedAt = builder.updatedAt;
     }
@@ -538,6 +562,54 @@ public class NutritionProfile {
         this.healthNotes = healthNotes;
     }
 
+    public boolean isEatsBreakfast() {
+        return eatsBreakfast;
+    }
+
+    public void setEatsBreakfast(boolean eatsBreakfast) {
+        this.eatsBreakfast = eatsBreakfast;
+    }
+
+    public boolean isEatsLunch() {
+        return eatsLunch;
+    }
+
+    public void setEatsLunch(boolean eatsLunch) {
+        this.eatsLunch = eatsLunch;
+    }
+
+    public boolean isEatsAfternoonSnack() {
+        return eatsAfternoonSnack;
+    }
+
+    public void setEatsAfternoonSnack(boolean eatsAfternoonSnack) {
+        this.eatsAfternoonSnack = eatsAfternoonSnack;
+    }
+
+    public boolean isEatsDinner() {
+        return eatsDinner;
+    }
+
+    public void setEatsDinner(boolean eatsDinner) {
+        this.eatsDinner = eatsDinner;
+    }
+
+    public boolean isOpenToRoutineAdjustment() {
+        return openToRoutineAdjustment;
+    }
+
+    public void setOpenToRoutineAdjustment(boolean openToRoutineAdjustment) {
+        this.openToRoutineAdjustment = openToRoutineAdjustment;
+    }
+
+    public String getFreeExtrasJson() {
+        return freeExtrasJson;
+    }
+
+    public void setFreeExtrasJson(String freeExtrasJson) {
+        this.freeExtrasJson = freeExtrasJson;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -596,6 +668,12 @@ public class NutritionProfile {
         private String medications;
         private String allergies;
         private String healthNotes;
+        private boolean eatsBreakfast = true;
+        private boolean eatsLunch = true;
+        private boolean eatsAfternoonSnack = false;
+        private boolean eatsDinner = true;
+        private boolean openToRoutineAdjustment = false;
+        private String freeExtrasJson;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
 
