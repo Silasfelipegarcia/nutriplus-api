@@ -230,6 +230,44 @@ SELECT * FROM audit_log WHERE correlation_id = '<cid>' ORDER BY created_at DESC;
 
 ---
 
+## Runbook — incidente e ataque
+
+### Usuário reporta erro
+
+1. Obter `correlationId` do app (rodapé do erro: `Suporte: #...`) ou JSON da API.
+2. Logs API: `grep "<correlationId>"` → path, duração, `userId`.
+3. Logs agente: mesmo `X-Correlation-Id`.
+4. SQL:
+   ```sql
+   SELECT * FROM ai_requests_log WHERE correlation_id = '...';
+   SELECT * FROM security_events ORDER BY created_at DESC LIMIT 20;
+   ```
+
+### Sinais de ataque (manual / alertas)
+
+| Sinal | Onde | Ação |
+|-------|------|------|
+| Spike 429 | Logs `RATE_LIMIT_EXCEEDED` | Ver IP em `security_events`; ajustar WAF |
+| Spike 401 `/auth/login` | Logs + `security_events` | Possível credential stuffing |
+| Alert `NutriplusSecurityRiskSpike` | Prometheus | Revisar `security_events` blocked=true |
+| Jobs FAILED `AI_AGENT_ERROR` | `meal_plan_generation_jobs` | Agente down ou circuit breaker aberto |
+| CPU/RAM Railway | Dashboard | Escalar ou limitar Tier C |
+
+### Health pós-deploy
+
+```bash
+curl -s http://localhost:8080/actuator/health/readiness | jq .
+curl -s http://localhost:8000/health | jq .
+```
+
+Prometheus (com token):
+
+```bash
+curl -s -H "X-Metrics-Token: $METRICS_SCRAPE_TOKEN" http://localhost:8080/actuator/prometheus | head
+```
+
+---
+
 ## Roadmap
 
 | Prioridade | Item | Repositório | Status |

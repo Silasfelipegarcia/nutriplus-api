@@ -41,6 +41,26 @@ public class ShoppingListItem {
     @Column(name = "alternatives_json", columnDefinition = "json")
     private String alternativesJson;
 
+    @Column(name = "swap_group", length = 64)
+    private String swapGroup;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "swap_options_json", columnDefinition = "json")
+    private String swapOptionsJson;
+
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "market_tips_json", columnDefinition = "json")
+    private String marketTipsJson;
+
+    @Column(name = "selected_swap_id", length = 64)
+    private String selectedSwapId;
+
+    @Column(name = "default_option_id", length = 64)
+    private String defaultOptionId;
+
+    @Column(name = "recommended_option_id", length = 64)
+    private String recommendedOptionId;
+
     protected ShoppingListItem() {
     }
 
@@ -55,6 +75,12 @@ public class ShoppingListItem {
         this.kcalEstimate = builder.kcalEstimate;
         this.explanation = builder.explanation;
         this.alternativesJson = builder.alternativesJson;
+        this.swapGroup = builder.swapGroup;
+        this.swapOptionsJson = builder.swapOptionsJson;
+        this.marketTipsJson = builder.marketTipsJson;
+        this.selectedSwapId = builder.selectedSwapId;
+        this.defaultOptionId = builder.defaultOptionId;
+        this.recommendedOptionId = builder.recommendedOptionId;
     }
 
     public static Builder builder() {
@@ -141,6 +167,54 @@ public class ShoppingListItem {
         this.alternativesJson = alternativesJson;
     }
 
+    public String getSwapGroup() {
+        return swapGroup;
+    }
+
+    public void setSwapGroup(String swapGroup) {
+        this.swapGroup = swapGroup;
+    }
+
+    public String getSwapOptionsJson() {
+        return swapOptionsJson;
+    }
+
+    public void setSwapOptionsJson(String swapOptionsJson) {
+        this.swapOptionsJson = swapOptionsJson;
+    }
+
+    public String getMarketTipsJson() {
+        return marketTipsJson;
+    }
+
+    public void setMarketTipsJson(String marketTipsJson) {
+        this.marketTipsJson = marketTipsJson;
+    }
+
+    public String getSelectedSwapId() {
+        return selectedSwapId;
+    }
+
+    public void setSelectedSwapId(String selectedSwapId) {
+        this.selectedSwapId = selectedSwapId;
+    }
+
+    public String getDefaultOptionId() {
+        return defaultOptionId;
+    }
+
+    public void setDefaultOptionId(String defaultOptionId) {
+        this.defaultOptionId = defaultOptionId;
+    }
+
+    public String getRecommendedOptionId() {
+        return recommendedOptionId;
+    }
+
+    public void setRecommendedOptionId(String recommendedOptionId) {
+        this.recommendedOptionId = recommendedOptionId;
+    }
+
     public static class Builder {
         private Long id;
         private ShoppingList shoppingList;
@@ -152,6 +226,12 @@ public class ShoppingListItem {
         private Integer kcalEstimate;
         private String explanation;
         private String alternativesJson;
+        private String swapGroup;
+        private String swapOptionsJson;
+        private String marketTipsJson;
+        private String selectedSwapId;
+        private String defaultOptionId;
+        private String recommendedOptionId;
 
         public Builder id(Long id) {
             this.id = id;
@@ -200,6 +280,36 @@ public class ShoppingListItem {
 
         public Builder alternativesJson(String alternativesJson) {
             this.alternativesJson = alternativesJson;
+            return this;
+        }
+
+        public Builder swapGroup(String swapGroup) {
+            this.swapGroup = swapGroup;
+            return this;
+        }
+
+        public Builder swapOptionsJson(String swapOptionsJson) {
+            this.swapOptionsJson = swapOptionsJson;
+            return this;
+        }
+
+        public Builder marketTipsJson(String marketTipsJson) {
+            this.marketTipsJson = marketTipsJson;
+            return this;
+        }
+
+        public Builder selectedSwapId(String selectedSwapId) {
+            this.selectedSwapId = selectedSwapId;
+            return this;
+        }
+
+        public Builder defaultOptionId(String defaultOptionId) {
+            this.defaultOptionId = defaultOptionId;
+            return this;
+        }
+
+        public Builder recommendedOptionId(String recommendedOptionId) {
+            this.recommendedOptionId = recommendedOptionId;
             return this;
         }
 

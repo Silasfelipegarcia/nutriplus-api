@@ -6,10 +6,12 @@ import java.util.List;
 
 public record ShoppingListResponse(
         Long id,
+        Long mealPlanId,
         LocalDate weekStart,
         LocalDate weekEnd,
         List<ShoppingListItemResponse> items,
         ShoppingGuidanceResponse guidance,
+        boolean pendingSwapReview,
         LocalDateTime createdAt
 ) {
 }

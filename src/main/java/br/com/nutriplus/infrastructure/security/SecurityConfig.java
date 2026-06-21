@@ -7,6 +7,7 @@ import br.com.nutriplus.infrastructure.config.CorsProperties;
 import br.com.nutriplus.infrastructure.config.IdempotencyProperties;
 import br.com.nutriplus.infrastructure.web.IdempotencyFilter;
 import br.com.nutriplus.infrastructure.web.IdempotencySupport;
+import br.com.nutriplus.infrastructure.web.MetricsTokenFilter;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -109,6 +110,7 @@ public class SecurityConfig {
             RequestPerformanceFilter requestPerformanceFilter,
             RateLimitFilter rateLimitFilter,
             IdempotencyFilter idempotencyFilter,
+            MetricsTokenFilter metricsTokenFilter,
             JsonSecurityHandlers jsonSecurityHandlers
     ) throws Exception {
         http
@@ -120,7 +122,9 @@ public class SecurityConfig {
                         "/webhooks/**",
                         "/actuator/health",
                         "/actuator/health/**",
-                        "/actuator/info")
+                        "/actuator/info",
+                        "/actuator/prometheus",
+                        "/actuator/metrics")
                 .csrf(csrf -> csrf.disable())
                 .cors(Customizer.withDefaults())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -132,6 +136,7 @@ public class SecurityConfig {
                         .accessDeniedHandler(jsonSecurityHandlers))
                 .addFilterBefore(correlationIdFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(requestPerformanceFilter, CorrelationIdFilter.class)
+                .addFilterAfter(metricsTokenFilter, RequestPerformanceFilter.class)
                 .addFilterAfter(idempotencyFilter, RequestPerformanceFilter.class)
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
@@ -145,6 +150,8 @@ public class SecurityConfig {
             CorrelationIdFilter correlationIdFilter,
             RequestPerformanceFilter requestPerformanceFilter,
             RateLimitFilter rateLimitFilter,
+            UserRateLimitFilter userRateLimitFilter,
+            RiskEvaluationFilter riskEvaluationFilter,
             MdcUserFilter mdcUserFilter,
             PasswordMustChangeFilter passwordMustChangeFilter,
             IdempotencyFilter idempotencyFilter,
@@ -156,7 +163,6 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/actuator/prometheus", "/actuator/metrics").authenticated()
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(jsonSecurityHandlers)
@@ -167,6 +173,8 @@ public class SecurityConfig {
                 .addFilterAfter(requestPerformanceFilter, CorrelationIdFilter.class)
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(mdcUserFilter, BearerTokenAuthenticationFilter.class)
+                .addFilterAfter(userRateLimitFilter, MdcUserFilter.class)
+                .addFilterAfter(riskEvaluationFilter, UserRateLimitFilter.class)
                 .addFilterAfter(passwordMustChangeFilter, BearerTokenAuthenticationFilter.class)
                 .addFilterAfter(idempotencyFilter, PasswordMustChangeFilter.class);
         return http.build();

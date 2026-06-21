@@ -111,6 +111,30 @@ k6 run perf/k6/generate-flow.js
 
 Polls `GET /meal-plans/generation-status` until `COMPLETED` or `FAILED`, then asserts `GET /meal-plans/latest` returns **200**.
 
+## k6 Tier A / B (capacity plan MVP)
+
+| Script | Tier | VUs | SLO p95 | Endpoints |
+|--------|------|-----|---------|-----------|
+| `perf/k6/smoke.js` | S | 5 | &lt; 200 ms | health, users/me, latest |
+| `perf/k6/tier-a-auth.js` | A | 10 | &lt; 500 ms | register, login |
+| `perf/k6/tier-b-profile.js` | B | 3 | &lt; 2000 ms | POST /nutrition-profile |
+| `perf/k6/generate-flow.js` | C | 1 | &lt; 30 s | generate + poll (manual) |
+
+```bash
+BASE_URL=http://localhost:8080 k6 run perf/k6/tier-a-auth.js
+BASE_URL=http://localhost:8080 k6 run perf/k6/tier-b-profile.js
+```
+
+**Capacity assumptions (single API instance, MVP):**
+
+- ~120 req/min/IP sustained (general)
+- ~20 req/min/IP on `/auth/**`
+- 3 meal-plan generations/hour/user
+- Hikari pool max 10 connections (prod)
+- LLM cost bound by user rate limit + circuit breaker on agent client
+
+**Multi-replica:** enable Redis (`spring.data.redis.host`) for shared rate limits — see `RedisRateLimitStore`.
+
 ## Spring Security testing
 
 - Use `@WithMockUser` or real JWT from register/login in integration tests

@@ -109,6 +109,10 @@ public class MealPlanGenerationProcessor {
                 .aiModel(aiResponse.aiModel())
                 .medicalReviewStatus(aiResponse.medicalReviewStatus())
                 .medicalReviewNotes(aiResponse.medicalReviewNotes())
+                .dietReviewStatus(aiResponse.dietReviewStatus())
+                .dietReviewNotes(aiResponse.dietReviewNotes())
+                .seniorReviewStatus(aiResponse.seniorReviewStatus())
+                .seniorReviewNotes(aiResponse.seniorReviewNotes())
                 .build();
 
         mealPlan = mealPlanRepository.save(mealPlan);
@@ -209,14 +213,9 @@ public class MealPlanGenerationProcessor {
 
         if (aiItems != null) {
             for (AiShoppingItemDto aiItem : aiItems) {
-                String alternativesJson = null;
-                try {
-                    if (aiItem.alternatives() != null && !aiItem.alternatives().isEmpty()) {
-                        alternativesJson = objectMapper.writeValueAsString(aiItem.alternatives());
-                    }
-                } catch (Exception ignored) {
-                    alternativesJson = null;
-                }
+                String alternativesJson = toJsonList(aiItem.alternatives());
+                String swapOptionsJson = toJsonList(aiItem.swapOptions());
+                String marketTipsJson = toJsonList(aiItem.marketTips());
                 ShoppingListItem item = ShoppingListItem.builder()
                         .shoppingList(shoppingList)
                         .itemName(aiItem.itemName())
@@ -227,11 +226,30 @@ public class MealPlanGenerationProcessor {
                         .kcalEstimate(aiItem.kcalEstimate())
                         .explanation(aiItem.explanation())
                         .alternativesJson(alternativesJson)
+                        .swapGroup(aiItem.swapGroup())
+                        .swapOptionsJson(swapOptionsJson)
+                        .marketTipsJson(marketTipsJson)
+                        .defaultOptionId(aiItem.defaultOptionId())
+                        .recommendedOptionId(aiItem.recommendedOptionId())
                         .build();
                 shoppingList.getItems().add(item);
             }
         }
 
         shoppingListRepository.save(shoppingList);
+    }
+
+    private String toJsonList(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof List<?> list && list.isEmpty()) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(value);
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 }

@@ -161,10 +161,19 @@ class MealPlanFlowIntegrationTest extends AbstractIntegrationTest {
                         "LEAN",
                         840,
                         "Fonte de proteína",
-                        List.of("Clara de ovo")
+                        List.of("Clara de ovo"),
+                        null,
+                        null,
+                        null,
+                        null,
+                        null
                 )),
                 null,
                 "APPROVED",
+                null,
+                null,
+                null,
+                null,
                 null
         );
     }

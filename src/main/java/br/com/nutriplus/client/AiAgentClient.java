@@ -6,10 +6,13 @@ import br.com.nutriplus.client.dto.AiNutritionCalculateResponse;
 import br.com.nutriplus.client.dto.AiProgressAnalyzeResponse;
 import br.com.nutriplus.domain.entity.BodyMeasurementSession;
 import br.com.nutriplus.domain.entity.NutritionProfile;
+import br.com.nutriplus.domain.util.LifeStageUtil;
 import br.com.nutriplus.exception.AiAgentException;
 import br.com.nutriplus.infrastructure.config.AiAgentProperties;
 import br.com.nutriplus.infrastructure.web.TraceContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import org.slf4j.Logger;
@@ -34,11 +37,16 @@ public class AiAgentClient {
     private final ObjectMapper objectMapper;
     private final MeterRegistry meterRegistry;
     private final HttpClient httpClient;
+    private final CircuitBreaker circuitBreaker;
 
-    public AiAgentClient(AiAgentProperties aiAgentProperties, ObjectMapper objectMapper, MeterRegistry meterRegistry) {
+    public AiAgentClient(AiAgentProperties aiAgentProperties,
+                         ObjectMapper objectMapper,
+                         MeterRegistry meterRegistry,
+                         CircuitBreaker aiAgentCircuitBreaker) {
         this.aiAgentProperties = aiAgentProperties;
         this.objectMapper = objectMapper;
         this.meterRegistry = meterRegistry;
+        this.circuitBreaker = aiAgentCircuitBreaker;
         this.httpClient = HttpClient.newBuilder()
                 .version(HttpClient.Version.HTTP_1_1)
                 .connectTimeout(Duration.ofSeconds(aiAgentProperties.connectTimeoutSeconds()))
@@ -117,6 +125,23 @@ public class AiAgentClient {
     private Map<String, Object> profileToMap(NutritionProfile profile) {
         Map<String, Object> body = new HashMap<>();
         body.put("age", profile.getAge());
+        if (profile.getBirthDate() != null) {
+            body.put("birthDate", profile.getBirthDate().toString());
+        }
+        if (profile.getStateCode() != null && !profile.getStateCode().isBlank()) {
+            body.put("stateCode", profile.getStateCode());
+        }
+        if (profile.getCity() != null && !profile.getCity().isBlank()) {
+            body.put("city", profile.getCity());
+        }
+        if (profile.getChewingDifficulty() != null) {
+            body.put("chewingDifficulty", profile.getChewingDifficulty().name());
+        }
+        String lifeStage = profile.getBirthDate() != null
+                ? LifeStageUtil.resolveFromBirthDate(profile.getBirthDate()).name()
+                : LifeStageUtil.resolve(profile.getAge()).name();
+        body.put("lifeStage", lifeStage);
+        body.put("seniorWeightLossAck", profile.isSeniorWeightLossAck());
         body.put("sex", profile.getSex().name());
         body.put("heightCm", profile.getHeightCm());
         body.put("currentWeightKg", profile.getCurrentWeightKg());
@@ -139,6 +164,9 @@ public class AiAgentClient {
         }
         if (profile.getMealNotes() != null && !profile.getMealNotes().isBlank()) {
             body.put("mealNotes", profile.getMealNotes());
+        }
+        if (profile.getFoodBudgetLevel() != null) {
+            body.put("foodBudgetLevel", profile.getFoodBudgetLevel().name());
         }
         if (profile.getCalculationMethod() != null) {
             body.put("calculationMethod", profile.getCalculationMethod().name());
@@ -178,6 +206,14 @@ public class AiAgentClient {
     }
 
     private <T> T post(String path, Object body, Class<T> responseType) {
+        try {
+            return circuitBreaker.executeSupplier(() -> doPost(path, body, responseType));
+        } catch (CallNotPermittedException e) {
+            throw new AiAgentException("Serviço de IA temporariamente indisponível. Tente novamente em instantes.", e);
+        }
+    }
+
+    private <T> T doPost(String path, Object body, Class<T> responseType) {
         Timer.Sample sample = Timer.start(meterRegistry);
         String statusTag = "success";
         int maxAttempts = aiAgentProperties.maxRetries() + 1;
@@ -195,6 +231,9 @@ public class AiAgentClient {
                             .POST(HttpRequest.BodyPublishers.ofString(json));
 
                     TraceContext.currentHeaders().forEach(builder::header);
+                    if (aiAgentProperties.internalToken() != null && !aiAgentProperties.internalToken().isBlank()) {
+                        builder.header("X-Internal-Token", aiAgentProperties.internalToken());
+                    }
 
                     HttpResponse<String> response = httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString());
 

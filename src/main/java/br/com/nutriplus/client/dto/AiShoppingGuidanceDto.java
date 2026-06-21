@@ -5,6 +5,7 @@ import java.util.List;
 public record AiShoppingGuidanceDto(
         List<AiSatietyTipDto> satietyTips,
         List<AiFlexibleOptionDto> flexibleOptions,
-        String weeklyImpactSummary
+        String weeklyImpactSummary,
+        String budgetSummary
 ) {
 }

@@ -51,6 +51,18 @@ public class MealPlan {
     @Column(name = "medical_review_notes", columnDefinition = "TEXT")
     private String medicalReviewNotes;
 
+    @Column(name = "diet_review_notes", columnDefinition = "TEXT")
+    private String dietReviewNotes;
+
+    @Column(name = "senior_review_notes", columnDefinition = "TEXT")
+    private String seniorReviewNotes;
+
+    @Column(name = "diet_review_status", length = 20)
+    private String dietReviewStatus;
+
+    @Column(name = "senior_review_status", length = 20)
+    private String seniorReviewStatus;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "plan_source", nullable = false)
     private PlanSource planSource = PlanSource.AI_ONLY;
@@ -79,6 +91,10 @@ public class MealPlan {
         this.aiModel = builder.aiModel;
         this.medicalReviewStatus = builder.medicalReviewStatus;
         this.medicalReviewNotes = builder.medicalReviewNotes;
+        this.dietReviewNotes = builder.dietReviewNotes;
+        this.seniorReviewNotes = builder.seniorReviewNotes;
+        this.dietReviewStatus = builder.dietReviewStatus;
+        this.seniorReviewStatus = builder.seniorReviewStatus;
         this.createdAt = builder.createdAt;
     }
 
@@ -182,6 +198,38 @@ public class MealPlan {
         this.medicalReviewNotes = medicalReviewNotes;
     }
 
+    public String getDietReviewNotes() {
+        return dietReviewNotes;
+    }
+
+    public void setDietReviewNotes(String dietReviewNotes) {
+        this.dietReviewNotes = dietReviewNotes;
+    }
+
+    public String getSeniorReviewNotes() {
+        return seniorReviewNotes;
+    }
+
+    public void setSeniorReviewNotes(String seniorReviewNotes) {
+        this.seniorReviewNotes = seniorReviewNotes;
+    }
+
+    public String getDietReviewStatus() {
+        return dietReviewStatus;
+    }
+
+    public void setDietReviewStatus(String dietReviewStatus) {
+        this.dietReviewStatus = dietReviewStatus;
+    }
+
+    public String getSeniorReviewStatus() {
+        return seniorReviewStatus;
+    }
+
+    public void setSeniorReviewStatus(String seniorReviewStatus) {
+        this.seniorReviewStatus = seniorReviewStatus;
+    }
+
     public PlanSource getPlanSource() {
         return planSource;
     }
@@ -219,6 +267,10 @@ public class MealPlan {
         private String aiModel;
         private String medicalReviewStatus;
         private String medicalReviewNotes;
+        private String dietReviewNotes;
+        private String seniorReviewNotes;
+        private String dietReviewStatus;
+        private String seniorReviewStatus;
         private LocalDateTime createdAt;
 
         public Builder id(Long id) {
@@ -278,6 +330,26 @@ public class MealPlan {
 
         public Builder medicalReviewNotes(String medicalReviewNotes) {
             this.medicalReviewNotes = medicalReviewNotes;
+            return this;
+        }
+
+        public Builder dietReviewNotes(String dietReviewNotes) {
+            this.dietReviewNotes = dietReviewNotes;
+            return this;
+        }
+
+        public Builder seniorReviewNotes(String seniorReviewNotes) {
+            this.seniorReviewNotes = seniorReviewNotes;
+            return this;
+        }
+
+        public Builder dietReviewStatus(String dietReviewStatus) {
+            this.dietReviewStatus = dietReviewStatus;
+            return this;
+        }
+
+        public Builder seniorReviewStatus(String seniorReviewStatus) {
+            this.seniorReviewStatus = seniorReviewStatus;
             return this;
         }
 

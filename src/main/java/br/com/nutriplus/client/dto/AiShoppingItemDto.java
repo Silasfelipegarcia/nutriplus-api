@@ -10,6 +10,11 @@ public record AiShoppingItemDto(
         String proteinLeanness,
         Integer kcalEstimate,
         String explanation,
-        List<String> alternatives
+        List<String> alternatives,
+        String swapGroup,
+        List<AiShoppingSwapOptionDto> swapOptions,
+        List<String> marketTips,
+        String defaultOptionId,
+        String recommendedOptionId
 ) {
 }
