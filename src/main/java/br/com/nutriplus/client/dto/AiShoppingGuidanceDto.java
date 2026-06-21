@@ -6,6 +6,9 @@ public record AiShoppingGuidanceDto(
         List<AiSatietyTipDto> satietyTips,
         List<AiFlexibleOptionDto> flexibleOptions,
         String weeklyImpactSummary,
-        String budgetSummary
+        String budgetSummary,
+        String routineCurrentSummary,
+        String routineSuggestedSummary,
+        String routineGentleNote
 ) {
 }

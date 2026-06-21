@@ -25,6 +25,16 @@ public class EvolutionReportBuilder {
             BodyMeasurementResponse latest,
             int weekAdherencePercent
     ) {
+        return buildMetrics(profile, baseline, latest, weekAdherencePercent, profile.isAthleteModeEnabled());
+    }
+
+    public List<EvolutionMetricResponse> buildMetrics(
+            NutritionProfile profile,
+            BodyMeasurementResponse baseline,
+            BodyMeasurementResponse latest,
+            int weekAdherencePercent,
+            boolean athleteMode
+    ) {
         List<EvolutionMetricResponse> metrics = new ArrayList<>();
         Goal goal = profile.getGoal();
 
@@ -40,10 +50,23 @@ public class EvolutionReportBuilder {
                 null, goal, this::rateHip);
         addDecimalMetric(metrics, "chest", "Peito", "cm", baseline.chestCm(), latest.chestCm(),
                 null, goal, this::rateChest);
-        addDecimalMetric(metrics, "arm", "Braço (médio)", "cm", avg(baseline.armRightCm(), baseline.armLeftCm()),
-                avg(latest.armRightCm(), latest.armLeftCm()), null, goal, this::rateArm);
-        addDecimalMetric(metrics, "thigh", "Coxa (média)", "cm", avg(baseline.thighRightCm(), baseline.thighLeftCm()),
-                avg(latest.thighRightCm(), latest.thighLeftCm()), null, goal, this::rateThigh);
+        if (athleteMode) {
+            addDecimalMetric(metrics, "neck", "Pescoço", "cm", baseline.neckCm(), latest.neckCm(),
+                    null, goal, this::rateNeck);
+            addDecimalMetric(metrics, "armRight", "Braço direito", "cm", baseline.armRightCm(), latest.armRightCm(),
+                    null, goal, this::rateArm);
+            addDecimalMetric(metrics, "armLeft", "Braço esquerdo", "cm", baseline.armLeftCm(), latest.armLeftCm(),
+                    null, goal, this::rateArm);
+            addDecimalMetric(metrics, "thighRight", "Coxa direita", "cm", baseline.thighRightCm(), latest.thighRightCm(),
+                    null, goal, this::rateThigh);
+            addDecimalMetric(metrics, "thighLeft", "Coxa esquerda", "cm", baseline.thighLeftCm(), latest.thighLeftCm(),
+                    null, goal, this::rateThigh);
+        } else {
+            addDecimalMetric(metrics, "arm", "Braço (médio)", "cm", avg(baseline.armRightCm(), baseline.armLeftCm()),
+                    avg(latest.armRightCm(), latest.armLeftCm()), null, goal, this::rateArm);
+            addDecimalMetric(metrics, "thigh", "Coxa (média)", "cm", avg(baseline.thighRightCm(), baseline.thighLeftCm()),
+                    avg(latest.thighRightCm(), latest.thighLeftCm()), null, goal, this::rateThigh);
+        }
 
         metrics.add(rateAdherence(weekAdherencePercent));
         return metrics;
@@ -258,6 +281,16 @@ public class EvolutionReportBuilder {
         return rateArm(goal, base, cur, target, delta);
     }
 
+    private EvolutionMetricStatus rateNeck(Goal goal, BigDecimal base, BigDecimal cur, BigDecimal target, BigDecimal delta) {
+        if (goal == Goal.LOSE_WEIGHT && delta.compareTo(new BigDecimal("-1")) <= 0) {
+            return EvolutionMetricStatus.GOOD;
+        }
+        if (delta.abs().compareTo(new BigDecimal("0.5")) <= 0) {
+            return EvolutionMetricStatus.OK;
+        }
+        return EvolutionMetricStatus.OK;
+    }
+
     private String direction(BigDecimal delta) {
         int cmp = delta.compareTo(BigDecimal.ZERO);
         if (cmp > 0) {
@@ -278,6 +311,21 @@ public class EvolutionReportBuilder {
         }
         if ("arm".equals(key) && delta.compareTo(new BigDecimal("0.5")) >= 0) {
             return "Braços maiores — pode indicar aumento de perímetro muscular.";
+        }
+        if ("armRight".equals(key) && delta.compareTo(new BigDecimal("0.5")) >= 0) {
+            return "Braço direito maior — sinal positivo de hipertrofia local.";
+        }
+        if ("armLeft".equals(key) && delta.compareTo(new BigDecimal("0.5")) >= 0) {
+            return "Braço esquerdo maior — sinal positivo de hipertrofia local.";
+        }
+        if ("chest".equals(key) && delta.compareTo(new BigDecimal("0.5")) >= 0) {
+            return "Peito/tórax maior — pode indicar ganho de massa no tronco.";
+        }
+        if ("thighRight".equals(key) && delta.compareTo(new BigDecimal("0.5")) >= 0) {
+            return "Coxa direita maior — evolução positiva no membro inferior.";
+        }
+        if ("thighLeft".equals(key) && delta.compareTo(new BigDecimal("0.5")) >= 0) {
+            return "Coxa esquerda maior — evolução positiva no membro inferior.";
         }
         if ("bodyFat".equals(key) && delta.compareTo(BigDecimal.ZERO) < 0) {
             return "% de gordura em queda — pode sugerir recomposição (estimativa).";

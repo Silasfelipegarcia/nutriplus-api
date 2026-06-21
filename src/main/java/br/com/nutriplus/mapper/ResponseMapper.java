@@ -9,6 +9,7 @@ import br.com.nutriplus.domain.util.LifeStageUtil;
 import br.com.nutriplus.dto.response.*;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import br.com.nutriplus.service.HealthReferenceService;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalTime;
@@ -20,9 +21,11 @@ import java.util.Map;
 public class ResponseMapper {
 
     private final ObjectMapper objectMapper;
+    private final HealthReferenceService healthReferenceService;
 
-    public ResponseMapper(ObjectMapper objectMapper) {
+    public ResponseMapper(ObjectMapper objectMapper, HealthReferenceService healthReferenceService) {
         this.objectMapper = objectMapper;
+        this.healthReferenceService = healthReferenceService;
     }
     public UserResponse toUserResponse(br.com.nutriplus.domain.entity.User user, boolean hasNutritionProfile) {
         return new UserResponse(
@@ -86,6 +89,12 @@ public class ResponseMapper {
                 profile.getFoodLikes(),
                 profile.getFoodDislikes(),
                 profile.getMealNotes(),
+                profile.isEatsBreakfast(),
+                profile.isEatsLunch(),
+                profile.isEatsAfternoonSnack(),
+                profile.isEatsDinner(),
+                profile.isOpenToRoutineAdjustment(),
+                parseFreeExtras(profile.getFreeExtrasJson()),
                 profile.getFoodBudgetLevel(),
                 profile.getCalculationMethod(),
                 profile.getBodyFatPercent(),
@@ -105,7 +114,8 @@ public class ResponseMapper {
                 profile.getHealthConditions(),
                 profile.getMedications(),
                 profile.getAllergies(),
-                profile.getHealthNotes()
+                profile.getHealthNotes(),
+                healthReferenceService.buildBmiSnapshot(profile)
         );
     }
 
@@ -256,9 +266,22 @@ public class ResponseMapper {
                             o.id(), o.label(), o.kcalEstimate(), o.impactSummary(),
                             o.deficitPercent(), o.daysDelay(), o.evandroStatus(), o.evandroNote()))
                     .toList();
-            return new ShoppingGuidanceResponse(tips, flex, dto.weeklyImpactSummary(), dto.budgetSummary());
+            return new ShoppingGuidanceResponse(
+                    tips, flex, dto.weeklyImpactSummary(), dto.budgetSummary(),
+                    dto.routineCurrentSummary(), dto.routineSuggestedSummary(), dto.routineGentleNote());
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    private List<String> parseFreeExtras(String json) {
+        if (json == null || json.isBlank()) {
+            return List.of();
+        }
+        try {
+            return objectMapper.readValue(json, new TypeReference<List<String>>() {});
+        } catch (Exception e) {
+            return List.of();
         }
     }
 }

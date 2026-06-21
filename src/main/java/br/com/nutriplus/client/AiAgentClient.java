@@ -75,6 +75,7 @@ public class AiAgentClient {
         body.put("agentId", profile.getAgentPersona().toAgentId());
         body.put("goal", profile.getGoal().name());
         body.put("weekAdherencePercent", weekAdherencePercent);
+        body.put("athleteModeEnabled", profile.isAthleteModeEnabled());
         body.put("current", sessionToMap(current));
         if (previous != null) {
             body.put("previous", sessionToMap(previous));
@@ -164,6 +165,18 @@ public class AiAgentClient {
         }
         if (profile.getMealNotes() != null && !profile.getMealNotes().isBlank()) {
             body.put("mealNotes", profile.getMealNotes());
+        }
+        body.put("eatsBreakfast", profile.isEatsBreakfast());
+        body.put("eatsLunch", profile.isEatsLunch());
+        body.put("eatsAfternoonSnack", profile.isEatsAfternoonSnack());
+        body.put("eatsDinner", profile.isEatsDinner());
+        body.put("openToRoutineAdjustment", profile.isOpenToRoutineAdjustment());
+        if (profile.getFreeExtrasJson() != null && !profile.getFreeExtrasJson().isBlank()) {
+            try {
+                body.put("freeExtras", objectMapper.readValue(profile.getFreeExtrasJson(), java.util.List.class));
+            } catch (com.fasterxml.jackson.core.JsonProcessingException ignored) {
+                // ignore malformed extras
+            }
         }
         if (profile.getFoodBudgetLevel() != null) {
             body.put("foodBudgetLevel", profile.getFoodBudgetLevel().name());
