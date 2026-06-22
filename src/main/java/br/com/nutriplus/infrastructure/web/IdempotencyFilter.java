@@ -14,9 +14,7 @@ import org.slf4j.MDC;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StreamUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
-import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.ContentCachingResponseWrapper;
 
 import java.io.IOException;
@@ -91,8 +89,8 @@ public class IdempotencyFilter extends OncePerRequestFilter {
                                           String path,
                                           String idempotencyKey) throws ServletException, IOException {
         long scopeUserId = IdempotencySupport.resolveScopeUserId(request);
-        ContentCachingRequestWrapper cachedRequest = new ContentCachingRequestWrapper(request);
-        byte[] requestBody = StreamUtils.copyToByteArray(cachedRequest.getInputStream());
+        CachedBodyHttpServletRequest cachedRequest = wrapRequestBody(request);
+        byte[] requestBody = cachedRequest.getContentAsByteArray();
         String requestHash = IdempotencySupport.hashRequestBody(requestBody);
 
         Optional<IdempotencyStore.StoredRecord> existing = idempotencyStore.find(
@@ -170,6 +168,13 @@ public class IdempotencyFilter extends OncePerRequestFilter {
                 body,
                 contentType
         );
+    }
+
+    private CachedBodyHttpServletRequest wrapRequestBody(HttpServletRequest request) throws IOException {
+        if (request instanceof CachedBodyHttpServletRequest cached) {
+            return cached;
+        }
+        return new CachedBodyHttpServletRequest(request);
     }
 
     private boolean isStale(IdempotencyStore.StoredRecord stored) {

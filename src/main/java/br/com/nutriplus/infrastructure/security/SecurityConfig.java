@@ -174,9 +174,9 @@ public class SecurityConfig {
                 .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
                 .addFilterAfter(mdcUserFilter, BearerTokenAuthenticationFilter.class)
                 .addFilterAfter(userRateLimitFilter, MdcUserFilter.class)
-                .addFilterAfter(riskEvaluationFilter, UserRateLimitFilter.class)
                 .addFilterAfter(passwordMustChangeFilter, BearerTokenAuthenticationFilter.class)
-                .addFilterAfter(idempotencyFilter, PasswordMustChangeFilter.class);
+                .addFilterAfter(idempotencyFilter, PasswordMustChangeFilter.class)
+                .addFilterAfter(riskEvaluationFilter, IdempotencyFilter.class);
         return http.build();
     }
 

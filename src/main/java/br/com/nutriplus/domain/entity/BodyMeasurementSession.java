@@ -19,6 +19,10 @@ public class BodyMeasurementSession {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "recorded_by_nutritionist_id")
+    private Nutritionist recordedByNutritionist;
+
     @Column(name = "measured_on", nullable = false)
     private LocalDate measuredOn;
 
@@ -79,6 +83,14 @@ public class BodyMeasurementSession {
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public Nutritionist getRecordedByNutritionist() {
+        return recordedByNutritionist;
+    }
+
+    public void setRecordedByNutritionist(Nutritionist recordedByNutritionist) {
+        this.recordedByNutritionist = recordedByNutritionist;
     }
 
     public LocalDate getMeasuredOn() {

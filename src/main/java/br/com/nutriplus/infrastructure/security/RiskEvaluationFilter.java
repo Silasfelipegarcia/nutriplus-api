@@ -60,7 +60,9 @@ public class RiskEvaluationFilter extends OncePerRequestFilter {
         String body = null;
 
         if (HttpMethod.POST.matches(request.getMethod()) && EXPENSIVE_PATHS.contains(request.getRequestURI())) {
-            CachedBodyHttpServletRequest cached = new CachedBodyHttpServletRequest(request);
+            CachedBodyHttpServletRequest cached = request instanceof CachedBodyHttpServletRequest existing
+                    ? existing
+                    : new CachedBodyHttpServletRequest(request);
             body = cached.bodyAsString();
             effective = cached;
 

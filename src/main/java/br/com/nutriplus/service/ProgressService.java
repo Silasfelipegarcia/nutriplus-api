@@ -3,9 +3,11 @@ package br.com.nutriplus.service;
 import br.com.nutriplus.client.AiAgentClient;
 import br.com.nutriplus.client.dto.AiProgressAnalyzeResponse;
 import br.com.nutriplus.domain.entity.BodyMeasurementSession;
+import br.com.nutriplus.domain.entity.Nutritionist;
 import br.com.nutriplus.domain.entity.NutritionProfile;
 import br.com.nutriplus.domain.entity.ProgressReview;
 import br.com.nutriplus.domain.entity.User;
+import br.com.nutriplus.domain.enums.CalculationMethod;
 import br.com.nutriplus.domain.enums.ProgressReviewStatus;
 import br.com.nutriplus.domain.enums.EvolutionMetricStatus;
 import br.com.nutriplus.domain.enums.ProgressTrend;
@@ -108,6 +110,14 @@ public class ProgressService {
 
     @Transactional
     public BodyMeasurementResponse saveMeasurementForUser(Long userId, BodyMeasurementRequest request) {
+        return saveMeasurementForUser(userId, request, null, null);
+    }
+
+    @Transactional
+    public BodyMeasurementResponse saveMeasurementForUser(Long userId,
+                                                        BodyMeasurementRequest request,
+                                                        CalculationMethod calculationMethod,
+                                                        Nutritionist recordedByNutritionist) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
         NutritionProfile profile = requireProfile(user.getId());
@@ -126,6 +136,9 @@ public class ProgressService {
         session.setThighRightCm(request.thighRightCm());
         session.setThighLeftCm(request.thighLeftCm());
         session.setNotes(request.notes());
+        if (recordedByNutritionist != null) {
+            session.setRecordedByNutritionist(recordedByNutritionist);
+        }
         session = measurementRepository.save(session);
 
         profile.setCurrentWeightKg(request.weightKg());
@@ -134,6 +147,9 @@ public class ProgressService {
         }
         if (request.muscleMassKg() != null) {
             profile.setMuscleMassKg(request.muscleMassKg());
+        }
+        if (calculationMethod != null) {
+            profile.setCalculationMethod(calculationMethod);
         }
         nutritionProfileRepository.save(profile);
 

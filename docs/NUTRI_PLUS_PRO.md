@@ -111,7 +111,7 @@ Ver [PRICING.md](./PRICING.md). Resumo:
 | Com bio | `BIOIMPEDANCE` | + % gordura / massa muscular; maior precisão |
 
 - Onboarding e progresso **não exigem** bio.
-- Nutricionista pode registrar medição na consulta (`POST /pro/patients/{id}/measurements`) com ou sem bio.
+- Nutricionista registra medição na consulta via `POST /pro/patients/{id}/measurements` com `calculationMethod` (`ESTIMATE` ou `BIOIMPEDANCE`). Bio exige `bodyFatPercent`; o perfil do paciente é atualizado com o modo escolhido.
 
 ---
 
@@ -238,7 +238,7 @@ Persistido em `care_relationships.preferred_care_mode` — visível no dossiê d
 | Método | Path |
 |--------|------|
 | GET | `/pro/dashboard`, `/pro/patients`, `/pro/patients/{id}/dossier` |
-| POST | `/pro/invites`, `/pro/stripe/connect` |
+| POST | `/pro/invites`, `/pro/stripe/connect`, `/pro/patients/{id}/measurements` |
 | PUT | `/pro/profile`, `/pro/pricing` |
 | PUT | `/pro/patients/{id}/meal-plans/{id}/publish` |
 | GET | `/pro/reports/revenue` |

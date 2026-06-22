@@ -1,6 +1,6 @@
 package br.com.nutriplus.controller;
 
-import br.com.nutriplus.dto.request.BodyMeasurementRequest;
+import br.com.nutriplus.dto.request.ProBodyMeasurementRequest;
 import br.com.nutriplus.dto.request.CreateInviteRequest;
 import br.com.nutriplus.dto.request.ProPricingUpdateRequest;
 import br.com.nutriplus.dto.request.ProProfileUpdateRequest;
@@ -74,7 +74,7 @@ public class ProController {
 
     @PostMapping("/patients/{patientId}/measurements")
     public BodyMeasurementResponse recordMeasurement(@PathVariable Long patientId,
-                                                     @Valid @RequestBody BodyMeasurementRequest request) {
+                                                     @Valid @RequestBody ProBodyMeasurementRequest request) {
         return dossierService.recordMeasurementForPatient(patientId, request);
     }
 

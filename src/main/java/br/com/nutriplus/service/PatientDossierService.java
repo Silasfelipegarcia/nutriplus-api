@@ -3,7 +3,7 @@ package br.com.nutriplus.service;
 import br.com.nutriplus.domain.entity.*;
 import br.com.nutriplus.domain.enums.CheckinStatus;
 import br.com.nutriplus.domain.enums.ProgressReviewStatus;
-import br.com.nutriplus.dto.request.BodyMeasurementRequest;
+import br.com.nutriplus.dto.request.ProBodyMeasurementRequest;
 import br.com.nutriplus.dto.response.*;
 import br.com.nutriplus.exception.ResourceNotFoundException;
 import br.com.nutriplus.mapper.ProMapper;
@@ -31,6 +31,7 @@ public class PatientDossierService {
     private final EvolutionReportBuilder evolutionReportBuilder;
     private final ProgressService progressService;
     private final HealthReferenceService healthReferenceService;
+    private final ProMeasurementValidator proMeasurementValidator;
 
     public PatientDossierService(AuthorizationService authorizationService,
                                  NutritionProfileRepository nutritionProfileRepository,
@@ -43,7 +44,8 @@ public class PatientDossierService {
                                  ProMapper proMapper,
                                  EvolutionReportBuilder evolutionReportBuilder,
                                  ProgressService progressService,
-                                 HealthReferenceService healthReferenceService) {
+                                 HealthReferenceService healthReferenceService,
+                                 ProMeasurementValidator proMeasurementValidator) {
         this.authorizationService = authorizationService;
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.measurementRepository = measurementRepository;
@@ -56,6 +58,7 @@ public class PatientDossierService {
         this.evolutionReportBuilder = evolutionReportBuilder;
         this.progressService = progressService;
         this.healthReferenceService = healthReferenceService;
+        this.proMeasurementValidator = proMeasurementValidator;
     }
 
     public PatientDossierResponse getDossier(Long patientId) {
@@ -101,9 +104,16 @@ public class PatientDossierService {
     }
 
     @Transactional
-    public BodyMeasurementResponse recordMeasurementForPatient(Long patientId, BodyMeasurementRequest request) {
+    public BodyMeasurementResponse recordMeasurementForPatient(Long patientId, ProBodyMeasurementRequest request) {
+        var nutritionist = authorizationService.requireNutritionist();
         authorizationService.requireCareAccessForNutritionistByPatientId(patientId);
-        return progressService.saveMeasurementForUser(patientId, request);
+        proMeasurementValidator.validate(request);
+        return progressService.saveMeasurementForUser(
+                patientId,
+                request.toBodyMeasurementRequest(),
+                request.calculationMethod(),
+                nutritionist
+        );
     }
 
     private CheckinStatsResponse checkinStatsFor(Long userId) {

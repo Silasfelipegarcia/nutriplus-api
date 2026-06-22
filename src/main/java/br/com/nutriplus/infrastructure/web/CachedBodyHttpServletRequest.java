@@ -23,6 +23,10 @@ public class CachedBodyHttpServletRequest extends HttpServletRequestWrapper {
         this.cachedBody = request.getInputStream().readAllBytes();
     }
 
+    public byte[] getContentAsByteArray() {
+        return cachedBody;
+    }
+
     public String bodyAsString() {
         return new String(cachedBody, StandardCharsets.UTF_8);
     }

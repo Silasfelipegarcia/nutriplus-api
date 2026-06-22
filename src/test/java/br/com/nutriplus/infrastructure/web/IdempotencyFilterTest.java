@@ -157,4 +157,26 @@ class IdempotencyFilterTest {
                 isNull()
         );
     }
+
+    @Test
+    void forwardsRequestBodyToDownstreamFilter() throws Exception {
+        IdempotencyFilter filter = new IdempotencyFilter(
+                new IdempotencyProperties(true, true, 24, 120),
+                store,
+                objectMapper
+        );
+        when(store.find(anyString(), anyLong(), anyString(), anyString())).thenReturn(Optional.empty());
+
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/checkins");
+        request.addHeader(IdempotencySupport.HEADER, "key-body");
+        request.setContent("{\"mealId\":1}".getBytes());
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        final String[] capturedBody = new String[1];
+        filter.doFilter(request, response, (req, res) -> {
+            capturedBody[0] = req.getReader().readLine();
+        });
+
+        assertThat(capturedBody[0]).isEqualTo("{\"mealId\":1}");
+    }
 }

@@ -1,10 +1,19 @@
 package br.com.nutriplus.dto.response;
 
-import br.com.nutriplus.domain.enums.*;
+import br.com.nutriplus.domain.enums.ActivityLevel;
+import br.com.nutriplus.domain.enums.AgentPersona;
+import br.com.nutriplus.domain.enums.CalculationMethod;
+import br.com.nutriplus.domain.enums.ChewingDifficulty;
+import br.com.nutriplus.domain.enums.DietaryPreference;
+import br.com.nutriplus.domain.enums.FoodBudgetLevel;
+import br.com.nutriplus.domain.enums.Goal;
+import br.com.nutriplus.domain.enums.Restriction;
+import br.com.nutriplus.domain.enums.Sex;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 public record NutritionProfileResponse(
         Long id,
@@ -33,7 +42,7 @@ public record NutritionProfileResponse(
         boolean eatsAfternoonSnack,
         boolean eatsDinner,
         boolean openToRoutineAdjustment,
-        java.util.List<String> freeExtras,
+        List<String> freeExtras,
         FoodBudgetLevel foodBudgetLevel,
         CalculationMethod calculationMethod,
         BigDecimal bodyFatPercent,

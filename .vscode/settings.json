@@ -2,6 +2,5 @@
   "java.configuration.updateBuildConfiguration": "automatic",
   "java.import.maven.enabled": true,
   "java.compile.nullAnalysis.mode": "disabled",
-  "java.project.sourcePaths": [],
-  "java.project.outputPath": "target/classes"
+  "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx2G -Xms100m"
 }
