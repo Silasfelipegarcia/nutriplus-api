@@ -34,6 +34,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class ProgressService {
@@ -74,21 +75,25 @@ public class ProgressService {
     public ProgressScheduleResponse getSchedule() {
         User user = currentUser.get();
         NutritionProfile profile = requireProfile(user.getId());
+        return getScheduleForUser(user.getId(), profile);
+    }
+
+    private ProgressScheduleResponse getScheduleForUser(Long userId, NutritionProfile profile) {
         int intervalDays = profile.getProgressReviewIntervalDays();
 
-        LocalDate anchor = resolveAnchorDate(user.getId(), profile);
+        LocalDate anchor = resolveAnchorDate(userId, profile);
         LocalDate nextDueOn = anchor.plusDays(intervalDays);
         LocalDate today = LocalDate.now();
         long daysUntil = ChronoUnit.DAYS.between(today, nextDueOn);
         boolean due = !today.isBefore(nextDueOn);
 
-        LocalDateTime lastReviewAt = reviewRepository.findFirstByUserIdOrderByCreatedAtDesc(user.getId())
+        LocalDateTime lastReviewAt = reviewRepository.findFirstByUserIdOrderByCreatedAtDesc(userId)
                 .filter(r -> r.getStatus() == ProgressReviewStatus.COMPLETED)
                 .map(ProgressReview::getCompletedAt)
                 .orElse(null);
 
         LocalDate lastMeasurementOn = measurementRepository
-                .findFirstByUserIdOrderByMeasuredOnDescIdDesc(user.getId())
+                .findFirstByUserIdOrderByMeasuredOnDescIdDesc(userId)
                 .map(BodyMeasurementSession::getMeasuredOn)
                 .orElse(null);
 
@@ -122,8 +127,27 @@ public class ProgressService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
         NutritionProfile profile = requireProfile(user.getId());
 
-        BodyMeasurementSession session = new BodyMeasurementSession(user);
-        session.setMeasuredOn(request.measuredOn());
+        LocalDate measuredOn = request.measuredOn();
+        LocalDate today = LocalDate.now();
+        ProgressScheduleResponse schedule = getScheduleForUser(userId, profile);
+        Optional<BodyMeasurementSession> existingOnDate = measurementRepository
+                .findFirstByUserIdAndMeasuredOnOrderByIdDesc(userId, measuredOn);
+
+        if (!schedule.due()) {
+            if (!measuredOn.equals(today) || existingOnDate.isEmpty()) {
+                int days = schedule.daysUntilDue();
+                throw new BusinessException(
+                        days > 0
+                                ? "Aguarde " + days + " dias para registrar a próxima medição."
+                                : "Aguarde o prazo da próxima medição.");
+            }
+        }
+
+        BodyMeasurementSession session = existingOnDate.orElseGet(() -> new BodyMeasurementSession(user));
+        if (session.getId() == null) {
+            session.setUser(user);
+        }
+        session.setMeasuredOn(measuredOn);
         session.setWeightKg(request.weightKg());
         session.setBodyFatPercent(request.bodyFatPercent());
         session.setMuscleMassKg(request.muscleMassKg());

@@ -14,10 +14,13 @@ Ativação **fora do onboarding**, no Perfil — para quem pratica esporte e que
 
 ## Fluxo
 
-1. Onboarding mantém só **nível de atividade geral** (sedentário → intenso).
-2. Depois, em **Perfil → Modo atleta**: liga o switch e adiciona treinos (esporte, dias/semana, minutos/sessão).
-3. App mostra **kcal por sessão** e **média diária extra**.
-4. **Aplicar ao plano** recalcula macros e sugere gerar novo plano alimentar.
+1. Onboarding: escolha **tipo de perfil** → se atleta, cadastre treinos **antes** de métricas/dieta → salve perfil.
+2. Use `POST /onboarding/complete` (atleta) ou `POST /nutrition-profile` + `PUT /training/profile` + `POST /training/apply`.
+3. Em **Perfil → Modo atleta**: edite treinos e **Aplicar ao plano** para recalcular macros.
+4. App mostra **kcal por sessão** e **média diária extra**.
+5. **Aplicar ao plano** recalcula macros e sugere gerar novo plano alimentar.
+
+Ver [ONBOARDING.md](./ONBOARDING.md) para sequência completa.
 
 ## Fórmula (Compendium MET)
 
@@ -32,3 +35,4 @@ Ativação **fora do onboarding**, no Perfil — para quem pratica esporte e que
 | GET | `/training/profile` | Modo atleta + treinos + preview kcal |
 | PUT | `/training/profile` | Salva treinos (não recalcula macros) |
 | POST | `/training/apply` | Recalcula metas nutricionais com treino |
+| POST | `/onboarding/complete` | Onboarding atleta: perfil + treino + apply |
