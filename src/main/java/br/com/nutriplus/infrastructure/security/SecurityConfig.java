@@ -180,12 +180,25 @@ public class SecurityConfig {
         return http.build();
     }
 
+    private static final List<String> DEFAULT_PRODUCTION_ORIGIN_PATTERNS = List.of(
+            "https://nutriplus-web-ten.vercel.app",
+            "https://nutriplus-web.vercel.app",
+            "https://nutriplus.com.br",
+            "https://www.nutriplus.com.br",
+            "https://*.vercel.app"
+    );
+
     @Bean
     CorsConfigurationSource corsConfigurationSource(CorsProperties corsProperties) {
         CorsConfiguration configuration = new CorsConfiguration();
         List<String> originPatterns = new ArrayList<>();
         if (corsProperties.allowedOrigins() != null) {
-            originPatterns.addAll(corsProperties.allowedOrigins());
+            corsProperties.allowedOrigins().stream()
+                    .filter(origin -> origin != null && !origin.isBlank())
+                    .forEach(originPatterns::add);
+        }
+        if (originPatterns.isEmpty()) {
+            originPatterns.addAll(DEFAULT_PRODUCTION_ORIGIN_PATTERNS);
         }
         configuration.setAllowedOriginPatterns(originPatterns);
         configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
