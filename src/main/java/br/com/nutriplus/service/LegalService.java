@@ -4,6 +4,8 @@ import br.com.nutriplus.dto.response.LegalDocumentResponse;
 import br.com.nutriplus.infrastructure.config.LegalProperties;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.Cacheable;
+import br.com.nutriplus.infrastructure.config.NutriCacheNames;
 import org.springframework.util.StreamUtils;
 
 import java.io.IOException;
@@ -18,6 +20,7 @@ public class LegalService {
         this.legalProperties = legalProperties;
     }
 
+    @Cacheable(value = NutriCacheNames.LEGAL_DOCUMENTS, key = "#root.methodName")
     public LegalDocumentResponse terms() {
         return document(
                 legalProperties.version(),
@@ -26,6 +29,7 @@ public class LegalService {
         );
     }
 
+    @Cacheable(value = NutriCacheNames.LEGAL_DOCUMENTS, key = "#root.methodName")
     public LegalDocumentResponse privacy() {
         return document(
                 legalProperties.privacyVersion(),
@@ -34,6 +38,7 @@ public class LegalService {
         );
     }
 
+    @Cacheable(value = NutriCacheNames.LEGAL_DOCUMENTS, key = "#root.methodName")
     public LegalDocumentResponse aiDisclosure() {
         return document(
                 legalProperties.version(),
@@ -42,6 +47,7 @@ public class LegalService {
         );
     }
 
+    @Cacheable(value = NutriCacheNames.LEGAL_DOCUMENTS, key = "#root.methodName")
     public LegalDocumentResponse dataSharingConsent() {
         return document(
                 "2026-06-pro-1",
@@ -50,6 +56,7 @@ public class LegalService {
         );
     }
 
+    @Cacheable(value = NutriCacheNames.LEGAL_DOCUMENTS, key = "#root.methodName")
     public LegalDocumentResponse nutritionistTerms() {
         return document(
                 "2026-06-pro-1",

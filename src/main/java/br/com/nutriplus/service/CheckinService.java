@@ -26,6 +26,9 @@ import br.com.nutriplus.repository.NutritionProfileRepository;
 import br.com.nutriplus.security.CurrentUser;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import br.com.nutriplus.infrastructure.config.NutriCacheNames;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -64,6 +67,7 @@ public class CheckinService {
         this.aiAgentClient = aiAgentClient;
     }
 
+    @Cacheable(value = NutriCacheNames.CHECKINS_TODAY, keyGenerator = "userDateCacheKeyGenerator")
     public TodayCheckinsResponse getToday() {
         User user = currentUser.get();
         LocalDate today = LocalDate.now();
@@ -118,6 +122,7 @@ public class CheckinService {
     }
 
     @Transactional
+    @CacheEvict(value = {NutriCacheNames.CHECKINS_TODAY, NutriCacheNames.CHECKINS_STATS}, allEntries = true)
     public TodayMealCheckinResponse saveCheckin(MealCheckinRequest request) {
         User user = currentUser.get();
         LocalDate today = LocalDate.now();
@@ -178,6 +183,7 @@ public class CheckinService {
         return toExtraResponse(saved);
     }
 
+    @Cacheable(value = NutriCacheNames.CHECKINS_STATS, keyGenerator = "userDateCacheKeyGenerator")
     public CheckinStatsResponse getStats() {
         User user = currentUser.get();
         LocalDate today = LocalDate.now();

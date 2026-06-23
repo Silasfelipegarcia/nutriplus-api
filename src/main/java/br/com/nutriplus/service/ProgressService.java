@@ -28,6 +28,9 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import br.com.nutriplus.infrastructure.config.NutriCacheNames;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -72,6 +75,7 @@ public class ProgressService {
         this.healthReferenceService = healthReferenceService;
     }
 
+    @Cacheable(value = NutriCacheNames.PROGRESS_SCHEDULE, keyGenerator = "userIdCacheKeyGenerator")
     public ProgressScheduleResponse getSchedule() {
         User user = currentUser.get();
         NutritionProfile profile = requireProfile(user.getId());
@@ -108,6 +112,8 @@ public class ProgressService {
     }
 
     @Transactional
+    @CacheEvict(value = {NutriCacheNames.PROGRESS_SCHEDULE, NutriCacheNames.PROGRESS_MEASUREMENT_LATEST},
+            keyGenerator = "userIdCacheKeyGenerator")
     public BodyMeasurementResponse saveMeasurement(BodyMeasurementRequest request) {
         User user = currentUser.get();
         return saveMeasurementForUser(user.getId(), request);
@@ -180,6 +186,7 @@ public class ProgressService {
         return toResponse(session);
     }
 
+    @Cacheable(value = NutriCacheNames.PROGRESS_MEASUREMENT_LATEST, keyGenerator = "userIdCacheKeyGenerator")
     public BodyMeasurementResponse getLatestMeasurement() {
         User user = currentUser.get();
         return measurementRepository.findFirstByUserIdOrderByMeasuredOnDescIdDesc(user.getId())

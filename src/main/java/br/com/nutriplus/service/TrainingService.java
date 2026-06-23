@@ -20,6 +20,8 @@ import br.com.nutriplus.security.CurrentUser;
 import br.com.nutriplus.dto.response.NutritionProfileResponse;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.Cacheable;
+import br.com.nutriplus.infrastructure.config.NutriCacheNames;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -48,6 +50,7 @@ public class TrainingService {
         this.responseMapper = responseMapper;
     }
 
+    @Cacheable(value = NutriCacheNames.SPORT_CATALOG, key = "'catalog'")
     public List<SportCatalogItemResponse> getSportCatalog() {
         return Arrays.stream(SportType.values())
                 .sorted(Comparator.comparing(SportType::labelPt))

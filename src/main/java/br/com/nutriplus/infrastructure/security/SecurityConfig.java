@@ -122,6 +122,8 @@ public class SecurityConfig {
                         "/health",
                         "/legal/**",
                         "/pricing/guidelines",
+                        "/nutritionists",
+                        "/nutritionists/**",
                         "/training/sports",
                         "/webhooks/**",
                         "/actuator/health",

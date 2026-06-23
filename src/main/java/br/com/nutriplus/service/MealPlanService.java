@@ -14,6 +14,8 @@ import br.com.nutriplus.repository.MealPlanRepository;
 import br.com.nutriplus.security.CurrentUser;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.Cacheable;
+import br.com.nutriplus.infrastructure.config.NutriCacheNames;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
@@ -106,6 +108,7 @@ public class MealPlanService {
                 ));
     }
 
+    @Cacheable(value = NutriCacheNames.MEAL_PLAN_LATEST, keyGenerator = "userIdCacheKeyGenerator")
     public MealPlanResponse getLatest() {
         User user = currentUser.get();
         List<MealPlan> plans = mealPlanRepository.findByUserIdOrderByCreatedAtDesc(user.getId());

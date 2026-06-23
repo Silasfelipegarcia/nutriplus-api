@@ -15,6 +15,9 @@ import br.com.nutriplus.security.CurrentUser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import br.com.nutriplus.infrastructure.config.NutriCacheNames;
 
 import java.time.LocalTime;
 import java.time.LocalDate;
@@ -46,6 +49,7 @@ public class NutritionProfileService {
     }
 
     @Transactional
+    @CacheEvict(value = {NutriCacheNames.NUTRITION_PROFILE, NutriCacheNames.USER_ME}, keyGenerator = "userIdCacheKeyGenerator")
     public NutritionProfileResponse saveOrUpdate(NutritionProfileRequest request) {
         User user = currentUser.get();
         long start = System.currentTimeMillis();
@@ -83,6 +87,7 @@ public class NutritionProfileService {
         }
     }
 
+    @Cacheable(value = NutriCacheNames.NUTRITION_PROFILE, keyGenerator = "userIdCacheKeyGenerator")
     public NutritionProfileResponse get() {
         User user = currentUser.get();
         NutritionProfile profile = nutritionProfileRepository.findByUserId(user.getId())

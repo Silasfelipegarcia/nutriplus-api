@@ -12,6 +12,7 @@ import br.com.nutriplus.domain.enums.AiRequestType;
 import br.com.nutriplus.domain.enums.MealPlanGenerationStatus;
 import br.com.nutriplus.domain.enums.MealType;
 import br.com.nutriplus.infrastructure.config.AppProperties;
+import br.com.nutriplus.infrastructure.config.NutriCacheEvictionService;
 import br.com.nutriplus.repository.MealItemRepository;
 import br.com.nutriplus.repository.MealPlanGenerationJobRepository;
 import br.com.nutriplus.repository.MealPlanRepository;
@@ -49,6 +50,7 @@ public class MealPlanGenerationProcessor {
     private final AppProperties appProperties;
     private final ObjectMapper objectMapper;
     private final AuditLogService auditLogService;
+    private final NutriCacheEvictionService cacheEvictionService;
 
     public MealPlanGenerationProcessor(MealPlanGenerationJobRepository jobRepository,
                                        UserRepository userRepository,
@@ -61,7 +63,8 @@ public class MealPlanGenerationProcessor {
                                        AiRequestLogService aiRequestLogService,
                                        AppProperties appProperties,
                                        ObjectMapper objectMapper,
-                                       AuditLogService auditLogService) {
+                                       AuditLogService auditLogService,
+                                       NutriCacheEvictionService cacheEvictionService) {
         this.jobRepository = jobRepository;
         this.userRepository = userRepository;
         this.nutritionProfileRepository = nutritionProfileRepository;
@@ -74,6 +77,7 @@ public class MealPlanGenerationProcessor {
         this.appProperties = appProperties;
         this.objectMapper = objectMapper;
         this.auditLogService = auditLogService;
+        this.cacheEvictionService = cacheEvictionService;
     }
 
     @Transactional
@@ -155,6 +159,8 @@ public class MealPlanGenerationProcessor {
         job.setMealPlan(mealPlan);
         job.setCompletedAt(LocalDateTime.now());
         jobRepository.save(job);
+
+        cacheEvictionService.evictMealPlanCaches(user.getId());
 
         aiRequestLogService.log(user, AiRequestType.GENERATE_MEAL_PLAN, requestJson,
                 objectMapper.writeValueAsString(aiResponse), AiRequestStatus.SUCCESS, null,

@@ -8,6 +8,8 @@ import br.com.nutriplus.mapper.ResponseMapper;
 import br.com.nutriplus.repository.ShoppingListRepository;
 import br.com.nutriplus.security.CurrentUser;
 import org.springframework.stereotype.Service;
+import org.springframework.cache.annotation.Cacheable;
+import br.com.nutriplus.infrastructure.config.NutriCacheNames;
 
 import java.util.List;
 
@@ -26,6 +28,7 @@ public class ShoppingListService {
         this.responseMapper = responseMapper;
     }
 
+    @Cacheable(value = NutriCacheNames.SHOPPING_LIST_LATEST, keyGenerator = "userIdCacheKeyGenerator")
     public ShoppingListResponse getLatest() {
         User user = currentUser.get();
         List<ShoppingList> lists = shoppingListRepository.findByUserIdWithItemsOrderByCreatedAtDesc(user.getId());

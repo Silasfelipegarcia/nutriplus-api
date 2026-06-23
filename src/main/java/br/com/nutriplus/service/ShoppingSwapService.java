@@ -22,6 +22,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
+import br.com.nutriplus.infrastructure.config.NutriCacheNames;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
@@ -63,6 +65,7 @@ public class ShoppingSwapService {
     }
 
     @Transactional
+    @CacheEvict(value = NutriCacheNames.SHOPPING_LIST_LATEST, keyGenerator = "userIdCacheKeyGenerator")
     public ApplyShoppingSwapsResponse applySwaps(ApplyShoppingSwapsRequest request) {
         User user = currentUser.get();
         ShoppingList list = latestListForUser(user.getId());

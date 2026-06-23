@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "description": "Referência p95 Tier S (ms). Atualizar após otimizações intencionais.",
+  "thresholds": {
+    "tier_s_p95_ms": 200,
+    "regression_factor": 1.2
+  },
+  "metrics": {
+    "http_req_duration{tier:S}": {
+      "p95_ms": 180
+    }
+  }
+}

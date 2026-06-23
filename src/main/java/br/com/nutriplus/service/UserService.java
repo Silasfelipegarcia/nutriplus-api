@@ -16,6 +16,9 @@ import br.com.nutriplus.repository.UserRepository;
 import br.com.nutriplus.security.CurrentUser;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import br.com.nutriplus.infrastructure.config.NutriCacheNames;
 
 import java.time.LocalDateTime;
 
@@ -49,12 +52,14 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
+    @Cacheable(value = NutriCacheNames.USER_ME, keyGenerator = "userIdCacheKeyGenerator")
     public UserResponse getMe() {
         var user = getCurrentUserUseCase.execute();
         boolean hasProfile = nutritionProfileRepository.findByUserId(user.id()).isPresent();
         return responseMapper.toUserResponse(user, hasProfile);
     }
 
+    @CacheEvict(value = NutriCacheNames.USER_ME, keyGenerator = "userIdCacheKeyGenerator")
     public UserResponse updateProfile(UpdateUserProfileRequest request) {
         Long userId = actingUserResolver.resolveUserId();
         var user = updateUserProfileUseCase.execute(userId, request);
@@ -62,6 +67,7 @@ public class UserService {
         return responseMapper.toUserResponse(user, hasProfile);
     }
 
+    @CacheEvict(value = NutriCacheNames.USER_ME, keyGenerator = "userIdCacheKeyGenerator")
     public AuthResponse changePassword(ChangePasswordRequest request) {
         Long userId = actingUserResolver.resolveUserId();
         LoginUseCase.Response result = changePasswordUseCase.execute(userId, request);
@@ -76,6 +82,7 @@ public class UserService {
     }
 
     @Transactional
+    @CacheEvict(value = NutriCacheNames.USER_ME, keyGenerator = "userIdCacheKeyGenerator")
     public UserResponse acceptTerms(AcceptTermsRequest request) {
         var entity = currentUser.get();
         LocalDateTime now = LocalDateTime.now();

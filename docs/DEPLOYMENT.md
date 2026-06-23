@@ -68,6 +68,23 @@ JWT_SECRET=<secret-prod>
 AI_AGENT_URL=http://nutriplus-agentes.railway.internal:8000
 ```
 
+### Cache (habilitado por padrão em prod/homolog)
+
+```bash
+# Já ativo via application-prod.properties / application-homolog.properties
+# CACHE_ENABLED=true
+
+# Desligar se necessário:
+# CACHE_ENABLED=false
+
+# Fase 2 — Redis para multi-réplica
+CACHE_ENABLED=true
+spring.data.redis.host=<redis-host>
+spring.data.redis.port=6379
+```
+
+Ver matriz completa em `docs/PERFORMANCE.md`.
+
 ## Health checks
 
 | Endpoint | Uso |
