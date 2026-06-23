@@ -119,6 +119,7 @@ public class SecurityConfig {
                         "/health",
                         "/legal/**",
                         "/pricing/guidelines",
+                        "/training/sports",
                         "/webhooks/**",
                         "/actuator/health",
                         "/actuator/health/**",

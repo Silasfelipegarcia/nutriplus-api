@@ -31,7 +31,7 @@ Ver [ONBOARDING.md](./ONBOARDING.md) para sequência completa.
 
 | Método | Path | Descrição |
 |--------|------|-----------|
-| GET | `/training/sports` | Catálogo de esportes + MET |
+| GET | `/training/sports` | Catálogo de esportes + MET (**público**, sem JWT) |
 | GET | `/training/profile` | Modo atleta + treinos + preview kcal |
 | PUT | `/training/profile` | Salva treinos (não recalcula macros) |
 | POST | `/training/apply` | Recalcula metas nutricionais com treino |
