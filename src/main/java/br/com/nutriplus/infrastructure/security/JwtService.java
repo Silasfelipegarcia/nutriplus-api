@@ -40,7 +40,7 @@ public class JwtService implements TokenPort {
                 .claim("passwordMustChange", user.passwordMustChange())
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiresAt))
-                .signWith(getSecretKey())
+                .signWith(getSecretKey(), Jwts.SIG.HS256)
                 .compact();
     }
 
@@ -54,7 +54,7 @@ public class JwtService implements TokenPort {
                 .claim(TOKEN_TYPE_CLAIM, TYPE_REFRESH)
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(expiresAt))
-                .signWith(getSecretKey())
+                .signWith(getSecretKey(), Jwts.SIG.HS256)
                 .compact();
     }
 

@@ -29,6 +29,7 @@ import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
@@ -72,7 +73,9 @@ public class SecurityConfig {
     @Bean
     JwtDecoder jwtDecoder(JwtService jwtService) {
         SecretKey key = jwtService.getSecretKey();
-        NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(key).build();
+        NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(key)
+                .macAlgorithm(MacAlgorithm.HS256)
+                .build();
         OAuth2TokenValidator<Jwt> rejectRefresh = jwt -> {
             if ("refresh".equals(jwt.getClaims().get("typ"))) {
                 return OAuth2TokenValidatorResult.failure(new OAuth2Error(
