@@ -63,8 +63,9 @@ O profile `homolog` habilita rate limit e exige secrets via env (sem fallback no
 SPRING_PROFILES_ACTIVE=prod
 DB_URL=jdbc:mysql://...
 JWT_SECRET=<secret-prod>
-CORS_ALLOWED_ORIGINS=https://app.nutriplus.example.com
-AI_AGENT_URL=https://agent-prod.up.railway.app
+# CORS opcional — padrão em application-prod.properties já inclui Vercel + nutriplus.com.br
+# CORS_ALLOWED_ORIGINS=https://nutriplus.com.br,https://nutriplus-web-ten.vercel.app
+AI_AGENT_URL=http://nutriplus-agentes.railway.internal:8000
 ```
 
 ## Health checks
