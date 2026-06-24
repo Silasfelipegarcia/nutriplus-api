@@ -8,6 +8,7 @@ import br.com.nutriplus.domain.enums.PreferredCareMode;
 import br.com.nutriplus.domain.enums.ServiceMode;
 import br.com.nutriplus.domain.util.ServiceModeCodec;
 import br.com.nutriplus.dto.request.AcceptInviteRequest;
+import br.com.nutriplus.dto.request.CareRequestRequest;
 import br.com.nutriplus.dto.request.CreateInviteRequest;
 import br.com.nutriplus.dto.response.CareContactResponse;
 import br.com.nutriplus.dto.response.CareRelationshipResponse;
@@ -137,12 +138,15 @@ public class CareService {
     }
 
     @Transactional
-    public CareRelationshipResponse requestMarketplaceCare(Long nutritionistId, PreferredCareMode preferredCareMode) {
+    public CareRelationshipResponse requestMarketplaceCare(Long nutritionistId, CareRequestRequest request) {
+        if (request == null || !Boolean.TRUE.equals(request.consentDataSharing())) {
+            throw new BusinessException("É necessário consentir o compartilhamento de dados.");
+        }
         authorizationService.requirePatient();
         User patient = currentUser.get();
         Nutritionist nutritionist = getMarketplaceNutritionist(nutritionistId);
 
-        PreferredCareMode mode = preferredCareMode != null ? preferredCareMode : PreferredCareMode.EITHER;
+        PreferredCareMode mode = request.preferredCareMode() != null ? request.preferredCareMode() : PreferredCareMode.EITHER;
         validatePreferredMode(nutritionist, mode);
 
         CareRelationship care = careRelationshipRepository
@@ -155,7 +159,13 @@ public class CareService {
         }
         care.setStatus(CareRelationshipStatus.PENDING_PAYMENT);
         care.setPreferredCareMode(mode);
-        return proMapper.toCare(careRelationshipRepository.save(care));
+        care = careRelationshipRepository.save(care);
+
+        if (consentRepository.findByCareRelationshipId(care.getId()).isEmpty()) {
+            consentRepository.save(PatientDataConsent.grant(patient, nutritionist, care));
+        }
+
+        return proMapper.toCare(care);
     }
 
     public CareContactResponse getCareContact(Long careRelationshipId) {
@@ -200,6 +210,11 @@ public class CareService {
 
         if (threadRepository.findByCareRelationshipId(care.getId()).isEmpty()) {
             threadRepository.save(ConversationThread.forCare(care));
+        }
+
+        if (consentRepository.findByCareRelationshipId(care.getId()).isEmpty()) {
+            consentRepository.save(PatientDataConsent.grant(
+                    care.getPatient(), care.getNutritionist(), care));
         }
     }
 

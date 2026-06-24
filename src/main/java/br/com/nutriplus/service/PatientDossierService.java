@@ -8,6 +8,7 @@ import br.com.nutriplus.dto.response.*;
 import br.com.nutriplus.exception.ResourceNotFoundException;
 import br.com.nutriplus.mapper.ProMapper;
 import br.com.nutriplus.mapper.ResponseMapper;
+import br.com.nutriplus.infrastructure.security.CpfProtectionService;
 import br.com.nutriplus.repository.*;
 import br.com.nutriplus.security.AuthorizationService;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,7 @@ public class PatientDossierService {
     private final ProgressService progressService;
     private final HealthReferenceService healthReferenceService;
     private final ProMeasurementValidator proMeasurementValidator;
+    private final CpfProtectionService cpfProtectionService;
 
     public PatientDossierService(AuthorizationService authorizationService,
                                  NutritionProfileRepository nutritionProfileRepository,
@@ -45,7 +47,8 @@ public class PatientDossierService {
                                  EvolutionReportBuilder evolutionReportBuilder,
                                  ProgressService progressService,
                                  HealthReferenceService healthReferenceService,
-                                 ProMeasurementValidator proMeasurementValidator) {
+                                 ProMeasurementValidator proMeasurementValidator,
+                                 CpfProtectionService cpfProtectionService) {
         this.authorizationService = authorizationService;
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.measurementRepository = measurementRepository;
@@ -59,6 +62,7 @@ public class PatientDossierService {
         this.progressService = progressService;
         this.healthReferenceService = healthReferenceService;
         this.proMeasurementValidator = proMeasurementValidator;
+        this.cpfProtectionService = cpfProtectionService;
     }
 
     public PatientDossierResponse getDossier(Long patientId) {
@@ -93,6 +97,10 @@ public class PatientDossierService {
         return new PatientDossierResponse(
                 uid,
                 patient.getName(),
+                patient.getEmail(),
+                patient.getPhotoThumbnailUrl(),
+                profile != null ? profile.getBirthDate() : null,
+                cpfProtectionService.maskFromEncrypted(patient.getCpfEncrypted()),
                 proMapper.toCare(care),
                 profile != null ? responseMapper.toNutritionProfileResponse(profile) : null,
                 measurements,

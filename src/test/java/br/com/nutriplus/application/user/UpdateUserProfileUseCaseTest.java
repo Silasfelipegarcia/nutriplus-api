@@ -78,6 +78,7 @@ class UpdateUserProfileUseCaseTest {
                 "hash",
                 photoUrl,
                 photoThumbnailUrl,
+                null,
                 0,
                 false,
                 null,

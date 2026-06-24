@@ -14,6 +14,7 @@ final class UserPersistenceMapper {
                 entity.getPasswordHash(),
                 entity.getPhotoUrl(),
                 entity.getPhotoThumbnailUrl(),
+                entity.getCpfEncrypted(),
                 entity.getFailedLoginAttempts(),
                 entity.isPasswordMustChange(),
                 entity.getTermsAcceptedAt(),

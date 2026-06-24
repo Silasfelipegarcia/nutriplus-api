@@ -37,14 +37,14 @@ class AuthControllerTest extends WebMvcTestSupport {
 
     @Test
     void registerReturnsCreated() throws Exception {
-        var user = new UserResponse(1L, "Test", "test@nutriplus.com", LocalDateTime.now(), false, null, null, null, null);
+        var user = new UserResponse(1L, "Test", "test@nutriplus.com", LocalDateTime.now(), false, null, null, null, null, null);
         when(authService.register(any(RegisterRequest.class)))
                 .thenReturn(new AuthResponse("access", "refresh", "Bearer", 3600L, user));
 
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                new RegisterRequest("Test", "test@nutriplus.com", "secret123"))))
+                                new RegisterRequest("Test", "test@nutriplus.com", "secret123", "529.982.247-25"))))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.token").value("access"))
                 .andExpect(jsonPath("$.user.email").value("test@nutriplus.com"));
@@ -52,7 +52,7 @@ class AuthControllerTest extends WebMvcTestSupport {
 
     @Test
     void loginReturnsOk() throws Exception {
-        var user = new UserResponse(1L, "Test", "test@nutriplus.com", LocalDateTime.now(), false, null, null, null, null);
+        var user = new UserResponse(1L, "Test", "test@nutriplus.com", LocalDateTime.now(), false, null, null, null, null, null);
         when(authService.login(any(LoginRequest.class)))
                 .thenReturn(new AuthResponse("access", "refresh", "Bearer", 3600L, user));
 

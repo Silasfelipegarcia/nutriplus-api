@@ -40,6 +40,7 @@ public class NutritionistProService {
     private final PricingGuidelineService pricingGuidelineService;
     private final AuthorizationService authorizationService;
     private final AuditLogService auditLogService;
+    private final CpfRegistrationService cpfRegistrationService;
 
     public NutritionistProService(UserRepository userRepository,
                                   NutritionistRepository nutritionistRepository,
@@ -51,7 +52,8 @@ public class NutritionistProService {
                                   ProMapper proMapper,
                                   PricingGuidelineService pricingGuidelineService,
                                   AuthorizationService authorizationService,
-                                  AuditLogService auditLogService) {
+                                  AuditLogService auditLogService,
+                                  CpfRegistrationService cpfRegistrationService) {
         this.userRepository = userRepository;
         this.nutritionistRepository = nutritionistRepository;
         this.nutritionProfileRepository = nutritionProfileRepository;
@@ -63,6 +65,7 @@ public class NutritionistProService {
         this.pricingGuidelineService = pricingGuidelineService;
         this.authorizationService = authorizationService;
         this.auditLogService = auditLogService;
+        this.cpfRegistrationService = cpfRegistrationService;
     }
 
     @Transactional
@@ -78,6 +81,7 @@ public class NutritionistProService {
                 .passwordHash(passwordHasherPort.encode(request.password()))
                 .role(UserRole.NUTRITIONIST)
                 .build();
+        cpfRegistrationService.applyCpf(user, request.cpf());
         user = userRepository.save(user);
 
         Nutritionist nutritionist = Nutritionist.createFor(
@@ -111,6 +115,9 @@ public class NutritionistProService {
             n.setSpecialties(request.specialties());
         }
         if (request.marketplaceVisible() != null) {
+            if (Boolean.TRUE.equals(request.marketplaceVisible()) && !n.isCrnVerified()) {
+                throw new BusinessException("CRN ainda não verificado. Marketplace indisponível até aprovação.");
+            }
             n.setMarketplaceVisible(request.marketplaceVisible());
         }
         if (request.serviceModes() != null) {

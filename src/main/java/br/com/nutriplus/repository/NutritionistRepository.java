@@ -11,4 +11,6 @@ public interface NutritionistRepository extends JpaRepository<Nutritionist, Long
     Optional<Nutritionist> findByUserId(Long userId);
 
     List<Nutritionist> findByMarketplaceVisibleTrueAndCrnVerifiedTrueOrderByCreatedAtDesc();
+
+    List<Nutritionist> findByCrnVerifiedFalseOrderByCreatedAtAsc();
 }

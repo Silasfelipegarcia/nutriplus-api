@@ -31,7 +31,7 @@ class RefreshTokenUseCaseTest {
 
     private static final User USER = new User(
             1L, "Test", "test@nutriplus.com", UserRole.PATIENT, "hash",
-            null, null, 0, false, null, null, null, LocalDateTime.now(), LocalDateTime.now());
+            null, null, null, 0, false, null, null, null, LocalDateTime.now(), LocalDateTime.now());
 
     @Test
     void refreshReturnsNewTokens() {

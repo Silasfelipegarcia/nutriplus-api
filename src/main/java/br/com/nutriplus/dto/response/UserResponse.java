@@ -9,6 +9,7 @@ public record UserResponse(
         LocalDateTime createdAt,
         boolean hasNutritionProfile,
         String photoThumbnailUrl,
+        String cpfMasked,
         LocalDateTime termsAcceptedAt,
         String termsVersion,
         LocalDateTime privacyPolicyAcceptedAt

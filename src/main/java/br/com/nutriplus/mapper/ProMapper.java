@@ -4,6 +4,7 @@ import br.com.nutriplus.domain.entity.*;
 import br.com.nutriplus.domain.enums.ServiceMode;
 import br.com.nutriplus.domain.util.ServiceModeCodec;
 import br.com.nutriplus.dto.response.*;
+import br.com.nutriplus.repository.CareRatingRepository;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -12,6 +13,12 @@ import java.util.Set;
 
 @Component
 public class ProMapper {
+
+    private final CareRatingRepository careRatingRepository;
+
+    public ProMapper(CareRatingRepository careRatingRepository) {
+        this.careRatingRepository = careRatingRepository;
+    }
 
     public NutritionistPublicResponse toPublic(Nutritionist n) {
         return toNutritionistResponse(n, false);
@@ -25,10 +32,13 @@ public class ProMapper {
         User u = n.getUser();
         Set<ServiceMode> modes = ServiceModeCodec.decode(n.getServiceModes());
         List<String> modeNames = modes.stream().map(Enum::name).sorted().toList();
+        Double avg = careRatingRepository.averageStarsByNutritionistId(n.getId());
+        long count = careRatingRepository.countByNutritionistId(n.getId());
         return new NutritionistPublicResponse(
                 n.getId(),
                 u.getName(),
                 n.getCrn(),
+                n.isCrnVerified(),
                 n.getBio(),
                 n.getSpecialties(),
                 n.getConsultationPriceCents(),
@@ -38,7 +48,9 @@ public class ProMapper {
                 n.getCity(),
                 n.getStateCode(),
                 buildLocationLabel(n, modes),
-                includePrivateContact ? n.getWhatsappPhone() : null
+                includePrivateContact ? n.getWhatsappPhone() : null,
+                avg != null ? avg : 0.0,
+                count
         );
     }
 

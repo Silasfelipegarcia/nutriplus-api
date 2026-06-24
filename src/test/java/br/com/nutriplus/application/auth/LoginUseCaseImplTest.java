@@ -47,6 +47,7 @@ class LoginUseCaseImplTest {
             "hash",
             null,
             null,
+            null,
             0,
             false,
             null,
@@ -93,7 +94,7 @@ class LoginUseCaseImplTest {
     void lockedAccountRejected() {
         User locked = new User(
                 1L, "Test", "test@nutriplus.com", UserRole.PATIENT, "hash",
-                null, null, 3, false, null, null, null, LocalDateTime.now(), LocalDateTime.now());
+                null, null, null, 3, false, null, null, null, LocalDateTime.now(), LocalDateTime.now());
         when(userQueryPort.findByEmail("test@nutriplus.com")).thenReturn(Optional.of(locked));
 
         assertThatThrownBy(() -> loginUseCase.execute(new LoginUseCase.Request("test@nutriplus.com", "secret123")))

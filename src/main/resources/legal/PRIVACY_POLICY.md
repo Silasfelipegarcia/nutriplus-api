@@ -15,7 +15,7 @@ E-mail do encarregado (DPO): **[PREENCHER — privacidade@nutriplus.com]**
 
 | Categoria | Exemplos |
 |-----------|----------|
-| Cadastro | Nome, e-mail, senha (armazenada com hash) |
+| Cadastro | Nome, e-mail, CPF (criptografado em repouso), senha (armazenada com hash) |
 | Perfil nutricional | Idade, sexo, peso, altura, metas, preferências alimentares |
 | Dados sensíveis (art. 11 LGPD) | Peso, medidas corporais, % gordura informado por você, check-ins de refeições |
 | Uso do app | Logs técnicos, identificadores de sessão, chamadas à IA (auditoria) |
@@ -23,7 +23,7 @@ E-mail do encarregado (DPO): **[PREENCHER — privacidade@nutriplus.com]**
 
 ## 3. Finalidades
 
-- Criar e manter sua conta
+- Criar e manter sua conta e identificar usuários de forma única (CPF)
 - Calcular metas nutricionais e sugerir planos alimentares
 - Acompanhar hábitos e evolução corporal (estimativas)
 - Segurança, suporte e melhoria do serviço
@@ -55,7 +55,7 @@ Você pode solicitar: confirmação de tratamento, acesso, correção, exclusão
 
 ## 8. Segurança
 
-Utilizamos HTTPS, autenticação por token, hash de senha e controles de acesso. Nenhum sistema é 100% seguro; notifique-nos em caso de incidente.
+Utilizamos HTTPS, autenticação por token, hash de senha, criptografia do CPF (AES-256) e mascaramento nas respostas da API. O CPF completo não é exibido após o cadastro. Nenhum sistema é 100% seguro; notifique-nos em caso de incidente.
 
 ## 9. Crianças e adolescentes
 

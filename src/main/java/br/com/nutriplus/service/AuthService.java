@@ -28,6 +28,7 @@ public class AuthService {
     private final RefreshTokenUseCase refreshTokenUseCase;
     private final ResponseMapper responseMapper;
     private final AuditLogService auditLogService;
+    private final CpfRegistrationService cpfRegistrationService;
 
     public AuthService(UserRepository userRepository,
                        NutritionProfileRepository nutritionProfileRepository,
@@ -37,7 +38,8 @@ public class AuthService {
                        LoginUseCase loginUseCase,
                        RefreshTokenUseCase refreshTokenUseCase,
                        ResponseMapper responseMapper,
-                       AuditLogService auditLogService) {
+                       AuditLogService auditLogService,
+                       CpfRegistrationService cpfRegistrationService) {
         this.userRepository = userRepository;
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.passwordHasherPort = passwordHasherPort;
@@ -47,6 +49,7 @@ public class AuthService {
         this.refreshTokenUseCase = refreshTokenUseCase;
         this.responseMapper = responseMapper;
         this.auditLogService = auditLogService;
+        this.cpfRegistrationService = cpfRegistrationService;
     }
 
     @Transactional
@@ -60,6 +63,7 @@ public class AuthService {
                 .email(request.email())
                 .passwordHash(passwordHasherPort.encode(request.password()))
                 .build();
+        cpfRegistrationService.applyCpf(user, request.cpf());
 
         user = userRepository.save(user);
         auditLogService.log("REGISTER", "USER", user);

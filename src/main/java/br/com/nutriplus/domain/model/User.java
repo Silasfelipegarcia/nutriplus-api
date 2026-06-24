@@ -12,6 +12,7 @@ public record User(
         String passwordHash,
         String photoUrl,
         String photoThumbnailUrl,
+        String cpfEncrypted,
         int failedLoginAttempts,
         boolean passwordMustChange,
         LocalDateTime termsAcceptedAt,

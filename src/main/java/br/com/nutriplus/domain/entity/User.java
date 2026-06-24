@@ -34,6 +34,12 @@ public class User {
     @Column(name = "photo_thumbnail_url", columnDefinition = "MEDIUMTEXT")
     private String photoThumbnailUrl;
 
+    @Column(name = "cpf_hash", length = 64, unique = true)
+    private String cpfHash;
+
+    @Column(name = "cpf_encrypted", length = 512)
+    private String cpfEncrypted;
+
     @Column(name = "failed_login_attempts", nullable = false)
     private int failedLoginAttempts = 0;
 
@@ -137,6 +143,22 @@ public class User {
         this.photoThumbnailUrl = photoThumbnailUrl;
     }
 
+    public String getCpfHash() {
+        return cpfHash;
+    }
+
+    public void setCpfHash(String cpfHash) {
+        this.cpfHash = cpfHash;
+    }
+
+    public String getCpfEncrypted() {
+        return cpfEncrypted;
+    }
+
+    public void setCpfEncrypted(String cpfEncrypted) {
+        this.cpfEncrypted = cpfEncrypted;
+    }
+
     public int getFailedLoginAttempts() {
         return failedLoginAttempts;
     }
@@ -201,6 +223,8 @@ public class User {
         private String passwordHash;
         private String photoUrl;
         private String photoThumbnailUrl;
+        private String cpfHash;
+        private String cpfEncrypted;
         private int failedLoginAttempts;
         private boolean passwordMustChange;
         private LocalDateTime termsAcceptedAt;
@@ -241,6 +265,16 @@ public class User {
 
         public Builder photoThumbnailUrl(String photoThumbnailUrl) {
             this.photoThumbnailUrl = photoThumbnailUrl;
+            return this;
+        }
+
+        public Builder cpfHash(String cpfHash) {
+            this.cpfHash = cpfHash;
+            return this;
+        }
+
+        public Builder cpfEncrypted(String cpfEncrypted) {
+            this.cpfEncrypted = cpfEncrypted;
             return this;
         }
 

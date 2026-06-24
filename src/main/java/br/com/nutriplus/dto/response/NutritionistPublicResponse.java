@@ -6,6 +6,7 @@ public record NutritionistPublicResponse(
         Long id,
         String name,
         String crn,
+        boolean crnVerified,
         String bio,
         String specialties,
         int consultationPriceCents,
@@ -15,6 +16,8 @@ public record NutritionistPublicResponse(
         String city,
         String stateCode,
         String locationLabel,
-        String whatsappPhone
+        String whatsappPhone,
+        double averageRating,
+        long ratingCount
 ) {
 }

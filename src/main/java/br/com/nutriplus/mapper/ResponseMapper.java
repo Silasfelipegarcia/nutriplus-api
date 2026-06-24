@@ -22,10 +22,14 @@ public class ResponseMapper {
 
     private final ObjectMapper objectMapper;
     private final HealthReferenceService healthReferenceService;
+    private final br.com.nutriplus.infrastructure.security.CpfProtectionService cpfProtectionService;
 
-    public ResponseMapper(ObjectMapper objectMapper, HealthReferenceService healthReferenceService) {
+    public ResponseMapper(ObjectMapper objectMapper,
+                          HealthReferenceService healthReferenceService,
+                          br.com.nutriplus.infrastructure.security.CpfProtectionService cpfProtectionService) {
         this.objectMapper = objectMapper;
         this.healthReferenceService = healthReferenceService;
+        this.cpfProtectionService = cpfProtectionService;
     }
     public UserResponse toUserResponse(br.com.nutriplus.domain.entity.User user, boolean hasNutritionProfile) {
         return new UserResponse(
@@ -35,6 +39,7 @@ public class ResponseMapper {
                 user.getCreatedAt(),
                 hasNutritionProfile,
                 photoForClient(user.getPhotoThumbnailUrl()),
+                cpfProtectionService.maskFromEncrypted(user.getCpfEncrypted()),
                 user.getTermsAcceptedAt(),
                 user.getTermsVersion(),
                 user.getPrivacyPolicyAcceptedAt()
@@ -49,6 +54,7 @@ public class ResponseMapper {
                 user.createdAt(),
                 hasNutritionProfile,
                 user.photoForClient(),
+                cpfProtectionService.maskFromEncrypted(user.cpfEncrypted()),
                 user.termsAcceptedAt(),
                 user.termsVersion(),
                 user.privacyPolicyAcceptedAt()

@@ -11,6 +11,8 @@ import br.com.nutriplus.exception.ResourceNotFoundException;
 import br.com.nutriplus.mapper.ResponseMapper;
 import br.com.nutriplus.repository.MealPlanGenerationJobRepository;
 import br.com.nutriplus.repository.MealPlanRepository;
+import br.com.nutriplus.repository.UserRepository;
+import br.com.nutriplus.security.AuthorizationService;
 import br.com.nutriplus.security.CurrentUser;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,6 +50,8 @@ public class MealPlanService {
     private final MealPlanGenerationJobRepository jobRepository;
     private final MealPlanGenerationWorker generationWorker;
     private final ResponseMapper responseMapper;
+    private final AuthorizationService authorizationService;
+    private final UserRepository userRepository;
 
     public MealPlanService(CurrentUser currentUser,
                            NutritionProfileService nutritionProfileService,
@@ -55,7 +59,9 @@ public class MealPlanService {
                            MealLoader mealLoader,
                            MealPlanGenerationJobRepository jobRepository,
                            MealPlanGenerationWorker generationWorker,
-                           ResponseMapper responseMapper) {
+                           ResponseMapper responseMapper,
+                           AuthorizationService authorizationService,
+                           UserRepository userRepository) {
         this.currentUser = currentUser;
         this.nutritionProfileService = nutritionProfileService;
         this.mealPlanRepository = mealPlanRepository;
@@ -63,11 +69,23 @@ public class MealPlanService {
         this.jobRepository = jobRepository;
         this.generationWorker = generationWorker;
         this.responseMapper = responseMapper;
+        this.authorizationService = authorizationService;
+        this.userRepository = userRepository;
+    }
+
+    @Transactional
+    public MealPlanGenerationStatusResponse enqueueGenerationForUser(Long userId) {
+        authorizationService.requireCareAccessForNutritionistByPatientId(userId);
+        return enqueueGenerationInternal(userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado.")));
     }
 
     @Transactional
     public MealPlanGenerationStatusResponse enqueueGeneration() {
-        User user = currentUser.get();
+        return enqueueGenerationInternal(currentUser.get());
+    }
+
+    private MealPlanGenerationStatusResponse enqueueGenerationInternal(User user) {
         nutritionProfileService.getEntityForUser(user);
 
         List<MealPlanGenerationJob> active = jobRepository.findByUserIdAndStatusIn(user.getId(), ACTIVE_STATUSES);

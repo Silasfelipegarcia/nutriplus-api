@@ -1,13 +1,16 @@
 package br.com.nutriplus.controller;
 
 import br.com.nutriplus.dto.request.AcceptInviteRequest;
+import br.com.nutriplus.dto.request.CareRatingRequest;
 import br.com.nutriplus.dto.request.CareRequestRequest;
 import br.com.nutriplus.dto.request.ConsultationPayRequest;
 import br.com.nutriplus.dto.response.AuthResponse;
 import br.com.nutriplus.dto.response.CareContactResponse;
+import br.com.nutriplus.dto.response.CareRatingResponse;
 import br.com.nutriplus.dto.response.CareRelationshipResponse;
 import br.com.nutriplus.dto.response.PaymentIntentResponse;
 import br.com.nutriplus.dto.request.NutritionistRegisterRequest;
+import br.com.nutriplus.service.CareRatingService;
 import br.com.nutriplus.service.CareService;
 import br.com.nutriplus.service.NutritionistProService;
 import br.com.nutriplus.service.StripePaymentService;
@@ -23,13 +26,16 @@ public class CareController {
     private final CareService careService;
     private final StripePaymentService stripePaymentService;
     private final NutritionistProService nutritionistProService;
+    private final CareRatingService careRatingService;
 
     public CareController(CareService careService,
                           StripePaymentService stripePaymentService,
-                          NutritionistProService nutritionistProService) {
+                          NutritionistProService nutritionistProService,
+                          CareRatingService careRatingService) {
         this.careService = careService;
         this.stripePaymentService = stripePaymentService;
         this.nutritionistProService = nutritionistProService;
+        this.careRatingService = careRatingService;
     }
 
     @PostMapping("/auth/register/nutritionist")
@@ -46,9 +52,14 @@ public class CareController {
 
     @PostMapping("/care/request/{nutritionistId}")
     public CareRelationshipResponse requestCare(@PathVariable Long nutritionistId,
-                                                @RequestBody(required = false) CareRequestRequest request) {
-        var preferred = request != null ? request.preferredCareMode() : null;
-        return careService.requestMarketplaceCare(nutritionistId, preferred);
+                                                @Valid @RequestBody CareRequestRequest request) {
+        return careService.requestMarketplaceCare(nutritionistId, request);
+    }
+
+    @PostMapping("/care/relationships/{careRelationshipId}/rate")
+    public CareRatingResponse rate(@PathVariable Long careRelationshipId,
+                                   @Valid @RequestBody CareRatingRequest request) {
+        return careRatingService.rate(careRelationshipId, request);
     }
 
     @GetMapping("/care/relationships/{careRelationshipId}/contact")

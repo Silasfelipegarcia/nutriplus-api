@@ -50,6 +50,7 @@ public class UpdateUserProfileUseCase {
                 current.passwordHash(),
                 photoUrl,
                 photoThumbnailUrl,
+                current.cpfEncrypted(),
                 current.failedLoginAttempts(),
                 current.passwordMustChange(),
                 current.termsAcceptedAt(),
