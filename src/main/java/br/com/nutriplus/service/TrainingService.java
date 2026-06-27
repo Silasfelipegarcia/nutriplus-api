@@ -8,11 +8,11 @@ import br.com.nutriplus.domain.entity.UserTrainingActivity;
 import br.com.nutriplus.domain.enums.SportType;
 import br.com.nutriplus.dto.request.TrainingActivityRequest;
 import br.com.nutriplus.dto.request.TrainingProfileRequest;
+import br.com.nutriplus.dto.response.CoachInsightResponse;
 import br.com.nutriplus.dto.response.SportCatalogItemResponse;
 import br.com.nutriplus.dto.response.TrainingActivityResponse;
 import br.com.nutriplus.dto.response.TrainingProfileResponse;
 import br.com.nutriplus.exception.BusinessException;
-import br.com.nutriplus.exception.ResourceNotFoundException;
 import br.com.nutriplus.mapper.ResponseMapper;
 import br.com.nutriplus.repository.NutritionProfileRepository;
 import br.com.nutriplus.repository.UserTrainingActivityRepository;
@@ -37,17 +37,20 @@ public class TrainingService {
     private final UserTrainingActivityRepository activityRepository;
     private final AiAgentClient aiAgentClient;
     private final ResponseMapper responseMapper;
+    private final CoachInsightService coachInsightService;
 
     public TrainingService(CurrentUser currentUser,
                            NutritionProfileRepository nutritionProfileRepository,
                            UserTrainingActivityRepository activityRepository,
                            AiAgentClient aiAgentClient,
-                           ResponseMapper responseMapper) {
+                           ResponseMapper responseMapper,
+                           CoachInsightService coachInsightService) {
         this.currentUser = currentUser;
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.activityRepository = activityRepository;
         this.aiAgentClient = aiAgentClient;
         this.responseMapper = responseMapper;
+        this.coachInsightService = coachInsightService;
     }
 
     @Cacheable(value = NutriCacheNames.SPORT_CATALOG, key = "'catalog'")
@@ -67,7 +70,7 @@ public class TrainingService {
         User user = currentUser.get();
         NutritionProfile profile = requireProfile(user.getId());
         List<UserTrainingActivity> activities = activityRepository.findByUserIdOrderByIdAsc(user.getId());
-        return buildResponse(profile, activities);
+        return buildResponse(profile, activities, null);
     }
 
     @Transactional
@@ -108,7 +111,10 @@ public class TrainingService {
             throw new BusinessException("Adicione pelo menos um treino no modo atleta.");
         }
 
-        return buildResponse(profile, saved);
+        profile = recalculateMacrosForProfile(profile, saved);
+        TrainingProfileResponse response = buildResponse(profile, saved, null);
+        CoachInsightResponse coachInsight = coachInsightService.trainingReview(profile, response);
+        return buildResponse(profile, saved, coachInsight);
     }
 
     @Transactional
@@ -124,8 +130,29 @@ public class TrainingService {
             throw new BusinessException("Cadastre seus treinos para ajustar o plano.");
         }
 
-        BigDecimal dailyExtra = computeDailyExtra(profile.getCurrentWeightKg(), activities);
-        profile.setTrainingDailyExtraKcal(dailyExtra);
+        profile = recalculateMacrosForProfile(profile, activities);
+        return responseMapper.toNutritionProfileResponse(profile);
+    }
+
+    public void syncTrainingDailyExtra(NutritionProfile profile) {
+        if (!profile.isAthleteModeEnabled()) {
+            return;
+        }
+        Long userId = profile.getUser().getId();
+        List<UserTrainingActivity> activities = activityRepository.findByUserIdOrderByIdAsc(userId);
+        if (activities.isEmpty()) {
+            return;
+        }
+        profile.setTrainingDailyExtraKcal(computeDailyExtra(profile.getCurrentWeightKg(), activities));
+    }
+
+    private NutritionProfile recalculateMacrosForProfile(NutritionProfile profile,
+                                                         List<UserTrainingActivity> activities) {
+        if (profile.isAthleteModeEnabled() && !activities.isEmpty()) {
+            profile.setTrainingDailyExtraKcal(computeDailyExtra(profile.getCurrentWeightKg(), activities));
+        } else {
+            profile.setTrainingDailyExtraKcal(null);
+        }
 
         AiNutritionCalculateResponse macros = aiAgentClient.calculateMacros(profile);
         profile.setBmrKcal(macros.bmrKcal());
@@ -138,11 +165,12 @@ public class TrainingService {
             profile.setLeanMassKg(macros.leanMassKg());
         }
 
-        profile = nutritionProfileRepository.save(profile);
-        return responseMapper.toNutritionProfileResponse(profile);
+        return nutritionProfileRepository.save(profile);
     }
 
-    private TrainingProfileResponse buildResponse(NutritionProfile profile, List<UserTrainingActivity> activities) {
+    private TrainingProfileResponse buildResponse(NutritionProfile profile,
+                                                  List<UserTrainingActivity> activities,
+                                                  CoachInsightResponse coachInsight) {
         BigDecimal weight = profile.getCurrentWeightKg();
         List<TrainingActivityResponse> items = activities.stream()
                 .map(a -> toActivityResponse(a, weight))
@@ -167,6 +195,10 @@ public class TrainingService {
             adjusted = baseTarget;
         }
 
+        boolean weightRequired = profile.isAthleteModeEnabled()
+                && !activities.isEmpty()
+                && (weight == null || weight.compareTo(BigDecimal.ZERO) <= 0);
+
         return new TrainingProfileResponse(
                 profile.isAthleteModeEnabled(),
                 items,
@@ -176,7 +208,9 @@ public class TrainingService {
                         ? baseTarget.subtract(profile.getTrainingDailyExtraKcal()).max(BigDecimal.ZERO)
                         : baseTarget,
                 adjusted,
-                applied
+                applied,
+                weightRequired,
+                coachInsight
         );
     }
 

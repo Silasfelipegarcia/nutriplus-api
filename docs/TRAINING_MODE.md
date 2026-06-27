@@ -15,10 +15,12 @@ Ativação **fora do onboarding**, no Perfil — para quem pratica esporte e que
 ## Fluxo
 
 1. Onboarding: escolha **tipo de perfil** → se atleta, cadastre treinos **antes** de métricas/dieta → salve perfil.
-2. Use `POST /onboarding/complete` (atleta) ou `POST /nutrition-profile` + `PUT /training/profile` + `POST /training/apply`.
-3. Em **Perfil → Modo atleta**: edite treinos e **Aplicar ao plano** para recalcular macros.
+2. Use `POST /onboarding/complete` (atleta) ou `POST /nutrition-profile` + `PUT /training/profile`.
+3. Em **Perfil → Modo atleta**: editar treinos em `PUT /training/profile` **já recalcula** metas com o extra de treino.
 4. App mostra **kcal por sessão** e **média diária extra**.
-5. **Aplicar ao plano** recalcula macros e sugere gerar novo plano alimentar.
+5. Gere um **novo plano alimentar** para refletir as metas na aba Plano (`POST /meal-plans/generate`).
+
+`POST /training/apply` permanece como alias retrocompatível (equivalente a salvar treinos com modo atleta ativo).
 
 Ver [ONBOARDING.md](./ONBOARDING.md) para sequência completa.
 
@@ -33,6 +35,6 @@ Ver [ONBOARDING.md](./ONBOARDING.md) para sequência completa.
 |--------|------|-----------|
 | GET | `/training/sports` | Catálogo de esportes + MET (**público**, sem JWT) |
 | GET | `/training/profile` | Modo atleta + treinos + preview kcal |
-| PUT | `/training/profile` | Salva treinos (não recalcula macros) |
-| POST | `/training/apply` | Recalcula metas nutricionais com treino |
+| PUT | `/training/profile` | Salva treinos e recalcula macros (extra de treino incluído) |
+| POST | `/training/apply` | Alias: recalcula metas nutricionais com treino (legado) |
 | POST | `/onboarding/complete` | Onboarding atleta: perfil + treino + apply |

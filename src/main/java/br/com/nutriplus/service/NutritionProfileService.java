@@ -31,6 +31,7 @@ public class NutritionProfileService {
 
     private final CurrentUser currentUser;
     private final NutritionProfileRepository nutritionProfileRepository;
+    private final TrainingService trainingService;
     private final AiAgentClient aiAgentClient;
     private final AiRequestLogService aiRequestLogService;
     private final ResponseMapper responseMapper;
@@ -38,12 +39,14 @@ public class NutritionProfileService {
 
     public NutritionProfileService(CurrentUser currentUser,
                                    NutritionProfileRepository nutritionProfileRepository,
+                                   TrainingService trainingService,
                                    AiAgentClient aiAgentClient,
                                    AiRequestLogService aiRequestLogService,
                                    ResponseMapper responseMapper,
                                    ObjectMapper objectMapper) {
         this.currentUser = currentUser;
         this.nutritionProfileRepository = nutritionProfileRepository;
+        this.trainingService = trainingService;
         this.aiAgentClient = aiAgentClient;
         this.aiRequestLogService = aiRequestLogService;
         this.responseMapper = responseMapper;
@@ -60,6 +63,7 @@ public class NutritionProfileService {
                 .orElse(NutritionProfile.builder().user(user).build());
 
         applyRequest(profile, request);
+        trainingService.syncTrainingDailyExtra(profile);
 
         String requestJson = toJson(request);
         try {

@@ -1,6 +1,7 @@
 package br.com.nutriplus.client;
 
 import br.com.nutriplus.client.dto.AiFoodExtraEstimateResponse;
+import br.com.nutriplus.client.dto.AiTrainingConsultResponse;
 import br.com.nutriplus.client.dto.AiMealPlanGenerateResponse;
 import br.com.nutriplus.client.dto.AiNutritionCalculateResponse;
 import br.com.nutriplus.client.dto.AiProgressAnalyzeResponse;
@@ -100,6 +101,10 @@ public class AiAgentClient {
         return post("/api/v1/food-extra/estimate", body, AiFoodExtraEstimateResponse.class);
     }
 
+    public AiTrainingConsultResponse consultTrainingGarcia(Map<String, Object> body) {
+        return post("/api/v1/training/consult", body, AiTrainingConsultResponse.class);
+    }
+
     private Map<String, Object> sessionToMap(BodyMeasurementSession session) {
         Map<String, Object> map = new HashMap<>();
         map.put("measuredOn", session.getMeasuredOn().toString());
@@ -193,9 +198,11 @@ public class AiAgentClient {
         if (profile.getLeanMassKg() != null) {
             body.put("leanMassKg", profile.getLeanMassKg());
         }
-        if (profile.isAthleteModeEnabled() && profile.getTrainingDailyExtraKcal() != null) {
-            body.put("trainingDailyExtraKcal", profile.getTrainingDailyExtraKcal());
+        if (profile.isAthleteModeEnabled()) {
             body.put("athleteModeEnabled", true);
+            if (profile.getTrainingDailyExtraKcal() != null) {
+                body.put("trainingDailyExtraKcal", profile.getTrainingDailyExtraKcal());
+            }
         }
         if (profile.getWakeTime() != null) {
             body.put("wakeTime", profile.getWakeTime().toString().substring(0, 5));

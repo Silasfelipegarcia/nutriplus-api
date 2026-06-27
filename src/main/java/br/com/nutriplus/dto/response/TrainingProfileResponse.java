@@ -10,6 +10,8 @@ public record TrainingProfileResponse(
         BigDecimal dailyExtraKcal,
         BigDecimal baseTargetCalories,
         BigDecimal adjustedTargetCalories,
-        boolean appliedToPlan
+        boolean appliedToPlan,
+        boolean weightRequired,
+        CoachInsightResponse coachInsight
 ) {
 }

@@ -4,6 +4,7 @@ import br.com.nutriplus.dto.request.FoodExtraRequest;
 import br.com.nutriplus.dto.request.MealCheckinRequest;
 import br.com.nutriplus.dto.response.CheckinAdherenceHistoryResponse;
 import br.com.nutriplus.dto.response.CheckinStatsResponse;
+import br.com.nutriplus.dto.response.CoachInsightResponse;
 import br.com.nutriplus.dto.response.DailyFoodExtraResponse;
 import br.com.nutriplus.dto.response.TodayCheckinsResponse;
 import br.com.nutriplus.dto.response.TodayMealCheckinResponse;
@@ -34,6 +35,11 @@ public class CheckinController {
     @PostMapping("/extras")
     public DailyFoodExtraResponse addExtra(@Valid @RequestBody FoodExtraRequest request) {
         return checkinService.addFoodExtra(request);
+    }
+
+    @PostMapping("/balance-insight")
+    public CoachInsightResponse balanceInsight() {
+        return checkinService.getBalanceCoachInsight();
     }
 
     @GetMapping("/stats")

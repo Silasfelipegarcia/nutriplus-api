@@ -17,6 +17,7 @@ import br.com.nutriplus.dto.response.CheckinAdherenceHistoryResponse;
 import br.com.nutriplus.dto.response.CheckinAdherenceProjectionResponse;
 import br.com.nutriplus.dto.response.CheckinStatsResponse;
 import br.com.nutriplus.dto.response.DailyAdherenceResponse;
+import br.com.nutriplus.dto.response.CoachInsightResponse;
 import br.com.nutriplus.dto.response.DailyFoodExtraResponse;
 import br.com.nutriplus.dto.response.TodayCheckinsResponse;
 import br.com.nutriplus.dto.response.TodayMealCheckinResponse;
@@ -54,6 +55,8 @@ public class CheckinService {
     private final NutritionProfileRepository nutritionProfileRepository;
     private final MealLoader mealLoader;
     private final AiAgentClient aiAgentClient;
+    private final CoachInsightService coachInsightService;
+    private final TrainingService trainingService;
 
     public CheckinService(CurrentUser currentUser,
                           MealPlanRepository mealPlanRepository,
@@ -62,7 +65,9 @@ public class CheckinService {
                           DailyFoodExtraRepository foodExtraRepository,
                           NutritionProfileRepository nutritionProfileRepository,
                           MealLoader mealLoader,
-                          AiAgentClient aiAgentClient) {
+                          AiAgentClient aiAgentClient,
+                          CoachInsightService coachInsightService,
+                          TrainingService trainingService) {
         this.currentUser = currentUser;
         this.mealPlanRepository = mealPlanRepository;
         this.mealRepository = mealRepository;
@@ -71,6 +76,8 @@ public class CheckinService {
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.mealLoader = mealLoader;
         this.aiAgentClient = aiAgentClient;
+        this.coachInsightService = coachInsightService;
+        this.trainingService = trainingService;
     }
 
     @Cacheable(value = NutriCacheNames.CHECKINS_TODAY, keyGenerator = "userDateCacheKeyGenerator")
@@ -188,6 +195,15 @@ public class CheckinService {
                 estimate.impactMessage()));
 
         return toExtraResponse(saved);
+    }
+
+    public CoachInsightResponse getBalanceCoachInsight() {
+        User user = currentUser.get();
+        NutritionProfile profile = nutritionProfileRepository.findByUserId(user.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Perfil nutricional não encontrado"));
+        TodayCheckinsResponse today = getToday();
+        var trainingProfile = trainingService.getProfile();
+        return coachInsightService.balanceInsight(profile, trainingProfile, today);
     }
 
     @Cacheable(value = NutriCacheNames.CHECKINS_STATS, keyGenerator = "userDateCacheKeyGenerator")
