@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 public record NutritionProfileRequest(
-        @NotNull @Min(10) @Max(120) Integer age,
+        @NotNull @Min(18) @Max(120) Integer age,
         LocalDate birthDate,
         @Size(max = 2) String stateCode,
         @Size(max = 120) String city,

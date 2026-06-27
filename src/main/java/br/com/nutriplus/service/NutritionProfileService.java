@@ -8,6 +8,7 @@ import br.com.nutriplus.domain.enums.AiRequestStatus;
 import br.com.nutriplus.domain.enums.AiRequestType;
 import br.com.nutriplus.dto.request.NutritionProfileRequest;
 import br.com.nutriplus.dto.response.NutritionProfileResponse;
+import br.com.nutriplus.exception.BusinessException;
 import br.com.nutriplus.exception.ResourceNotFoundException;
 import br.com.nutriplus.mapper.ResponseMapper;
 import br.com.nutriplus.repository.NutritionProfileRepository;
@@ -101,9 +102,16 @@ public class NutritionProfileService {
     }
 
     private void applyRequest(NutritionProfile profile, NutritionProfileRequest request) {
+        int resolvedAge = resolveAge(request);
+        if (resolvedAge < 18) {
+            throw new BusinessException("Você precisa ter pelo menos 18 anos.");
+        }
+        if (resolvedAge > 120) {
+            throw new BusinessException("Informe uma data de nascimento válida.");
+        }
         if (request.birthDate() != null) {
             profile.setBirthDate(request.birthDate());
-            profile.setAge(Period.between(request.birthDate(), LocalDate.now()).getYears());
+            profile.setAge(resolvedAge);
         } else {
             profile.setAge(request.age());
         }
@@ -157,6 +165,13 @@ public class NutritionProfileService {
         profile.setMedications(request.medications());
         profile.setAllergies(request.allergies());
         profile.setHealthNotes(request.healthNotes());
+    }
+
+    private int resolveAge(NutritionProfileRequest request) {
+        if (request.birthDate() != null) {
+            return Period.between(request.birthDate(), LocalDate.now()).getYears();
+        }
+        return request.age();
     }
 
     private LocalTime parseTime(String value) {

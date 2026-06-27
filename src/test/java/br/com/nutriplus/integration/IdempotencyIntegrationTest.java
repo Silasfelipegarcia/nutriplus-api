@@ -1,6 +1,7 @@
 package br.com.nutriplus.integration;
 
 import br.com.nutriplus.AbstractIntegrationTest;
+import br.com.nutriplus.support.TestCpfFactory;
 import br.com.nutriplus.infrastructure.web.IdempotencySupport;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,8 +30,8 @@ class IdempotencyIntegrationTest extends AbstractIntegrationTest {
     void registerRequiresIdempotencyKeyWhenEnabled() throws Exception {
         String email = "idem-" + UUID.randomUUID() + "@nutriplus.test";
         String registerBody = """
-                {"name":"Idem User","email":"%s","password":"secret123"}
-                """.formatted(email);
+                {"name":"Idem User","email":"%s","password":"secret123","cpf":"%s"}
+                """.formatted(email, TestCpfFactory.nextValidCpf());
 
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -42,9 +43,10 @@ class IdempotencyIntegrationTest extends AbstractIntegrationTest {
     @Test
     void registerReplayReturnsSameResponse() throws Exception {
         String email = "idem-replay-" + UUID.randomUUID() + "@nutriplus.test";
+        String cpf = TestCpfFactory.nextValidCpf();
         String registerBody = """
-                {"name":"Replay User","email":"%s","password":"secret123"}
-                """.formatted(email);
+                {"name":"Replay User","email":"%s","password":"secret123","cpf":"%s"}
+                """.formatted(email, cpf);
         String key = UUID.randomUUID().toString();
 
         mockMvc.perform(post("/auth/register")

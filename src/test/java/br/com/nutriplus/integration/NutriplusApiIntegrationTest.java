@@ -1,6 +1,7 @@
 package br.com.nutriplus.integration;
 
 import br.com.nutriplus.AbstractIntegrationTest;
+import br.com.nutriplus.support.TestCpfFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -34,8 +35,8 @@ class NutriplusApiIntegrationTest extends AbstractIntegrationTest {
         String password = "secret123";
 
         String registerBody = """
-                {"name":"Integration User","email":"%s","password":"%s"}
-                """.formatted(email, password);
+                {"name":"Integration User","email":"%s","password":"%s","cpf":"%s"}
+                """.formatted(email, password, TestCpfFactory.nextValidCpf());
 
         String authJson = mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -69,8 +70,8 @@ class NutriplusApiIntegrationTest extends AbstractIntegrationTest {
     void updateProfileWithAuth() throws Exception {
         String email = "profile-" + UUID.randomUUID() + "@nutriplus.test";
         String registerBody = """
-                {"name":"Before","email":"%s","password":"secret123"}
-                """.formatted(email);
+                {"name":"Before","email":"%s","password":"secret123","cpf":"%s"}
+                """.formatted(email, TestCpfFactory.nextValidCpf());
 
         String authJson = mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
