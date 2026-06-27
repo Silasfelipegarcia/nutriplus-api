@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Configuration
 @Profile({"local", "dev"})
@@ -24,6 +25,10 @@ public class DevDataLoader {
     public static final String TEST_EMAIL = "teste@nutriplus.local";
     public static final String TEST_PASSWORD = "Nutri123!";
 
+    public static final String TEST2_EMAIL = "teste2@nutriplus.local";
+    public static final String ADMIN_EMAIL = "admin@nutriplus.local";
+    public static final String ADMIN_PASSWORD = "Nutri123!";
+
     @Bean
     CommandLineRunner seedTestUser(
             UserRepository userRepository,
@@ -31,17 +36,50 @@ public class DevDataLoader {
             PasswordEncoder passwordEncoder
     ) {
         return args -> {
-            if (userRepository.findByEmail(TEST_EMAIL).isPresent()) {
-                return;
-            }
+            seedAdmin(userRepository, passwordEncoder);
+            seedPatient(userRepository, nutritionProfileRepository, passwordEncoder,
+                    TEST_EMAIL, "Usuário Teste", true);
+            seedPatient(userRepository, nutritionProfileRepository, passwordEncoder,
+                    TEST2_EMAIL, "Usuário Teste 2", false);
+        };
+    }
 
-            User user = User.builder()
-                    .name("Usuário Teste")
-                    .email(TEST_EMAIL)
-                    .passwordHash(passwordEncoder.encode(TEST_PASSWORD))
-                    .build();
-            user = userRepository.save(user);
+    private void seedAdmin(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+        if (userRepository.findByEmail(ADMIN_EMAIL).isPresent()) {
+            return;
+        }
+        User admin = User.builder()
+                .name("Admin Nutri+")
+                .email(ADMIN_EMAIL)
+                .role(UserRole.ADMIN)
+                .passwordHash(passwordEncoder.encode(ADMIN_PASSWORD))
+                .loginEnabled(true)
+                .loginEnabledAt(LocalDateTime.now())
+                .build();
+        userRepository.save(admin);
+        log.info("Dev admin user created: {} / {}", ADMIN_EMAIL, ADMIN_PASSWORD);
+    }
 
+    private void seedPatient(UserRepository userRepository,
+                               NutritionProfileRepository nutritionProfileRepository,
+                               PasswordEncoder passwordEncoder,
+                               String email,
+                               String name,
+                               boolean withProfile) {
+        if (userRepository.findByEmail(email).isPresent()) {
+            return;
+        }
+
+        User user = User.builder()
+                .name(name)
+                .email(email)
+                .passwordHash(passwordEncoder.encode(TEST_PASSWORD))
+                .loginEnabled(true)
+                .loginEnabledAt(LocalDateTime.now())
+                .build();
+        user = userRepository.save(user);
+
+        if (withProfile) {
             NutritionProfile profile = NutritionProfile.builder()
                     .user(user)
                     .age(30)
@@ -65,8 +103,8 @@ public class DevDataLoader {
                     .targetFatG(new BigDecimal("63.00"))
                     .build();
             nutritionProfileRepository.save(profile);
+        }
 
-            log.info("Dev test user created: {} / {}", TEST_EMAIL, TEST_PASSWORD);
-        };
+        log.info("Dev test user created: {} / {} (login liberado)", email, TEST_PASSWORD);
     }
 }

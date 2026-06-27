@@ -4,7 +4,7 @@ import br.com.nutriplus.dto.request.AcceptInviteRequest;
 import br.com.nutriplus.dto.request.CareRatingRequest;
 import br.com.nutriplus.dto.request.CareRequestRequest;
 import br.com.nutriplus.dto.request.ConsultationPayRequest;
-import br.com.nutriplus.dto.response.AuthResponse;
+import br.com.nutriplus.dto.response.RegisterResponse;
 import br.com.nutriplus.dto.response.CareContactResponse;
 import br.com.nutriplus.dto.response.CareRatingResponse;
 import br.com.nutriplus.dto.response.CareRelationshipResponse;
@@ -40,7 +40,7 @@ public class CareController {
 
     @PostMapping("/auth/register/nutritionist")
     @ResponseStatus(HttpStatus.CREATED)
-    public AuthResponse registerNutritionist(@Valid @RequestBody NutritionistRegisterRequest request) {
+    public RegisterResponse registerNutritionist(@Valid @RequestBody NutritionistRegisterRequest request) {
         return nutritionistProService.register(request);
     }
 

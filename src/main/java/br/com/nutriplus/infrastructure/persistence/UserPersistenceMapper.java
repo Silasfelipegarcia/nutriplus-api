@@ -11,6 +11,7 @@ final class UserPersistenceMapper {
                 entity.getName(),
                 entity.getEmail(),
                 entity.getRole(),
+                entity.isLoginEnabled(),
                 entity.getPasswordHash(),
                 entity.getPhotoUrl(),
                 entity.getPhotoThumbnailUrl(),
@@ -40,6 +41,7 @@ final class UserPersistenceMapper {
                 .name(domain.name())
                 .email(domain.email())
                 .role(domain.role())
+                .loginEnabled(domain.loginEnabled())
                 .passwordHash(domain.passwordHash())
                 .photoUrl(domain.photoUrl())
                 .photoThumbnailUrl(domain.photoThumbnailUrl())

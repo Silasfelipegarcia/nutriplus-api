@@ -102,4 +102,8 @@ public class AuthorizationService {
     public boolean hasRole(UserRole role) {
         return currentRoles().contains(role.name());
     }
+
+    public Long currentUserId() {
+        return requireAuthenticated().getId();
+    }
 }

@@ -1,14 +1,17 @@
 package br.com.nutriplus.service;
 
+import br.com.nutriplus.application.auth.LoginAccessPolicy;
 import br.com.nutriplus.application.auth.LoginUseCase;
 import br.com.nutriplus.application.auth.RefreshTokenUseCase;
 import br.com.nutriplus.application.port.PasswordHasherPort;
 import br.com.nutriplus.application.port.TokenPort;
 import br.com.nutriplus.application.port.UserQueryPort;
 import br.com.nutriplus.domain.entity.User;
+import br.com.nutriplus.domain.enums.RegistrationSource;
 import br.com.nutriplus.dto.request.LoginRequest;
 import br.com.nutriplus.dto.request.RegisterRequest;
 import br.com.nutriplus.dto.response.AuthResponse;
+import br.com.nutriplus.dto.response.RegisterResponse;
 import br.com.nutriplus.mapper.ResponseMapper;
 import br.com.nutriplus.repository.NutritionProfileRepository;
 import br.com.nutriplus.repository.UserRepository;
@@ -29,6 +32,7 @@ public class AuthService {
     private final AuditLogService auditLogService;
     private final CpfRegistrationService cpfRegistrationService;
     private final UserRegistrationValidator userRegistrationValidator;
+    private final FeatureFlagService featureFlagService;
 
     public AuthService(UserRepository userRepository,
                        NutritionProfileRepository nutritionProfileRepository,
@@ -40,7 +44,8 @@ public class AuthService {
                        ResponseMapper responseMapper,
                        AuditLogService auditLogService,
                        CpfRegistrationService cpfRegistrationService,
-                       UserRegistrationValidator userRegistrationValidator) {
+                       UserRegistrationValidator userRegistrationValidator,
+                       FeatureFlagService featureFlagService) {
         this.userRepository = userRepository;
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.passwordHasherPort = passwordHasherPort;
@@ -52,10 +57,27 @@ public class AuthService {
         this.auditLogService = auditLogService;
         this.cpfRegistrationService = cpfRegistrationService;
         this.userRegistrationValidator = userRegistrationValidator;
+        this.featureFlagService = featureFlagService;
     }
 
     @Transactional
-    public AuthResponse register(RegisterRequest request) {
+    public RegisterResponse register(RegisterRequest request) {
+        if (!featureFlagService.isEnabled("REGISTRATION_OPEN")) {
+            throw new br.com.nutriplus.exception.BusinessException("Cadastros temporariamente fechados.");
+        }
+        User user = createPendingPatient(request, RegistrationSource.OPEN);
+        auditLogService.log("REGISTER", "USER", user);
+        return toRegisterResponse(user, LoginAccessPolicy.PENDING_MESSAGE);
+    }
+
+    @Transactional
+    public RegisterResponse betaRequest(RegisterRequest request) {
+        User user = createPendingPatient(request, RegistrationSource.BETA_WAITLIST);
+        auditLogService.log("BETA_REQUEST", "USER", user);
+        return toRegisterResponse(user, LoginAccessPolicy.BETA_WAITLIST_MESSAGE);
+    }
+
+    private User createPendingPatient(RegisterRequest request, RegistrationSource source) {
         userRegistrationValidator.validateNewPatientAccount(
                 request.email(), request.cpf(), request.birthDate());
 
@@ -63,14 +85,21 @@ public class AuthService {
                 .name(request.name())
                 .email(request.email())
                 .passwordHash(passwordHasherPort.encode(request.password()))
+                .loginEnabled(false)
+                .registrationSource(source)
                 .build();
         cpfRegistrationService.applyCpf(user, request.cpf());
+        return userRepository.save(user);
+    }
 
-        user = userRepository.save(user);
-        auditLogService.log("REGISTER", "USER", user);
-
-        var domainUser = userQueryPort.findById(user.getId()).orElseThrow();
-        return toAuthResponse(domainUser);
+    private RegisterResponse toRegisterResponse(User user, String message) {
+        return new RegisterResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                false,
+                message
+        );
     }
 
     public AuthResponse login(LoginRequest request) {

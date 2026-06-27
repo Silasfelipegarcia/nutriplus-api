@@ -1,5 +1,6 @@
 package br.com.nutriplus.domain.entity;
 
+import br.com.nutriplus.domain.enums.RegistrationSource;
 import br.com.nutriplus.domain.enums.UserRole;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -24,6 +25,19 @@ public class User {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role = UserRole.PATIENT;
+
+    @Column(name = "login_enabled", nullable = false)
+    private boolean loginEnabled = false;
+
+    @Column(name = "login_enabled_at")
+    private LocalDateTime loginEnabledAt;
+
+    @Column(name = "login_enabled_by")
+    private Long loginEnabledBy;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "registration_source", nullable = false, length = 32)
+    private RegistrationSource registrationSource = RegistrationSource.OPEN;
 
     @Column(name = "password_hash", nullable = false)
     private String passwordHash;
@@ -71,6 +85,12 @@ public class User {
         this.name = builder.name;
         this.email = builder.email;
         this.role = builder.role != null ? builder.role : UserRole.PATIENT;
+        this.loginEnabled = builder.loginEnabled;
+        this.loginEnabledAt = builder.loginEnabledAt;
+        this.loginEnabledBy = builder.loginEnabledBy;
+        this.registrationSource = builder.registrationSource != null
+                ? builder.registrationSource
+                : RegistrationSource.OPEN;
         this.passwordHash = builder.passwordHash;
         this.photoUrl = builder.photoUrl;
         this.photoThumbnailUrl = builder.photoThumbnailUrl;
@@ -117,6 +137,38 @@ public class User {
 
     public void setRole(UserRole role) {
         this.role = role;
+    }
+
+    public boolean isLoginEnabled() {
+        return loginEnabled;
+    }
+
+    public void setLoginEnabled(boolean loginEnabled) {
+        this.loginEnabled = loginEnabled;
+    }
+
+    public LocalDateTime getLoginEnabledAt() {
+        return loginEnabledAt;
+    }
+
+    public void setLoginEnabledAt(LocalDateTime loginEnabledAt) {
+        this.loginEnabledAt = loginEnabledAt;
+    }
+
+    public Long getLoginEnabledBy() {
+        return loginEnabledBy;
+    }
+
+    public void setLoginEnabledBy(Long loginEnabledBy) {
+        this.loginEnabledBy = loginEnabledBy;
+    }
+
+    public RegistrationSource getRegistrationSource() {
+        return registrationSource;
+    }
+
+    public void setRegistrationSource(RegistrationSource registrationSource) {
+        this.registrationSource = registrationSource;
     }
 
     public String getPasswordHash() {
@@ -220,6 +272,10 @@ public class User {
         private String name;
         private String email;
         private UserRole role;
+        private boolean loginEnabled;
+        private LocalDateTime loginEnabledAt;
+        private Long loginEnabledBy;
+        private RegistrationSource registrationSource;
         private String passwordHash;
         private String photoUrl;
         private String photoThumbnailUrl;
@@ -250,6 +306,26 @@ public class User {
 
         public Builder role(UserRole role) {
             this.role = role;
+            return this;
+        }
+
+        public Builder loginEnabled(boolean loginEnabled) {
+            this.loginEnabled = loginEnabled;
+            return this;
+        }
+
+        public Builder loginEnabledAt(LocalDateTime loginEnabledAt) {
+            this.loginEnabledAt = loginEnabledAt;
+            return this;
+        }
+
+        public Builder loginEnabledBy(Long loginEnabledBy) {
+            this.loginEnabledBy = loginEnabledBy;
+            return this;
+        }
+
+        public Builder registrationSource(RegistrationSource registrationSource) {
+            this.registrationSource = registrationSource;
             return this;
         }
 

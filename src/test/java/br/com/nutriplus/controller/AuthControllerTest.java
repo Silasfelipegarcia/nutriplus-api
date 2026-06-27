@@ -3,6 +3,7 @@ package br.com.nutriplus.controller;
 import br.com.nutriplus.dto.request.LoginRequest;
 import br.com.nutriplus.dto.request.RegisterRequest;
 import br.com.nutriplus.dto.response.AuthResponse;
+import br.com.nutriplus.dto.response.RegisterResponse;
 import br.com.nutriplus.dto.response.UserResponse;
 import br.com.nutriplus.service.AuthService;
 import br.com.nutriplus.support.WebMvcTestSupport;
@@ -37,9 +38,9 @@ class AuthControllerTest extends WebMvcTestSupport {
 
     @Test
     void registerReturnsCreated() throws Exception {
-        var user = new UserResponse(1L, "Test", "test@nutriplus.com", LocalDateTime.now(), false, null, null, null, null, null);
         when(authService.register(any(RegisterRequest.class)))
-                .thenReturn(new AuthResponse("access", "refresh", "Bearer", 3600L, user));
+                .thenReturn(new RegisterResponse(1L, "Test", "test@nutriplus.com", false,
+                        "Seu cadastro foi recebido. Aguarde a liberação do acesso para entrar no app."));
 
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -47,8 +48,8 @@ class AuthControllerTest extends WebMvcTestSupport {
                                 {"name":"Test","email":"test@nutriplus.com","password":"secret123","cpf":"529.982.247-25","birthDate":"1990-06-15"}
                                 """))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.token").value("access"))
-                .andExpect(jsonPath("$.user.email").value("test@nutriplus.com"));
+                .andExpect(jsonPath("$.loginEnabled").value(false))
+                .andExpect(jsonPath("$.email").value("test@nutriplus.com"));
     }
 
     @Test

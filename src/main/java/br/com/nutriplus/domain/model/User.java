@@ -9,6 +9,7 @@ public record User(
         String name,
         String email,
         UserRole role,
+        boolean loginEnabled,
         String passwordHash,
         String photoUrl,
         String photoThumbnailUrl,

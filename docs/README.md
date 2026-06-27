@@ -6,6 +6,7 @@
 |-----------|-----------|----------|
 | [**BUSINESS_MODEL.md**](./BUSINESS_MODEL.md) | Produto + negócio | Modelo B2C/B2B2C, validação, acessibilidade, mercado |
 | [**PRICING.md**](./PRICING.md) | Produto + comercial | Tiers (grátis, atleta, nutri), faixas, defaults técnicos |
+| [**BILLING_AND_AUTH_ROADMAP.md**](./BILLING_AND_AUTH_ROADMAP.md) | Produto + engenharia | Plano: assinaturas, Mercado Pago, e-mail, paywall web/mobile |
 | [**NUTRI_PLUS_PRO.md**](./NUTRI_PLUS_PRO.md) | Produto + engenharia | Regras do marketplace nutricionista, status, endpoints |
 | [**HELP_CONTENT.md**](./HELP_CONTENT.md) | Produto | FAQ in-app (copy canônico) |
 | [**ENGAGEMENT.md**](./ENGAGEMENT.md) | Produto + engenharia | Gamificação, lembretes, motivação |

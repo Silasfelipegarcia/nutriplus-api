@@ -106,8 +106,12 @@ Assinatura atleta (proposta):           R$ ~25/mês    ██
 | Fase | Entrega |
 |------|---------|
 | **MVP (atual)** | Consulta avulsa + taxa % + mock Stripe |
-| **Fase 2** | Stripe Billing: assinatura atleta + renovação mensal paciente↔nutri |
+| **Fase 2a** | E-mail transacional (verificação cadastro + reset senha) — ver [BILLING_AND_AUTH_ROADMAP.md](./BILLING_AND_AUTH_ROADMAP.md) |
+| **Fase 2b** | **Mercado Pago:** assinatura modo atleta (mensal/anual) + paywall web/mobile |
+| **Fase 2c** | Stripe Billing: renovação consulta paciente↔nutri (se necessário além do avulso) |
 | **Fase 3** | Vouchers, preço por região, planos corporativos |
+
+> **Gateway B2C (paciente):** Mercado Pago para assinatura atleta. **Gateway Pro (nutricionista):** Stripe Connect — ver roadmap completo em [BILLING_AND_AUTH_ROADMAP.md](./BILLING_AND_AUTH_ROADMAP.md).
 
 ---
 

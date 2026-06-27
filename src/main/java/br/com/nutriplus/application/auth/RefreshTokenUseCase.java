@@ -20,6 +20,7 @@ public class RefreshTokenUseCase {
         Long userId = tokenPort.extractRefreshUserId(refreshToken);
         User user = userQueryPort.findById(userId)
                 .orElseThrow(() -> new TokenPort.InvalidTokenException("Usuário do refresh token não existe mais."));
+        LoginAccessPolicy.ensureCanLogin(user);
         return new LoginUseCase.Response(
                 tokenPort.generateAccessToken(user),
                 tokenPort.generateRefreshToken(user),

@@ -1,9 +1,9 @@
-# Política de Privacidade — Nutri+
+# Política de Privacidade — NutriPlus
 
 **Versão:** 2026-06-1  
 **Última atualização:** junho de 2026
 
-Esta Política descreve como o Nutri+ trata dados pessoais em conformidade com a **Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018)**.
+Esta Política descreve como o NutriPlus trata dados pessoais em conformidade com a **Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018)**.
 
 ## 1. Controlador
 
@@ -59,7 +59,7 @@ Utilizamos HTTPS, autenticação por token, hash de senha, criptografia do CPF (
 
 ## 9. Crianças e adolescentes
 
-O Nutri+ é destinado a maiores de 18 anos.
+O NutriPlus é destinado a maiores de 18 anos.
 
 ## 10. Alterações
 

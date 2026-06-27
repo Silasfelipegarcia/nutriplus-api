@@ -1,5 +1,6 @@
 package br.com.nutriplus.support;
 
+import br.com.nutriplus.infrastructure.security.LoginEnabledFilter;
 import br.com.nutriplus.infrastructure.security.PasswordMustChangeFilter;
 import br.com.nutriplus.infrastructure.security.RateLimitFilter;
 import br.com.nutriplus.infrastructure.security.RiskEvaluationFilter;
@@ -40,6 +41,9 @@ public abstract class WebMvcTestSupport {
 
     @MockBean
     private PasswordMustChangeFilter passwordMustChangeFilter;
+
+    @MockBean
+    private LoginEnabledFilter loginEnabledFilter;
 
     @MockBean
     private IdempotencyFilter idempotencyFilter;

@@ -125,6 +125,7 @@ public class SecurityConfig {
                         "/nutritionists",
                         "/nutritionists/**",
                         "/training/sports",
+                        "/feature-flags",
                         "/webhooks/**",
                         "/actuator/health",
                         "/actuator/health/**",
@@ -160,6 +161,7 @@ public class SecurityConfig {
             RiskEvaluationFilter riskEvaluationFilter,
             MdcUserFilter mdcUserFilter,
             PasswordMustChangeFilter passwordMustChangeFilter,
+            LoginEnabledFilter loginEnabledFilter,
             IdempotencyFilter idempotencyFilter,
             JsonSecurityHandlers jsonSecurityHandlers
     ) throws Exception {
@@ -181,7 +183,8 @@ public class SecurityConfig {
                 .addFilterAfter(mdcUserFilter, BearerTokenAuthenticationFilter.class)
                 .addFilterAfter(userRateLimitFilter, MdcUserFilter.class)
                 .addFilterAfter(passwordMustChangeFilter, BearerTokenAuthenticationFilter.class)
-                .addFilterAfter(idempotencyFilter, PasswordMustChangeFilter.class)
+                .addFilterAfter(loginEnabledFilter, PasswordMustChangeFilter.class)
+                .addFilterAfter(idempotencyFilter, LoginEnabledFilter.class)
                 .addFilterAfter(riskEvaluationFilter, IdempotencyFilter.class);
         return http.build();
     }

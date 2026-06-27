@@ -1,6 +1,6 @@
-# Nutri+ Pro — consentimento de compartilhamento de dados com nutricionista
+# NutriPlus Pro — consentimento de compartilhamento de dados com nutricionista
 
-Ao aceitar um convite ou contratar um nutricionista pelo Nutri+, você autoriza o compartilhamento dos seguintes dados com o profissional escolhido:
+Ao aceitar um convite ou contratar um nutricionista pelo NutriPlus, você autoriza o compartilhamento dos seguintes dados com o profissional escolhido:
 
 - Perfil nutricional (metas, preferências, restrições)
 - Medições corporais e evolução
@@ -11,6 +11,6 @@ Ao aceitar um convite ou contratar um nutricionista pelo Nutri+, você autoriza 
 
 **Revogação:** você pode encerrar o vínculo a qualquer momento nas configurações do app.
 
-**Responsabilidade:** o serviço clínico é prestado pelo nutricionista (CRN). O Nutri+ atua como intermediário tecnológico e de pagamento.
+**Responsabilidade:** o serviço clínico é prestado pelo nutricionista (CRN). O NutriPlus atua como intermediário tecnológico e de pagamento.
 
 Versão: 2026-06-pro-1

@@ -9,6 +9,7 @@ import br.com.nutriplus.domain.model.User;
 import br.com.nutriplus.exception.AccountLockedException;
 import br.com.nutriplus.exception.InvalidCredentialsException;
 import org.junit.jupiter.api.BeforeEach;
+import br.com.nutriplus.exception.LoginDisabledException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -44,6 +45,7 @@ class LoginUseCaseImplTest {
             "Test User",
             "test@nutriplus.com",
             UserRole.PATIENT,
+            true,
             "hash",
             null,
             null,
@@ -93,12 +95,24 @@ class LoginUseCaseImplTest {
     @Test
     void lockedAccountRejected() {
         User locked = new User(
-                1L, "Test", "test@nutriplus.com", UserRole.PATIENT, "hash",
+                1L, "Test", "test@nutriplus.com", UserRole.PATIENT, true, "hash",
                 null, null, null, 3, false, null, null, null, LocalDateTime.now(), LocalDateTime.now());
         when(userQueryPort.findByEmail("test@nutriplus.com")).thenReturn(Optional.of(locked));
 
         assertThatThrownBy(() -> loginUseCase.execute(new LoginUseCase.Request("test@nutriplus.com", "secret123")))
                 .isInstanceOf(AccountLockedException.class);
+    }
+
+    @Test
+    void loginDisabledRejected() {
+        User pending = new User(
+                1L, "Test", "test@nutriplus.com", UserRole.PATIENT, false, "hash",
+                null, null, null, 0, false, null, null, null, LocalDateTime.now(), LocalDateTime.now());
+        when(userQueryPort.findByEmail("test@nutriplus.com")).thenReturn(Optional.of(pending));
+        when(passwordHasherPort.matches("secret123", "hash")).thenReturn(true);
+
+        assertThatThrownBy(() -> loginUseCase.execute(new LoginUseCase.Request("test@nutriplus.com", "secret123")))
+                .isInstanceOf(LoginDisabledException.class);
     }
 
     @Test

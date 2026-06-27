@@ -1,6 +1,6 @@
-# Termos do Nutricionista — Nutri+ Pro
+# Termos do Nutricionista — NutriPlus Pro
 
-O nutricionista que utiliza a plataforma Nutri+ Pro concorda em:
+O nutricionista que utiliza a plataforma NutriPlus Pro concorda em:
 
 1. Manter CRN válido e informações profissionais atualizadas.
 2. Respeitar a **faixa de preços** definida pela plataforma (acessibilidade / baixa renda).

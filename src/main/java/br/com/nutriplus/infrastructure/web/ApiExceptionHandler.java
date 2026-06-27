@@ -5,6 +5,7 @@ import br.com.nutriplus.exception.AccountLockedException;
 import br.com.nutriplus.exception.AiAgentException;
 import br.com.nutriplus.exception.BusinessException;
 import br.com.nutriplus.exception.InvalidCredentialsException;
+import br.com.nutriplus.exception.LoginDisabledException;
 import br.com.nutriplus.exception.ResourceNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
@@ -54,6 +55,11 @@ public class ApiExceptionHandler {
     @ExceptionHandler(AccountLockedException.class)
     public ResponseEntity<Map<String, Object>> accountLocked(AccountLockedException ex, HttpServletRequest request) {
         return build(HttpStatus.FORBIDDEN, ex.getMessage(), "ACCOUNT_LOCKED", request);
+    }
+
+    @ExceptionHandler(LoginDisabledException.class)
+    public ResponseEntity<Map<String, Object>> loginDisabled(LoginDisabledException ex, HttpServletRequest request) {
+        return build(HttpStatus.FORBIDDEN, ex.getMessage(), "LOGIN_PENDING_APPROVAL", request);
     }
 
     @ExceptionHandler(AiAgentException.class)

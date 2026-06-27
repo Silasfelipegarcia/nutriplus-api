@@ -16,7 +16,7 @@ public class FeedbackService {
     private static final String SURVEY_VERSION = "v1";
     private static final String TRIGGER_MANUAL = "MANUAL";
     private static final String SUCCESS_MESSAGE =
-            "Obrigado! Sua opinião nos ajuda a melhorar o Nutri+.";
+            "Obrigado! Sua opinião nos ajuda a melhorar o NutriPlus.";
 
     private final CurrentUser currentUser;
     private final UserAppFeedbackRepository feedbackRepository;

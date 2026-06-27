@@ -1,15 +1,15 @@
-# Termos de Uso — Nutri+
+# Termos de Uso — NutriPlus
 
 **Versão:** 2026-06-1  
 **Última atualização:** junho de 2026
 
 ## 1. Aceitação
 
-Ao criar conta ou utilizar o Nutri+, você declara ter **18 anos ou mais** e concorda com estes Termos.
+Ao criar conta ou utilizar o NutriPlus, você declara ter **18 anos ou mais** e concorda com estes Termos.
 
-## 2. O que é o Nutri+
+## 2. O que é o NutriPlus
 
-O Nutri+ é um aplicativo de **organização alimentar e bem-estar** que utiliza inteligência artificial para sugerir planos alimentares, metas de macros e acompanhamento de hábitos. **Não é um serviço médico** e **não substitui** consulta, avaliação ou acompanhamento de nutricionista, médico ou outro profissional de saúde habilitado.
+O NutriPlus é um aplicativo de **organização alimentar e bem-estar** que utiliza inteligência artificial para sugerir planos alimentares, metas de macros e acompanhamento de hábitos. **Não é um serviço médico** e **não substitui** consulta, avaliação ou acompanhamento de nutricionista, médico ou outro profissional de saúde habilitado.
 
 ## 3. Inteligência artificial
 
@@ -27,7 +27,7 @@ Você pode solicitar exclusão da conta pelo app. O tratamento de dados pessoais
 
 ## 6. Limitação de responsabilidade
 
-Na extensão permitida pela lei, o Nutri+ e seus operadores não se responsabilizam por danos decorrentes do uso das sugestões do app. O serviço é fornecido "como está".
+Na extensão permitida pela lei, o NutriPlus e seus operadores não se responsabilizam por danos decorrentes do uso das sugestões do app. O serviço é fornecido "como está".
 
 ## 7. Alterações
 

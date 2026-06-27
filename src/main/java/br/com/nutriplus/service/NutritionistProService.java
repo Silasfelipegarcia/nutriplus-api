@@ -6,12 +6,14 @@ import br.com.nutriplus.application.port.UserQueryPort;
 import br.com.nutriplus.domain.entity.Nutritionist;
 import br.com.nutriplus.domain.entity.User;
 import br.com.nutriplus.domain.enums.ServiceMode;
+import br.com.nutriplus.domain.enums.RegistrationSource;
 import br.com.nutriplus.domain.enums.UserRole;
 import br.com.nutriplus.domain.util.ServiceModeCodec;
 import br.com.nutriplus.dto.request.NutritionistRegisterRequest;
 import br.com.nutriplus.dto.request.ProPricingUpdateRequest;
 import br.com.nutriplus.dto.request.ProProfileUpdateRequest;
-import br.com.nutriplus.dto.response.AuthResponse;
+import br.com.nutriplus.application.auth.LoginAccessPolicy;
+import br.com.nutriplus.dto.response.RegisterResponse;
 import br.com.nutriplus.dto.response.NutritionistPublicResponse;
 import br.com.nutriplus.exception.BusinessException;
 import br.com.nutriplus.mapper.ProMapper;
@@ -42,6 +44,7 @@ public class NutritionistProService {
     private final AuditLogService auditLogService;
     private final CpfRegistrationService cpfRegistrationService;
     private final UserRegistrationValidator userRegistrationValidator;
+    private final FeatureFlagService featureFlagService;
 
     public NutritionistProService(UserRepository userRepository,
                                   NutritionistRepository nutritionistRepository,
@@ -55,7 +58,8 @@ public class NutritionistProService {
                                   AuthorizationService authorizationService,
                                   AuditLogService auditLogService,
                                   CpfRegistrationService cpfRegistrationService,
-                                  UserRegistrationValidator userRegistrationValidator) {
+                                  UserRegistrationValidator userRegistrationValidator,
+                                  FeatureFlagService featureFlagService) {
         this.userRepository = userRepository;
         this.nutritionistRepository = nutritionistRepository;
         this.nutritionProfileRepository = nutritionProfileRepository;
@@ -69,10 +73,27 @@ public class NutritionistProService {
         this.auditLogService = auditLogService;
         this.cpfRegistrationService = cpfRegistrationService;
         this.userRegistrationValidator = userRegistrationValidator;
+        this.featureFlagService = featureFlagService;
     }
 
     @Transactional
-    public AuthResponse register(NutritionistRegisterRequest request) {
+    public RegisterResponse register(NutritionistRegisterRequest request) {
+        if (!featureFlagService.isEnabled("REGISTRATION_OPEN")) {
+            throw new BusinessException("Cadastros temporariamente fechados.");
+        }
+        User user = createPendingNutritionist(request, RegistrationSource.OPEN);
+        auditLogService.log("NUTRITIONIST_REGISTER", "NUTRITIONIST", user);
+        return toRegisterResponse(user, LoginAccessPolicy.PENDING_MESSAGE);
+    }
+
+    @Transactional
+    public RegisterResponse betaRequest(NutritionistRegisterRequest request) {
+        User user = createPendingNutritionist(request, RegistrationSource.BETA_WAITLIST);
+        auditLogService.log("BETA_REQUEST_NUTRITIONIST", "NUTRITIONIST", user);
+        return toRegisterResponse(user, LoginAccessPolicy.BETA_WAITLIST_MESSAGE);
+    }
+
+    private User createPendingNutritionist(NutritionistRegisterRequest request, RegistrationSource source) {
         userRegistrationValidator.validateNewNutritionistAccount(request.email(), request.cpf());
         var guidelines = pricingGuidelineService.requireGuidelines();
 
@@ -81,6 +102,8 @@ public class NutritionistProService {
                 .email(request.email())
                 .passwordHash(passwordHasherPort.encode(request.password()))
                 .role(UserRole.NUTRITIONIST)
+                .loginEnabled(false)
+                .registrationSource(source)
                 .build();
         cpfRegistrationService.applyCpf(user, request.cpf());
         user = userRepository.save(user);
@@ -89,16 +112,16 @@ public class NutritionistProService {
                 user, request.crn(), request.bio(), request.specialties(),
                 guidelines.getSuggestedPriceCents(), guidelines.getCareDurationDaysDefault());
         nutritionistRepository.save(nutritionist);
+        return user;
+    }
 
-        auditLogService.log("NUTRITIONIST_REGISTER", "NUTRITIONIST", user);
-
-        var domainUser = userQueryPort.findById(user.getId()).orElseThrow();
-        return new AuthResponse(
-                tokenPort.generateAccessToken(domainUser),
-                tokenPort.generateRefreshToken(domainUser),
-                "Bearer",
-                tokenPort.accessExpirationSeconds(),
-                responseMapper.toUserResponse(domainUser, false)
+    private RegisterResponse toRegisterResponse(User user, String message) {
+        return new RegisterResponse(
+                user.getId(),
+                user.getName(),
+                user.getEmail(),
+                false,
+                message
         );
     }
 

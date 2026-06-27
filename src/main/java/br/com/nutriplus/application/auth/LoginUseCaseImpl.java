@@ -53,6 +53,8 @@ public class LoginUseCaseImpl implements LoginUseCase {
             throw new InvalidCredentialsException("Credenciais inválidas");
         }
 
+        LoginAccessPolicy.ensureCanLogin(user);
+
         userUpdatePort.resetFailedLoginAttempts(user.id());
         User refreshed = userQueryPort.findById(user.id()).orElse(user);
         return new Response(

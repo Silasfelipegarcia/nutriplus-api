@@ -75,6 +75,7 @@ class UpdateUserProfileUseCaseTest {
                 name,
                 "user@test.com",
                 UserRole.PATIENT,
+                true,
                 "hash",
                 photoUrl,
                 photoThumbnailUrl,

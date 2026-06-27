@@ -47,6 +47,7 @@ public class UpdateUserProfileUseCase {
                 name,
                 current.email(),
                 current.role(),
+                current.loginEnabled(),
                 current.passwordHash(),
                 photoUrl,
                 photoThumbnailUrl,

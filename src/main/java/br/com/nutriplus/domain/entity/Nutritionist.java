@@ -80,7 +80,7 @@ public class Nutritionist {
         n.specialties = specialties;
         n.consultationPriceCents = priceCents;
         n.careDurationDays = careDays;
-        n.crnVerified = true;
+        n.crnVerified = false;
         return n;
     }
 
