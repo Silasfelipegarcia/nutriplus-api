@@ -9,4 +9,7 @@ import java.util.List;
 public interface DailyFoodExtraRepository extends JpaRepository<DailyFoodExtra, Long> {
 
     List<DailyFoodExtra> findByUserIdAndEntryDateOrderByCreatedAtAsc(Long userId, LocalDate entryDate);
+
+    List<DailyFoodExtra> findByUserIdAndEntryDateBetweenOrderByEntryDateAscCreatedAtAsc(
+            Long userId, LocalDate start, LocalDate end);
 }

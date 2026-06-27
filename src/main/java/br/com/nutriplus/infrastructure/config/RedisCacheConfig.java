@@ -121,6 +121,7 @@ public class RedisCacheConfig {
         caches.add(caffeineCache(NutriCacheNames.SHOPPING_LIST_LATEST, shoppingListTtlSeconds));
         caches.add(caffeineCache(NutriCacheNames.CHECKINS_TODAY, checkinsTtlSeconds));
         caches.add(caffeineCache(NutriCacheNames.CHECKINS_STATS, checkinsTtlSeconds));
+        caches.add(caffeineCache(NutriCacheNames.CHECKINS_ADHERENCE, checkinsTtlSeconds));
         caches.add(caffeineCache(NutriCacheNames.PROGRESS_SCHEDULE, progressTtlSeconds));
         caches.add(caffeineCache(NutriCacheNames.PROGRESS_MEASUREMENT_LATEST, progressTtlSeconds));
         caches.add(caffeineCache(NutriCacheNames.SPORT_CATALOG, staticContentTtlSeconds));
@@ -156,6 +157,7 @@ public class RedisCacheConfig {
                         defaults.entryTtl(Duration.ofSeconds(shoppingListTtlSeconds))),
                 Map.entry(NutriCacheNames.CHECKINS_TODAY, defaults.entryTtl(Duration.ofSeconds(checkinsTtlSeconds))),
                 Map.entry(NutriCacheNames.CHECKINS_STATS, defaults.entryTtl(Duration.ofSeconds(checkinsTtlSeconds))),
+                Map.entry(NutriCacheNames.CHECKINS_ADHERENCE, defaults.entryTtl(Duration.ofSeconds(checkinsTtlSeconds))),
                 Map.entry(NutriCacheNames.PROGRESS_SCHEDULE, defaults.entryTtl(Duration.ofSeconds(progressTtlSeconds))),
                 Map.entry(NutriCacheNames.PROGRESS_MEASUREMENT_LATEST,
                         defaults.entryTtl(Duration.ofSeconds(progressTtlSeconds))),

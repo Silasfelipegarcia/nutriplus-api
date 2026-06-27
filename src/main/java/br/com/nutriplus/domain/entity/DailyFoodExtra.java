@@ -49,6 +49,10 @@ public class DailyFoodExtra {
         return id;
     }
 
+    public LocalDate getEntryDate() {
+        return entryDate;
+    }
+
     public String getDescription() {
         return description;
     }

@@ -2,6 +2,7 @@ package br.com.nutriplus.controller;
 
 import br.com.nutriplus.dto.request.FoodExtraRequest;
 import br.com.nutriplus.dto.request.MealCheckinRequest;
+import br.com.nutriplus.dto.response.CheckinAdherenceHistoryResponse;
 import br.com.nutriplus.dto.response.CheckinStatsResponse;
 import br.com.nutriplus.dto.response.DailyFoodExtraResponse;
 import br.com.nutriplus.dto.response.TodayCheckinsResponse;
@@ -38,5 +39,10 @@ public class CheckinController {
     @GetMapping("/stats")
     public CheckinStatsResponse stats() {
         return checkinService.getStats();
+    }
+
+    @GetMapping("/adherence")
+    public CheckinAdherenceHistoryResponse adherence(@RequestParam(defaultValue = "7") int days) {
+        return checkinService.getAdherenceHistory(days);
     }
 }
