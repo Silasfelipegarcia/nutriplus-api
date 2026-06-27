@@ -41,6 +41,7 @@ public class NutritionistProService {
     private final AuthorizationService authorizationService;
     private final AuditLogService auditLogService;
     private final CpfRegistrationService cpfRegistrationService;
+    private final UserRegistrationValidator userRegistrationValidator;
 
     public NutritionistProService(UserRepository userRepository,
                                   NutritionistRepository nutritionistRepository,
@@ -53,7 +54,8 @@ public class NutritionistProService {
                                   PricingGuidelineService pricingGuidelineService,
                                   AuthorizationService authorizationService,
                                   AuditLogService auditLogService,
-                                  CpfRegistrationService cpfRegistrationService) {
+                                  CpfRegistrationService cpfRegistrationService,
+                                  UserRegistrationValidator userRegistrationValidator) {
         this.userRepository = userRepository;
         this.nutritionistRepository = nutritionistRepository;
         this.nutritionProfileRepository = nutritionProfileRepository;
@@ -66,13 +68,12 @@ public class NutritionistProService {
         this.authorizationService = authorizationService;
         this.auditLogService = auditLogService;
         this.cpfRegistrationService = cpfRegistrationService;
+        this.userRegistrationValidator = userRegistrationValidator;
     }
 
     @Transactional
     public AuthResponse register(NutritionistRegisterRequest request) {
-        if (userRepository.existsByEmail(request.email())) {
-            throw new BusinessException("E-mail já cadastrado");
-        }
+        userRegistrationValidator.validateNewNutritionistAccount(request.email(), request.cpf());
         var guidelines = pricingGuidelineService.requireGuidelines();
 
         User user = User.builder()

@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -82,6 +83,19 @@ public class ApiExceptionHandler {
         Map<String, Object> body = baseBody(message, "VALIDATION_ERROR", request);
         body.put("fields", fields);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Map<String, Object>> dataIntegrity(DataIntegrityViolationException ex, HttpServletRequest request) {
+        String details = ex.getMessage() != null ? ex.getMessage().toLowerCase() : "";
+        if (details.contains("cpf_hash") || details.contains("uk_users_cpf")) {
+            return build(HttpStatus.BAD_REQUEST, "CPF já cadastrado", "DUPLICATE_CPF", request);
+        }
+        if (details.contains("email") || details.contains("users.email")) {
+            return build(HttpStatus.BAD_REQUEST, "E-mail já cadastrado", "DUPLICATE_EMAIL", request);
+        }
+        log.warn("[DATA_INTEGRITY] {}", ex.getMessage());
+        return build(HttpStatus.BAD_REQUEST, "Dados já cadastrados.", "DUPLICATE_DATA", request);
     }
 
     @ExceptionHandler(Exception.class)

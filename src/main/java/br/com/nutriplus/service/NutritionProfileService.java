@@ -8,6 +8,7 @@ import br.com.nutriplus.domain.enums.AiRequestStatus;
 import br.com.nutriplus.domain.enums.AiRequestType;
 import br.com.nutriplus.dto.request.NutritionProfileRequest;
 import br.com.nutriplus.dto.response.NutritionProfileResponse;
+import br.com.nutriplus.domain.util.AgePolicy;
 import br.com.nutriplus.exception.BusinessException;
 import br.com.nutriplus.exception.ResourceNotFoundException;
 import br.com.nutriplus.mapper.ResponseMapper;
@@ -103,10 +104,12 @@ public class NutritionProfileService {
 
     private void applyRequest(NutritionProfile profile, NutritionProfileRequest request) {
         int resolvedAge = resolveAge(request);
-        if (resolvedAge < 18) {
-            throw new BusinessException("Você precisa ter pelo menos 18 anos.");
-        }
-        if (resolvedAge > 120) {
+        if (request.birthDate() != null) {
+            AgePolicy.requireAdult(request.birthDate());
+        } else if (resolvedAge < AgePolicy.MIN_AGE || resolvedAge > AgePolicy.MAX_AGE) {
+            if (resolvedAge < AgePolicy.MIN_AGE) {
+                throw new BusinessException("Você precisa ter pelo menos 18 anos.");
+            }
             throw new BusinessException("Informe uma data de nascimento válida.");
         }
         if (request.birthDate() != null) {

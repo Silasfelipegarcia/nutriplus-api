@@ -30,7 +30,7 @@ class IdempotencyIntegrationTest extends AbstractIntegrationTest {
     void registerRequiresIdempotencyKeyWhenEnabled() throws Exception {
         String email = "idem-" + UUID.randomUUID() + "@nutriplus.test";
         String registerBody = """
-                {"name":"Idem User","email":"%s","password":"secret123","cpf":"%s"}
+                {"name":"Idem User","email":"%s","password":"secret123","cpf":"%s","birthDate":"1990-06-15"}
                 """.formatted(email, TestCpfFactory.nextValidCpf());
 
         mockMvc.perform(post("/auth/register")
@@ -45,7 +45,7 @@ class IdempotencyIntegrationTest extends AbstractIntegrationTest {
         String email = "idem-replay-" + UUID.randomUUID() + "@nutriplus.test";
         String cpf = TestCpfFactory.nextValidCpf();
         String registerBody = """
-                {"name":"Replay User","email":"%s","password":"secret123","cpf":"%s"}
+                {"name":"Replay User","email":"%s","password":"secret123","cpf":"%s","birthDate":"1990-06-15"}
                 """.formatted(email, cpf);
         String key = UUID.randomUUID().toString();
 

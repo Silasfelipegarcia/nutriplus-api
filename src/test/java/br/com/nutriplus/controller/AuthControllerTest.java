@@ -43,8 +43,9 @@ class AuthControllerTest extends WebMvcTestSupport {
 
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(
-                                new RegisterRequest("Test", "test@nutriplus.com", "secret123", "529.982.247-25"))))
+                        .content("""
+                                {"name":"Test","email":"test@nutriplus.com","password":"secret123","cpf":"529.982.247-25","birthDate":"1990-06-15"}
+                                """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.token").value("access"))
                 .andExpect(jsonPath("$.user.email").value("test@nutriplus.com"));

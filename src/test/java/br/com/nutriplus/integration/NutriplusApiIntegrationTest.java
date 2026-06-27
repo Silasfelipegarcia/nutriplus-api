@@ -35,7 +35,7 @@ class NutriplusApiIntegrationTest extends AbstractIntegrationTest {
         String password = "secret123";
 
         String registerBody = """
-                {"name":"Integration User","email":"%s","password":"%s","cpf":"%s"}
+                {"name":"Integration User","email":"%s","password":"%s","cpf":"%s","birthDate":"1990-06-15"}
                 """.formatted(email, password, TestCpfFactory.nextValidCpf());
 
         String authJson = mockMvc.perform(post("/auth/register")
@@ -70,7 +70,7 @@ class NutriplusApiIntegrationTest extends AbstractIntegrationTest {
     void updateProfileWithAuth() throws Exception {
         String email = "profile-" + UUID.randomUUID() + "@nutriplus.test";
         String registerBody = """
-                {"name":"Before","email":"%s","password":"secret123","cpf":"%s"}
+                {"name":"Before","email":"%s","password":"secret123","cpf":"%s","birthDate":"1990-06-15"}
                 """.formatted(email, TestCpfFactory.nextValidCpf());
 
         String authJson = mockMvc.perform(post("/auth/register")
@@ -90,6 +90,53 @@ class NutriplusApiIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("After Update"))
                 .andExpect(jsonPath("$.email").value(email));
+    }
+
+    @Test
+    void registerRejectsDuplicateEmail() throws Exception {
+        String email = "dup-email-" + UUID.randomUUID() + "@nutriplus.test";
+        String cpf = TestCpfFactory.nextValidCpf();
+        String registerBody = """
+                {"name":"First User","email":"%s","password":"secret123","cpf":"%s","birthDate":"1990-06-15"}
+                """.formatted(email, cpf);
+
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerBody))
+                .andExpect(status().isCreated());
+
+        String duplicateBody = """
+                {"name":"Second User","email":"%s","password":"secret123","cpf":"%s","birthDate":"1990-06-15"}
+                """.formatted(email, TestCpfFactory.nextValidCpf());
+
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(duplicateBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("E-mail já cadastrado"));
+    }
+
+    @Test
+    void registerRejectsDuplicateCpf() throws Exception {
+        String cpf = TestCpfFactory.nextValidCpf();
+        String firstBody = """
+                {"name":"First User","email":"first-%s@nutriplus.test","password":"secret123","cpf":"%s","birthDate":"1990-06-15"}
+                """.formatted(UUID.randomUUID(), cpf);
+
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(firstBody))
+                .andExpect(status().isCreated());
+
+        String secondBody = """
+                {"name":"Second User","email":"second-%s@nutriplus.test","password":"secret123","cpf":"%s","birthDate":"1990-06-15"}
+                """.formatted(UUID.randomUUID(), cpf);
+
+        mockMvc.perform(post("/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(secondBody))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("CPF já cadastrado"));
     }
 
     private static String extractJsonField(String json, String field) {

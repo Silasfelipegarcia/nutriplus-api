@@ -4,12 +4,11 @@ import br.com.nutriplus.application.auth.LoginUseCase;
 import br.com.nutriplus.application.auth.RefreshTokenUseCase;
 import br.com.nutriplus.application.port.PasswordHasherPort;
 import br.com.nutriplus.application.port.TokenPort;
+import br.com.nutriplus.application.port.UserQueryPort;
 import br.com.nutriplus.domain.entity.User;
 import br.com.nutriplus.dto.request.LoginRequest;
 import br.com.nutriplus.dto.request.RegisterRequest;
 import br.com.nutriplus.dto.response.AuthResponse;
-import br.com.nutriplus.exception.BusinessException;
-import br.com.nutriplus.application.port.UserQueryPort;
 import br.com.nutriplus.mapper.ResponseMapper;
 import br.com.nutriplus.repository.NutritionProfileRepository;
 import br.com.nutriplus.repository.UserRepository;
@@ -29,6 +28,7 @@ public class AuthService {
     private final ResponseMapper responseMapper;
     private final AuditLogService auditLogService;
     private final CpfRegistrationService cpfRegistrationService;
+    private final UserRegistrationValidator userRegistrationValidator;
 
     public AuthService(UserRepository userRepository,
                        NutritionProfileRepository nutritionProfileRepository,
@@ -39,7 +39,8 @@ public class AuthService {
                        RefreshTokenUseCase refreshTokenUseCase,
                        ResponseMapper responseMapper,
                        AuditLogService auditLogService,
-                       CpfRegistrationService cpfRegistrationService) {
+                       CpfRegistrationService cpfRegistrationService,
+                       UserRegistrationValidator userRegistrationValidator) {
         this.userRepository = userRepository;
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.passwordHasherPort = passwordHasherPort;
@@ -50,13 +51,13 @@ public class AuthService {
         this.responseMapper = responseMapper;
         this.auditLogService = auditLogService;
         this.cpfRegistrationService = cpfRegistrationService;
+        this.userRegistrationValidator = userRegistrationValidator;
     }
 
     @Transactional
     public AuthResponse register(RegisterRequest request) {
-        if (userRepository.existsByEmail(request.email())) {
-            throw new BusinessException("E-mail já cadastrado");
-        }
+        userRegistrationValidator.validateNewPatientAccount(
+                request.email(), request.cpf(), request.birthDate());
 
         User user = User.builder()
                 .name(request.name())

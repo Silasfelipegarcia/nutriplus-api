@@ -97,7 +97,7 @@ class AppFeedbackIntegrationTest extends AbstractIntegrationTest {
     private String registerAndGetToken() throws Exception {
         String email = "feedback-" + UUID.randomUUID() + "@nutriplus.test";
         String registerBody = """
-                {"name":"Feedback User","email":"%s","password":"secret123","cpf":"%s"}
+                {"name":"Feedback User","email":"%s","password":"secret123","cpf":"%s","birthDate":"1990-06-15"}
                 """.formatted(email, TestCpfFactory.nextValidCpf());
 
         String authJson = mockMvc.perform(post("/auth/register")

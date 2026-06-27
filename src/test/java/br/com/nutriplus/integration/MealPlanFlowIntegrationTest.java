@@ -47,7 +47,7 @@ class MealPlanFlowIntegrationTest extends AbstractIntegrationTest {
         String email = "mealplan-" + UUID.randomUUID() + "@nutriplus.test";
         String password = "secret123";
         String registerBody = """
-                {"name":"Meal Plan User","email":"%s","password":"%s","cpf":"%s"}
+                {"name":"Meal Plan User","email":"%s","password":"%s","cpf":"%s","birthDate":"1990-06-15"}
                 """.formatted(email, password, TestCpfFactory.nextValidCpf());
 
         String authJson = mockMvc.perform(post("/auth/register")
