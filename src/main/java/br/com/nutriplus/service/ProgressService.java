@@ -20,6 +20,7 @@ import br.com.nutriplus.dto.response.ProgressScheduleResponse;
 import br.com.nutriplus.exception.BusinessException;
 import br.com.nutriplus.exception.ResourceNotFoundException;
 import br.com.nutriplus.repository.BodyMeasurementSessionRepository;
+import br.com.nutriplus.repository.MealPlanRepository;
 import br.com.nutriplus.repository.NutritionProfileRepository;
 import br.com.nutriplus.repository.ProgressReviewRepository;
 import br.com.nutriplus.repository.UserRepository;
@@ -45,6 +46,7 @@ public class ProgressService {
     private final CurrentUser currentUser;
     private final NutritionProfileRepository nutritionProfileRepository;
     private final BodyMeasurementSessionRepository measurementRepository;
+    private final MealPlanRepository mealPlanRepository;
     private final ProgressReviewRepository reviewRepository;
     private final UserRepository userRepository;
     private final CheckinService checkinService;
@@ -56,6 +58,7 @@ public class ProgressService {
     public ProgressService(CurrentUser currentUser,
                            NutritionProfileRepository nutritionProfileRepository,
                            BodyMeasurementSessionRepository measurementRepository,
+                           MealPlanRepository mealPlanRepository,
                            ProgressReviewRepository reviewRepository,
                            UserRepository userRepository,
                            CheckinService checkinService,
@@ -66,6 +69,7 @@ public class ProgressService {
         this.currentUser = currentUser;
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.measurementRepository = measurementRepository;
+        this.mealPlanRepository = mealPlanRepository;
         this.reviewRepository = reviewRepository;
         this.userRepository = userRepository;
         this.checkinService = checkinService;
@@ -139,14 +143,12 @@ public class ProgressService {
         Optional<BodyMeasurementSession> existingOnDate = measurementRepository
                 .findFirstByUserIdAndMeasuredOnOrderByIdDesc(userId, measuredOn);
 
-        if (!schedule.due()) {
-            if (!measuredOn.equals(today) || existingOnDate.isEmpty()) {
-                int days = schedule.daysUntilDue();
-                throw new BusinessException(
-                        days > 0
-                                ? "Aguarde " + days + " dias para registrar a próxima medição."
-                                : "Aguarde o prazo da próxima medição.");
-            }
+        if (!canSaveMeasurement(userId, measuredOn, today, existingOnDate, schedule)) {
+            int days = schedule.daysUntilDue();
+            throw new BusinessException(
+                    days > 0
+                            ? "Aguarde " + days + " dias para registrar a próxima medição."
+                            : "Aguarde o prazo da próxima medição.");
         }
 
         BodyMeasurementSession session = existingOnDate.orElseGet(() -> new BodyMeasurementSession(user));
@@ -376,6 +378,23 @@ public class ProgressService {
     private NutritionProfile requireProfile(Long userId) {
         return nutritionProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Perfil nutricional não encontrado"));
+    }
+
+    private boolean canSaveMeasurement(Long userId,
+                                       LocalDate measuredOn,
+                                       LocalDate today,
+                                       Optional<BodyMeasurementSession> existingOnDate,
+                                       ProgressScheduleResponse schedule) {
+        if (measurementRepository.findFirstByUserIdOrderByMeasuredOnAscIdAsc(userId).isEmpty()) {
+            return true;
+        }
+        if (mealPlanRepository.findByUserIdOrderByCreatedAtDesc(userId).isEmpty()) {
+            return true;
+        }
+        if (schedule.due()) {
+            return true;
+        }
+        return measuredOn.equals(today) && existingOnDate.isPresent();
     }
 
     private LocalDate resolveAnchorDate(Long userId, NutritionProfile profile) {
