@@ -7,4 +7,6 @@ public interface EmailSender {
     void sendPasswordReset(String email, String name, String resetLink);
 
     void sendBetaAccessApproved(String email, String name, String loginLink, UserRole role);
+
+    void sendTestEmail(String email, String name);
 }
