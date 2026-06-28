@@ -36,6 +36,7 @@ public class NutritionProfileService {
     private final AiRequestLogService aiRequestLogService;
     private final ResponseMapper responseMapper;
     private final ObjectMapper objectMapper;
+    private final SubscriptionService subscriptionService;
 
     public NutritionProfileService(CurrentUser currentUser,
                                    NutritionProfileRepository nutritionProfileRepository,
@@ -43,7 +44,8 @@ public class NutritionProfileService {
                                    AiAgentClient aiAgentClient,
                                    AiRequestLogService aiRequestLogService,
                                    ResponseMapper responseMapper,
-                                   ObjectMapper objectMapper) {
+                                   ObjectMapper objectMapper,
+                                   SubscriptionService subscriptionService) {
         this.currentUser = currentUser;
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.trainingService = trainingService;
@@ -51,6 +53,7 @@ public class NutritionProfileService {
         this.aiRequestLogService = aiRequestLogService;
         this.responseMapper = responseMapper;
         this.objectMapper = objectMapper;
+        this.subscriptionService = subscriptionService;
     }
 
     @Transactional
@@ -84,7 +87,7 @@ public class NutritionProfileService {
                     toJson(macros), AiRequestStatus.SUCCESS, null,
                     (int) (System.currentTimeMillis() - start));
 
-            return responseMapper.toNutritionProfileResponse(profile);
+            return toProfileResponse(profile, user);
         } catch (Exception e) {
             aiRequestLogService.log(user, AiRequestType.CALCULATE_MACROS, requestJson,
                     null, AiRequestStatus.ERROR, e.getMessage(),
@@ -98,7 +101,11 @@ public class NutritionProfileService {
         User user = currentUser.get();
         NutritionProfile profile = nutritionProfileRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Perfil nutricional não encontrado"));
-        return responseMapper.toNutritionProfileResponse(profile);
+        return toProfileResponse(profile, user);
+    }
+
+    private NutritionProfileResponse toProfileResponse(NutritionProfile profile, User user) {
+        return responseMapper.toNutritionProfileResponse(profile, subscriptionService.montarStatus(user));
     }
 
     public NutritionProfile getEntityForUser(User user) {

@@ -2,6 +2,12 @@
 
 Complementa [`OBSERVABILITY.md`](../OBSERVABILITY.md).
 
+## New Relic
+
+Setup completo (APM, logs, MySQL): [`NEW_RELIC.md`](./NEW_RELIC.md).
+
+Prometheus/Grafana **permanecem ativos** — NR é camada adicional.
+
 ## Prometheus — métricas novas
 
 | Métrica | Tags | Uso |

@@ -87,6 +87,10 @@ public class AuthService {
                 .passwordHash(passwordHasherPort.encode(request.password()))
                 .loginEnabled(false)
                 .registrationSource(source)
+                .acquisitionSource(trimToNull(request.acquisitionSource()))
+                .acquisitionMedium(trimToNull(request.acquisitionMedium()))
+                .acquisitionCampaign(trimToNull(request.acquisitionCampaign()))
+                .acquisitionLanding(trimToNull(request.acquisitionLanding()))
                 .build();
         cpfRegistrationService.applyCpf(user, request.cpf());
         return userRepository.save(user);
@@ -100,6 +104,14 @@ public class AuthService {
                 false,
                 message
         );
+    }
+
+    private static String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.strip();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     public AuthResponse login(LoginRequest request) {

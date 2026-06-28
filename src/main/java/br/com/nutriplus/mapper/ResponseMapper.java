@@ -69,6 +69,11 @@ public class ResponseMapper {
     }
 
     public NutritionProfileResponse toNutritionProfileResponse(NutritionProfile profile) {
+        return toNutritionProfileResponse(profile, null);
+    }
+
+    public NutritionProfileResponse toNutritionProfileResponse(NutritionProfile profile,
+                                                               SubscriptionStatusResponse subscriptionStatus) {
         String lifeStage = profile.getBirthDate() != null
                 ? LifeStageUtil.resolveFromBirthDate(profile.getBirthDate()).name()
                 : LifeStageUtil.resolve(profile.getAge()).name();
@@ -121,7 +126,8 @@ public class ResponseMapper {
                 profile.getMedications(),
                 profile.getAllergies(),
                 profile.getHealthNotes(),
-                healthReferenceService.buildBmiSnapshot(profile)
+                healthReferenceService.buildBmiSnapshot(profile),
+                subscriptionStatus
         );
     }
 

@@ -207,6 +207,53 @@ SELECT * FROM audit_log WHERE correlation_id = '<cid>' ORDER BY created_at DESC;
 ### 5. Métricas
 
 - Grafana / Prometheus: `nutriplus_ai_agent_duration_seconds`, `nutriplus_meal_plan_generation_duration_seconds`.
+- New Relic APM (quando `NEW_RELIC_LICENSE_KEY` configurada): transactions, distributed tracing, JDBC spans.
+
+---
+
+## New Relic (APM + logs + MySQL)
+
+Camada adicional ao Prometheus/Grafana. **Mesma conta/license key do `lupa-cnpj-api`** — copie `NEW_RELIC_LICENSE_KEY` do Railway do Lupa para os services Nutri+.
+
+Detalhes de setup em [`observability/NEW_RELIC.md`](./observability/NEW_RELIC.md).
+
+### Serviços instrumentados
+
+| Serviço | Mecanismo | Ativa quando |
+|---------|-----------|--------------|
+| `nutriplus-api` | Java agent v9.3.0 via `docker-entrypoint.sh` (padrão Lupa) | `NEW_RELIC_LICENSE_KEY` definida |
+| `nutriplus-agentes` | Python agent (`newrelic-admin run-program`) | idem |
+| MySQL (Railway) | JDBC spans (automático) + DB Monitoring (painel NR) | agent na API + usuário `newrelic` no MySQL |
+
+### Nomes de app (Railway)
+
+| Ambiente | API | Agente |
+|----------|-----|--------|
+| develop | `nutriplus-api-dev` | `nutriplus-agentes-dev` |
+| homolog | `nutriplus-api-homolog` | `nutriplus-agentes-homolog` |
+| prod | `nutriplus-api-prod` | `nutriplus-agentes-prod` |
+
+### Correlação cross-service
+
+Os mesmos IDs do contrato HTTP aparecem como atributos pesquisáveis:
+
+| ID | API (MDC / logs JSON) | Agente (logs + NR custom attrs) | Mobile |
+|----|----------------------|--------------------------------|--------|
+| `correlationId` | Sim | Sim | Header `X-Correlation-Id` |
+| `traceId` | Sim | Sim | Header `X-Trace-Id` |
+| `flowId` | Sim | Sim | Header `X-Flow-Id` |
+| `sessionId` | Sim | Sim | Header + Crashlytics `session_id` |
+| `app_env` | — | — | Crashlytics custom key |
+
+**Fluxo de investigação com NR:**
+
+1. Usuário reporta crash → Firebase Crashlytics com `session_id` e `app_env`.
+2. NR Logs: buscar `sessionId:<uuid>` na API ou `correlationId:<cid>` se disponível.
+3. Distributed tracing: seguir span API → agente → JDBC na mesma transação.
+
+### Mobile — Firebase Crashlytics
+
+Crashes do app Flutter vão para Firebase (não New Relic). Setup em `nutriplus-frontend/docs/DEPLOYMENT.md#firebase-crashlytics`.
 
 ---
 
@@ -227,6 +274,8 @@ SELECT * FROM audit_log WHERE correlation_id = '<cid>' ORDER BY created_at DESC;
 | Idempotency-Key em mutações (homolog/prod) | Sim |
 | Localhost sem bloqueio de idempotência | Sim (`dev`: `idempotency.enabled=false`) |
 | Replay seguro (retry / duplo clique) | Sim (`idempotency_keys` + header replay) |
+| APM New Relic (API + agente) | Sim (quando license key no Railway) |
+| Crash reporting mobile | Sim (Firebase Crashlytics em release) |
 
 ---
 
@@ -277,6 +326,9 @@ curl -s -H "X-Metrics-Token: $METRICS_SCRAPE_TOKEN" http://localhost:8080/actuat
 | P1 | SLO sync 300ms (WARN + histogram) | api | Feito |
 | P1 | `product_events` + `/analytics/events` | api + frontend | Feito |
 | P1 | `Idempotency-Key` API + Flutter + agente | todos | Feito |
+| P1 | New Relic APM (API Java + agente Python) | api + agentes | Feito |
+| P1 | Firebase Crashlytics (mobile) | frontend | Feito |
+| P2 | MySQL Database Monitoring no painel NR | infra | Pendente (manual) |
 | P2 | Colunas `trace_id`, `flow_id`, `session_id` em `ai_requests_log` | api | Pendente |
 | P2 | Log INFO estruturado no agente (JSON em prod) | agentes |
 | P2 | Expor `traceId` no `ApiException` | frontend |

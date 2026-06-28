@@ -63,6 +63,7 @@ public record NutritionProfileResponse(
         String medications,
         String allergies,
         String healthNotes,
-        HealthIndicatorResponse bmiSnapshot
+        HealthIndicatorResponse bmiSnapshot,
+        SubscriptionStatusResponse subscriptionStatus
 ) {
 }

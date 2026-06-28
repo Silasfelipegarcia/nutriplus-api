@@ -145,7 +145,8 @@ public class AdminAccessService {
                 user.getLoginEnabledAt(),
                 user.getCreatedAt(),
                 hasProfile,
-                user.getRegistrationSource()
+                user.getRegistrationSource(),
+                user.getAcquisitionCampaign()
         );
     }
 

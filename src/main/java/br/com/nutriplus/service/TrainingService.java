@@ -13,6 +13,7 @@ import br.com.nutriplus.dto.response.SportCatalogItemResponse;
 import br.com.nutriplus.dto.response.TrainingActivityResponse;
 import br.com.nutriplus.dto.response.TrainingProfileResponse;
 import br.com.nutriplus.exception.BusinessException;
+import br.com.nutriplus.exception.SubscriptionRequiredException;
 import br.com.nutriplus.mapper.ResponseMapper;
 import br.com.nutriplus.repository.NutritionProfileRepository;
 import br.com.nutriplus.repository.UserTrainingActivityRepository;
@@ -38,19 +39,25 @@ public class TrainingService {
     private final AiAgentClient aiAgentClient;
     private final ResponseMapper responseMapper;
     private final CoachInsightService coachInsightService;
+    private final AthleteAccessService athleteAccessService;
+    private final SubscriptionService subscriptionService;
 
     public TrainingService(CurrentUser currentUser,
                            NutritionProfileRepository nutritionProfileRepository,
                            UserTrainingActivityRepository activityRepository,
                            AiAgentClient aiAgentClient,
                            ResponseMapper responseMapper,
-                           CoachInsightService coachInsightService) {
+                           CoachInsightService coachInsightService,
+                           AthleteAccessService athleteAccessService,
+                           SubscriptionService subscriptionService) {
         this.currentUser = currentUser;
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.activityRepository = activityRepository;
         this.aiAgentClient = aiAgentClient;
         this.responseMapper = responseMapper;
         this.coachInsightService = coachInsightService;
+        this.athleteAccessService = athleteAccessService;
+        this.subscriptionService = subscriptionService;
     }
 
     @Cacheable(value = NutriCacheNames.SPORT_CATALOG, key = "'catalog'")
@@ -77,6 +84,10 @@ public class TrainingService {
     public TrainingProfileResponse saveProfile(TrainingProfileRequest request) {
         User user = currentUser.get();
         NutritionProfile profile = requireProfile(user.getId());
+
+        if (Boolean.TRUE.equals(request.athleteModeEnabled()) && !athleteAccessService.hasAthleteAccess(user)) {
+            throw new SubscriptionRequiredException("Assine o plano Atleta para ativar o modo atleta.");
+        }
 
         profile.setAthleteModeEnabled(Boolean.TRUE.equals(request.athleteModeEnabled()));
         if (!profile.isAthleteModeEnabled()) {
@@ -120,6 +131,9 @@ public class TrainingService {
     @Transactional
     public NutritionProfileResponse applyToPlan() {
         User user = currentUser.get();
+        if (!athleteAccessService.hasAthleteAccess(user)) {
+            throw new SubscriptionRequiredException("Assine o plano Atleta para aplicar treinos ao plano alimentar.");
+        }
         NutritionProfile profile = requireProfile(user.getId());
         if (!profile.isAthleteModeEnabled()) {
             throw new BusinessException("Ative o modo atleta antes de aplicar ao plano.");
@@ -131,7 +145,7 @@ public class TrainingService {
         }
 
         profile = recalculateMacrosForProfile(profile, activities);
-        return responseMapper.toNutritionProfileResponse(profile);
+        return responseMapper.toNutritionProfileResponse(profile, subscriptionService.montarStatus(user));
     }
 
     public void syncTrainingDailyExtra(NutritionProfile profile) {

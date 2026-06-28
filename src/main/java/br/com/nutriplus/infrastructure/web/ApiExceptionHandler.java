@@ -7,6 +7,7 @@ import br.com.nutriplus.exception.BusinessException;
 import br.com.nutriplus.exception.InvalidCredentialsException;
 import br.com.nutriplus.exception.LoginDisabledException;
 import br.com.nutriplus.exception.ResourceNotFoundException;
+import br.com.nutriplus.exception.SubscriptionRequiredException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +41,21 @@ public class ApiExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<Map<String, Object>> business(BusinessException ex, HttpServletRequest request) {
         return build(HttpStatus.BAD_REQUEST, ex.getMessage(), null, request);
+    }
+
+    @ExceptionHandler(SubscriptionRequiredException.class)
+    public ResponseEntity<Map<String, Object>> subscriptionRequired(SubscriptionRequiredException ex, HttpServletRequest request) {
+        return build(HttpStatus.PAYMENT_REQUIRED, ex.getMessage(), "SUBSCRIPTION_REQUIRED", request);
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, Object>> illegalState(IllegalStateException ex, HttpServletRequest request) {
+        return build(HttpStatus.BAD_REQUEST, ex.getMessage(), "INVALID_STATE", request);
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> illegalArgument(IllegalArgumentException ex, HttpServletRequest request) {
+        return build(HttpStatus.BAD_REQUEST, ex.getMessage(), "INVALID_ARGUMENT", request);
     }
 
     @ExceptionHandler(InvalidCredentialsException.class)

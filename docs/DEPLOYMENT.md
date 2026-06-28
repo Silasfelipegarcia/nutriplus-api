@@ -32,6 +32,26 @@ A API Java é implantada no [Railway](https://railway.app) via Dockerfile. Cada 
 | `AI_AGENT_URL` | URL interna/pública do agente Python |
 | `SERVER_PORT` | `8080` (Railway injeta `PORT`; mapeie se necessário) |
 
+### New Relic (opcional — mesma conta/license do `lupa-cnpj-api`)
+
+Padrão idêntico ao **lupa-cnpj-api** (mesmo repositório/org): agente Java no Docker via `docker-entrypoint.sh`; ativa só com `NEW_RELIC_LICENSE_KEY`.
+
+| Variável | Descrição |
+|----------|-----------|
+| `NEW_RELIC_LICENSE_KEY` | License key — [one.newrelic.com](https://one.newrelic.com) → API Keys (mesma key do Lupa) |
+| `NEW_RELIC_APP_NAME` | Nome do app no painel NR (por ambiente, ver tabela) |
+| `NEW_RELIC_ENVIRONMENT` | Opcional — `development`, `staging` ou `production` |
+
+| Branch / ambiente | `NEW_RELIC_APP_NAME` | `NEW_RELIC_ENVIRONMENT` |
+|-------------------|----------------------|-------------------------|
+| `develop` | `nutriplus-api-dev` | `development` |
+| `homolog` | `nutriplus-api-homolog` | `staging` |
+| `main` (prod) | `nutriplus-api-prod` | `production` |
+
+O agent (v9.3.0) lê as variáveis de ambiente automaticamente — sem flags `-D` no JVM. Localmente, omita as variáveis para rodar sem NR.
+
+Monitoramento de MySQL no servidor: ver [`docs/observability/NEW_RELIC.md`](./observability/NEW_RELIC.md).
+
 ### Por ambiente
 
 #### Dev (`develop`)

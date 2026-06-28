@@ -71,7 +71,8 @@ class AuthServiceBetaRequestTest {
         });
 
         var response = authService.betaRequest(new RegisterRequest(
-                "Test", "t@test.com", "secret", "52998224725", LocalDate.of(1990, 1, 1)));
+                "Test", "t@test.com", "secret", "52998224725", LocalDate.of(1990, 1, 1),
+                null, null, null, null));
 
         ArgumentCaptor<User> captor = ArgumentCaptor.forClass(User.class);
         verify(userRepository).save(captor.capture());

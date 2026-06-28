@@ -126,6 +126,8 @@ public class SecurityConfig {
                         "/nutritionists/**",
                         "/training/sports",
                         "/feature-flags",
+                        "/plans",
+                        "/payments/mercadopago/webhook",
                         "/webhooks/**",
                         "/actuator/health",
                         "/actuator/health/**",
