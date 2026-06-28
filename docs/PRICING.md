@@ -10,9 +10,9 @@ Referência de **tiers**, **faixas** e **defaults técnicos**. Valores comerciai
 
 | Tier | Preço | O que inclui |
 |------|-------|--------------|
-| **Grátis** | R$ 0 | Onboarding, **1 geração de plano/mês** (com cobrança ativa), check-ins, evolução |
-| **Essencial** | **R$ 19,90/mês** ou **R$ 179/ano** | Plano IA, check-ins, evolução, lista de compras, **1 regeneração/mês** |
-| **Atleta** | **R$ 29,90/mês** ou **R$ 269/ano** | Tudo do Essencial + modo atleta, treinos MET, **regenerações ilimitadas** |
+| **Grátis** | R$ 0 | Onboarding, **1 geração de plano/dia e /mês** (com cobrança ativa), check-ins, evolução |
+| **Essencial** | **R$ 19,90/mês** ou **R$ 179/ano** | Plano IA, check-ins, evolução, lista de compras, **1 regeneração/dia e /mês** |
+| **Atleta** | **R$ 29,90/mês** ou **R$ 269/ano** | Tudo do Essencial + modo atleta, treinos MET, **até 3 regenerações/dia** |
 | **Trial** | 7 dias grátis | Acesso **completo** (Essencial + Atleta); exige cartão; converte para Essencial |
 
 | Tier | Público | Monetização |
@@ -36,7 +36,7 @@ Fonte: migration `V45__essential_tier_pricing.sql` + `subscription_plan_catalog`
 
 Trial: `POST /payments/trial` → 7 dias → cobrança automática **Essencial Mensal** se cartão válido.
 
-Limites de geração: `MealPlanGenerationQuotaService` (1/mês grátis e essencial; ilimitado atleta/trial).
+Limites de geração: `MealPlanGenerationQuotaService` — 1/dia e 1/mês (grátis/essencial); 3/dia (atleta/trial); 2/dia (beta).
 
 ---
 

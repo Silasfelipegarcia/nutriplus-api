@@ -26,15 +26,17 @@ Preços default (V45): Essencial R$ 19,90 / R$ 179 ano; Atleta R$ 29,90 / R$ 269
 
 Serviço: `MealPlanGenerationQuotaService`.
 
-| Tier | Regenerações/mês |
-|------|------------------|
-| Grátis (billing on) | 1 |
-| Essencial | 1 |
-| Atleta | Ilimitado |
-| Trial | Ilimitado |
-| Beta (billing off) | Ilimitado |
+| Tier | Regenerações/dia | Regenerações/mês |
+|------|------------------|------------------|
+| Grátis (billing on) | 1 | 1 |
+| Essencial | 1 | 1 |
+| Atleta | 3 | Ilimitado |
+| Trial | 3 | Ilimitado |
+| Beta (billing off) | 2 | — |
 
-Excesso retorna **402** `SUBSCRIPTION_REQUIRED`.
+Excesso mensal retorna **402** `SUBSCRIPTION_REQUIRED`. Excesso diário retorna **400** com mensagem amigável.
+
+Config: `nutriplus.meal-plan-generation-quota.*` em `application.properties`.
 
 ---
 

@@ -4,7 +4,9 @@ import br.com.nutriplus.domain.entity.User;
 import br.com.nutriplus.domain.enums.MealPlanGenerationStatus;
 import br.com.nutriplus.domain.enums.SubscriptionPlan;
 import br.com.nutriplus.domain.enums.SubscriptionPlans;
+import br.com.nutriplus.exception.BusinessException;
 import br.com.nutriplus.exception.SubscriptionRequiredException;
+import br.com.nutriplus.infrastructure.config.MealPlanGenerationQuotaProperties;
 import br.com.nutriplus.repository.MealPlanGenerationJobRepository;
 import org.springframework.stereotype.Service;
 
@@ -13,13 +15,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Limites de geração de plano alimentar por tier (Opção A).
- * Grátis/Essencial: 1/mês. Atleta/Trial: ilimitado. Beta (billing off): ilimitado.
+ * Limites de geração de plano alimentar por tier e por janela (dia/mês).
+ * Grátis/Essencial: 1/dia e 1/mês. Atleta/Trial: 3/dia. Beta (billing off): 2/dia.
  */
 @Service
 public class MealPlanGenerationQuotaService {
-
-    private static final int LIMITED_TIER_MONTHLY_QUOTA = 1;
 
     private static final List<MealPlanGenerationStatus> QUOTA_STATUSES = List.of(
             MealPlanGenerationStatus.COMPLETED,
@@ -30,38 +30,64 @@ public class MealPlanGenerationQuotaService {
     private final BillingEnforcementService billingEnforcementService;
     private final SubscriptionService subscriptionService;
     private final MealPlanGenerationJobRepository jobRepository;
+    private final MealPlanGenerationQuotaProperties properties;
 
     public MealPlanGenerationQuotaService(BillingEnforcementService billingEnforcementService,
                                           SubscriptionService subscriptionService,
-                                          MealPlanGenerationJobRepository jobRepository) {
+                                          MealPlanGenerationJobRepository jobRepository,
+                                          MealPlanGenerationQuotaProperties properties) {
         this.billingEnforcementService = billingEnforcementService;
         this.subscriptionService = subscriptionService;
         this.jobRepository = jobRepository;
+        this.properties = properties;
     }
 
     public void assertCanGenerate(User user) {
+        subscriptionService.expirarSeNecessario(user);
+
+        int dailyLimit = resolveDailyLimit(user);
+        int usedToday = countGenerationsSince(user.getId(), startOfToday());
+        if (usedToday >= dailyLimit) {
+            throw dailyQuotaExceeded(user, dailyLimit);
+        }
+
         if (!billingEnforcementService.isBillingEnabled()) {
             return;
         }
-        subscriptionService.expirarSeNecessario(user);
-        if (hasUnlimitedGenerations(user)) {
+        if (hasUnlimitedMonthlyGenerations(user)) {
             return;
         }
-        int used = countGenerationsThisMonth(user.getId());
-        if (used >= LIMITED_TIER_MONTHLY_QUOTA) {
-            throw quotaExceeded(user);
+
+        int usedThisMonth = countGenerationsSince(user.getId(), startOfMonth());
+        if (usedThisMonth >= properties.limitedTierMonthlyQuota()) {
+            throw monthlyQuotaExceeded(user);
         }
     }
 
     public int remainingGenerationsThisMonth(User user) {
-        if (!billingEnforcementService.isBillingEnabled() || hasUnlimitedGenerations(user)) {
+        if (!billingEnforcementService.isBillingEnabled() || hasUnlimitedMonthlyGenerations(user)) {
             return -1;
         }
-        int used = countGenerationsThisMonth(user.getId());
-        return Math.max(0, LIMITED_TIER_MONTHLY_QUOTA - used);
+        int used = countGenerationsSince(user.getId(), startOfMonth());
+        return Math.max(0, properties.limitedTierMonthlyQuota() - used);
     }
 
-    private boolean hasUnlimitedGenerations(User user) {
+    public int remainingGenerationsToday(User user) {
+        int used = countGenerationsSince(user.getId(), startOfToday());
+        return Math.max(0, resolveDailyLimit(user) - used);
+    }
+
+    private int resolveDailyLimit(User user) {
+        if (!billingEnforcementService.isBillingEnabled()) {
+            return properties.betaDailyQuota();
+        }
+        if (hasUnlimitedMonthlyGenerations(user)) {
+            return properties.unlimitedTierDailyQuota();
+        }
+        return properties.limitedTierDailyQuota();
+    }
+
+    private boolean hasUnlimitedMonthlyGenerations(User user) {
         if (subscriptionService.emTrial(user)) {
             return true;
         }
@@ -72,13 +98,36 @@ public class MealPlanGenerationQuotaService {
         return SubscriptionPlans.isAthletePlan(plan);
     }
 
-    private int countGenerationsThisMonth(Long userId) {
-        LocalDateTime startOfMonth = LocalDate.now().withDayOfMonth(1).atStartOfDay();
+    private int countGenerationsSince(Long userId, LocalDateTime since) {
         return (int) jobRepository.countByUserIdAndStatusInAndCreatedAtGreaterThanEqual(
-                userId, QUOTA_STATUSES, startOfMonth);
+                userId, QUOTA_STATUSES, since);
     }
 
-    private SubscriptionRequiredException quotaExceeded(User user) {
+    private static LocalDateTime startOfToday() {
+        return LocalDate.now().atStartOfDay();
+    }
+
+    private static LocalDateTime startOfMonth() {
+        return LocalDate.now().withDayOfMonth(1).atStartOfDay();
+    }
+
+    private BusinessException dailyQuotaExceeded(User user, int dailyLimit) {
+        if (!billingEnforcementService.isBillingEnabled()) {
+            return new BusinessException(
+                    "Você atingiu o limite de " + dailyLimit + " gerações de plano por dia. "
+                            + "Tente novamente amanhã.");
+        }
+        if (hasUnlimitedMonthlyGenerations(user)) {
+            return new BusinessException(
+                    "Você já gerou " + dailyLimit + " planos hoje. "
+                            + "Amanhã você pode gerar de novo — ou ajuste preferências sem regerar o plano inteiro.");
+        }
+        return new BusinessException(
+                "Você já gerou seu plano de hoje. "
+                        + "Tente novamente amanhã ou faça upgrade para o plano Atleta para mais regenerações diárias.");
+    }
+
+    private SubscriptionRequiredException monthlyQuotaExceeded(User user) {
         SubscriptionPlan plan = subscriptionService.resolverPlanoEfetivo(user);
         if (plan == SubscriptionPlan.FREE) {
             return new SubscriptionRequiredException(
@@ -88,7 +137,7 @@ public class MealPlanGenerationQuotaService {
         if (SubscriptionPlans.isEssentialPlan(plan)) {
             return new SubscriptionRequiredException(
                     "Você já gerou seu plano deste mês no Essencial. "
-                            + "Faça upgrade para Atleta para regenerações ilimitadas.");
+                            + "Faça upgrade para Atleta para regenerações diárias extras.");
         }
         return new SubscriptionRequiredException(
                 "Limite de gerações de plano atingido. Assine um plano para continuar.");
