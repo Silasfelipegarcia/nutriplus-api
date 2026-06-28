@@ -1,34 +1,101 @@
-# Documentação — Nutri+ API
+# Documentação — Nutri+ Platform
 
-Índice da documentação deste repositório e da plataforma.
+Hub canônico da documentação da plataforma Nutri+. Este repositório (`nutriplus-api/docs/`) é a **fonte de verdade** para produto, negócio, integrações e arquitetura transversal.
+
+---
+
+## Visão geral
+
+| Documento | Audiência | Conteúdo |
+|-----------|-----------|----------|
+| [**EXECUTIVE_SUMMARY.md**](./EXECUTIVE_SUMMARY.md) | Investidores, parceiros, liderança | Visão de negócio, produto implementado, receita, stack, compliance |
+| [**PRODUCT.md**](./PRODUCT.md) | Produto + engenharia | Personas, jornadas end-to-end, regras de negócio |
+| [**FEATURES.md**](./FEATURES.md) | Produto + engenharia | Catálogo de features: Flutter vs Web vs API |
+
+---
+
+## Negócio e comercial
 
 | Documento | Audiência | Conteúdo |
 |-----------|-----------|----------|
 | [**BUSINESS_MODEL.md**](./BUSINESS_MODEL.md) | Produto + negócio | Modelo B2C/B2B2C, validação, acessibilidade, mercado |
 | [**PRICING.md**](./PRICING.md) | Produto + comercial | Tiers (grátis, atleta, nutri), faixas, defaults técnicos |
-| [**BILLING_AND_AUTH_ROADMAP.md**](./BILLING_AND_AUTH_ROADMAP.md) | Produto + engenharia | Plano: assinaturas, Mercado Pago, e-mail, paywall web/mobile |
-| [**NUTRI_PLUS_PRO.md**](./NUTRI_PLUS_PRO.md) | Produto + engenharia | Regras do marketplace nutricionista, status, endpoints |
-| [**HELP_CONTENT.md**](./HELP_CONTENT.md) | Produto | FAQ in-app (copy canônico) |
-| [**ENGAGEMENT.md**](./ENGAGEMENT.md) | Produto + engenharia | Gamificação, lembretes, motivação |
-| [**C4.md**](./C4.md) | Produto + engenharia | Modelo C4: contexto, containers, componentes, sequências |
-| [**OBSERVABILITY.md**](./OBSERVABILITY.md) | Engenharia / SRE | Trace, logs, métricas, runbook, gaps e roadmap |
-| [**ARCHITECTURE.md**](./ARCHITECTURE.md) | Engenharia | Clean Architecture, packages, bounded contexts |
-| [**SECURITY.md**](./SECURITY.md) | Engenharia | JWT, rate limit, lockout |
-| [**DEPLOYMENT.md**](./DEPLOYMENT.md) | DevOps | Railway, variáveis de ambiente |
-| [**GITFLOW.md**](./GITFLOW.md) | Time | Branches e releases |
-| [**TESTING.md**](./TESTING.md) | Engenharia | Testes unitários e integração |
+| [**NUTRI_PLUS_PRO.md**](./NUTRI_PLUS_PRO.md) | Produto + engenharia | Marketplace nutricionista, care, chat, endpoints Pro |
+| [**BILLING_AND_AUTH_ROADMAP.md**](./BILLING_AND_AUTH_ROADMAP.md) | Produto + engenharia | **Roadmap** futuro: e-mail transacional, paywall completo |
 
-### Outros repositórios
+---
 
-| Repositório | Doc principal |
-|-------------|---------------|
-| `nutriplus-frontend` | `docs/ARCHITECTURE.md` |
-| `nutriplus-agentes` | `docs/architecture.md` |
-| `nutriplus-pro-web` | `README.md` + [NUTRI_PLUS_PRO.md](../nutriplus-api/docs/NUTRI_PLUS_PRO.md) (API) |
+## Features (detalhamento)
 
-### Manutenção
+| Documento | Conteúdo |
+|-----------|----------|
+| [**SUBSCRIPTIONS.md**](./SUBSCRIPTIONS.md) | Assinatura atleta — **estado implementado** (Mercado Pago, trial, cancelamento) |
+| [**ONBOARDING.md**](./ONBOARDING.md) | Sequência de endpoints e payload do onboarding |
+| [**TRAINING_MODE.md**](./TRAINING_MODE.md) | Modo atleta, MET, treinos, calorias extras |
+| [**PROGRESS_ANALYSIS.md**](./PROGRESS_ANALYSIS.md) | Medidas corporais, evolução, reavaliação IA |
+| [**ENGAGEMENT.md**](./ENGAGEMENT.md) | Gamificação, lembretes, motivação |
+| [**HELP_CONTENT.md**](./HELP_CONTENT.md) | FAQ in-app (copy canônico) |
+| [**APP_FEEDBACK.md**](./APP_FEEDBACK.md) | Feedback Likert in-app |
+
+---
+
+## Engenharia e arquitetura
+
+| Documento | Conteúdo |
+|-----------|----------|
+| [**C4.md**](./C4.md) | Modelo C4: contexto, containers, componentes, sequências |
+| [**INTEGRATIONS.md**](./INTEGRATIONS.md) | Mapa de integrações externas (Groq, MP, Stripe, analytics) |
+| [**ARCHITECTURE.md**](./ARCHITECTURE.md) | Clean Architecture, packages, bounded contexts |
+| [**SECURITY.md**](./SECURITY.md) | JWT, rate limit, lockout, threat model |
+| [**PERFORMANCE.md**](./PERFORMANCE.md) | SLA, cache, matriz de endpoints |
+| [**TESTING.md**](./TESTING.md) | Testes unitários, integração, k6 |
+
+---
+
+## Operações e DevOps
+
+| Documento | Conteúdo |
+|-----------|----------|
+| [**DEPLOYMENT.md**](./DEPLOYMENT.md) | Railway, variáveis de ambiente, health checks |
+| [**OBSERVABILITY.md**](./OBSERVABILITY.md) | Trace, logs, métricas, runbooks |
+| [**observability/README.md**](./observability/README.md) | Dashboards Grafana, alertas Prometheus |
+| [**observability/NEW_RELIC.md**](./observability/NEW_RELIC.md) | APM New Relic |
+| [**GITFLOW.md**](./GITFLOW.md) | Branches e releases |
+| [**MERCADOPAGO_SETUP.md**](./MERCADOPAGO_SETUP.md) | Runbook Mercado Pago (assinatura atleta) |
+| [**FLYWAY_V38_RECOVERY.md**](./FLYWAY_V38_RECOVERY.md) | Runbook: reparo migration V38 |
+
+---
+
+## Compliance e lançamento
+
+| Documento | Conteúdo |
+|-----------|----------|
+| [**COMPLIANCE.md**](./COMPLIANCE.md) | Checklist release: IA, dados de saúde, legal, lojas |
+| [**STORE_SUBMISSION.md**](./STORE_SUBMISSION.md) | Kit App Store / Play Store |
+| [**legal/README.md**](./legal/README.md) | Publicação GitHub Pages (termos, privacidade) |
+| [**legal/TERMS_OF_USE.md**](./legal/TERMS_OF_USE.md) | Termos de uso B2C |
+| [**legal/PRIVACY_POLICY.md**](./legal/PRIVACY_POLICY.md) | Política de privacidade (LGPD) |
+| [**legal/AI_DISCLOSURE.md**](./legal/AI_DISCLOSURE.md) | Aviso de uso de IA |
+
+> Textos servidos pela API em runtime: `src/main/resources/legal/` (inclui termos do nutricionista e consentimento de dados).
+
+---
+
+## Outros repositórios
+
+| Repositório | Documentação |
+|-------------|--------------|
+| `nutriplus-frontend` | [`docs/README.md`](../../nutriplus-frontend/docs/README.md) |
+| `nutriplus-agentes` | [`docs/README.md`](../../nutriplus-agentes/docs/README.md) |
+| `nutriplus-web` | [`docs/README.md`](../../nutriplus-web/docs/README.md) |
+
+---
+
+## Manutenção
 
 Ao implementar features ou mudanças transversais:
 
-1. Atualize o doc técnico do repositório alterado.
-2. Se afetar integração ou trace, atualize **C4.md** e **OBSERVABILITY.md** nesta API (fonte canônica da plataforma).
+1. Atualize [**FEATURES.md**](./FEATURES.md) se afetar escopo de produto ou paridade entre clientes.
+2. Atualize o doc técnico do repositório alterado (frontend, agentes, web).
+3. Se afetar integração ou trace, atualize [**C4.md**](./C4.md), [**INTEGRATIONS.md**](./INTEGRATIONS.md) e [**OBSERVABILITY.md**](./OBSERVABILITY.md).
+4. Se afetar billing, atualize [**SUBSCRIPTIONS.md**](./SUBSCRIPTIONS.md) (estado atual) — **não** confundir com [`BILLING_AND_AUTH_ROADMAP.md`](./BILLING_AND_AUTH_ROADMAP.md) (futuro).

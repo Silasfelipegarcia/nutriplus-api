@@ -44,10 +44,23 @@ interfaces (REST) → application (use cases) → domain
 
 ## Bounded contexts
 
-- **auth** — registro, login, refresh, lockout
-- **user** — perfil, foto, senha
-- **nutrition** — perfil nutricional (legado em `service/`)
-- **mealplan** — planos e listas (legado em `service/`)
+- **auth** — registro, login, refresh, lockout, forgot/reset password
+- **user** — perfil, foto, senha, aceite termos, exclusão conta
+- **nutrition** — perfil nutricional, onboarding (`NutritionProfileService`)
+- **mealplan** — planos alimentares, listas de compras, geração assíncrona
+- **progress** — medidas corporais, evolução, reavaliação IA
+- **training** — modo atleta, atividades, MET, calorias extras
+- **checkin** — check-ins diários, aderência, streak
+- **billing** — assinatura atleta (Mercado Pago), trial, catálogo planos
+- **marketplace** — busca nutricionistas, ratings, pricing guidelines
+- **care** — vínculos paciente-nutri, convites, consultas
+- **pro** — portal nutricionista (perfil CRN, pricing, dossiê, relatórios)
+- **conversation** — chat Luna/Bruno e care chat
+- **admin** — flags, planos, nutricionistas, acessos, e-mail teste
+- **analytics** — eventos de produto, feedback in-app
+- **legal** — termos, privacidade, consentimento
+
+Legado: muitos contexts ainda em `service/` + `controller/` — migração gradual para `application/`.
 
 ## Idempotência
 

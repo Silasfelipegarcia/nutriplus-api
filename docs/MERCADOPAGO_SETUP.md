@@ -64,10 +64,10 @@ Em produção, `MERCADOPAGO_WEBHOOK_SECRET` é obrigatório.
 
 ## Beta vs. cobrança
 
-Durante o beta, deixe **desligada** a feature flag `SUBSCRIPTION_BILLING` em `/admin/flags`. O modo atleta fica liberado sem assinatura.
+Durante o beta, deixe **desligada** a feature flag `SUBSCRIPTION_BILLING` em `/admin/feature-flags`. O modo atleta fica liberado sem assinatura.
 
 Quando for cobrar:
 
-1. Configure preços/nomes em `/admin/planos`
-2. Ligue `SUBSCRIPTION_BILLING` em `/admin/flags`
+1. Configure preços/nomes em `/admin/subscription-plans`
+2. Ligue `SUBSCRIPTION_BILLING` em `/admin/feature-flags`
 3. Configure credenciais MP e webhook
