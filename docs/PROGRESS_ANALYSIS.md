@@ -93,14 +93,13 @@ sequenceDiagram
     participant Agente
 
     Note over App: Dia 15 — aba Evolução "Hora da reavaliação"
-    U->>App: Registra medidas
+    U->>App: Registra medidas + sensações (dores, positivos)
     App->>API: POST /progress/measurements
-    U->>App: Pedir análise
-    App->>API: POST /progress/reviews
+    App->>API: POST /progress/reviews (body opcional com feedback subjetivo)
     API->>Agente: POST /progress/analyze
-    Agente-->>API: trend + summary + recommendations
+    Agente-->>API: trend + summary + recommendations + planChangeSuggested
     API-->>App: ProgressReview
-    App->>U: Tela resultado Luna/Bruno
+    App->>U: Análise IA → manter plano ou gerar novo (CYCLE_REVIEW)
 ```
 
 ---
@@ -112,12 +111,14 @@ sequenceDiagram
 | GET | `/progress/schedule` | `due`, `daysUntilDue`, `intervalDays`, `nextDueAt`, `lastReviewAt` |
 | POST | `/progress/measurements` | Salva sessão de medidas |
 | GET | `/progress/measurements/latest` | Última sessão (formulário pré-preenchido) |
-| POST | `/progress/reviews` | Gera análise (última + anterior) |
+| POST | `/progress/reviews` | Gera análise (última + anterior). Body opcional: `physicalDiscomforts`, `positiveChanges`, `generalNotes` |
 | GET | `/progress/reviews/latest` | Última análise concluída |
 
 ## Agente
 
-`POST /api/v1/progress/analyze` — entrada: medidas atual/anterior, meta, aderência, `agentId`. Saída: `trend`, `summary`, `recommendations[]`, `confidence` (low/medium/high).
+`POST /api/v1/progress/analyze` — entrada: medidas atual/anterior, meta, aderência, `agentId`, feedback subjetivo opcional. Saída: `trend`, `summary`, `recommendations[]`, `confidence`, `plan_change_suggested`, `plan_change_rationale`, `keep_plan_message`.
+
+Quando `plan_change_suggested == true`, o app pode oferecer regeração com motivo `CYCLE_REVIEW` (ver [PLAN_REGENERATION.md](./PLAN_REGENERATION.md)).
 
 ---
 
