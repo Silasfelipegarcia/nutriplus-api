@@ -3,6 +3,7 @@ package br.com.nutriplus.service;
 import br.com.nutriplus.domain.entity.NutritionProfile;
 import br.com.nutriplus.domain.entity.User;
 import br.com.nutriplus.domain.enums.SubscriptionPlan;
+import br.com.nutriplus.domain.enums.SubscriptionPlans;
 import br.com.nutriplus.domain.enums.SubscriptionStatus;
 import br.com.nutriplus.dto.response.PlanQuoteResponse;
 import br.com.nutriplus.dto.response.SubscriptionStatusResponse;
@@ -48,7 +49,7 @@ public class SubscriptionService {
         user.setPlanCancelledAt(null);
         user.setTrialAte(null);
         userRepository.save(user);
-        syncAthleteModeOnActivation(user);
+        syncTierFeatures(user, plan);
     }
 
     @Transactional
@@ -58,25 +59,39 @@ public class SubscriptionService {
         user.setPlanCancelledAt(null);
         user.setTrialAte(null);
         userRepository.save(user);
-        syncAthleteModeOnActivation(user);
+        syncTierFeatures(user, novoPlano);
     }
 
     public boolean ehUpgradeProporcional(User user, SubscriptionPlan targetPlan) {
-        return targetPlan == SubscriptionPlan.ATHLETE_YEARLY
-                && resolverPlanoEfetivo(user) == SubscriptionPlan.ATHLETE_MONTHLY
-                && temAssinaturaPaga(user);
+        if (!temAssinaturaPaga(user)) {
+            return false;
+        }
+        SubscriptionPlan current = resolverPlanoEfetivo(user);
+        if (targetPlan == SubscriptionPlan.ATHLETE_YEARLY && current == SubscriptionPlan.ATHLETE_MONTHLY) {
+            return true;
+        }
+        if (targetPlan == SubscriptionPlan.ESSENTIAL_YEARLY && current == SubscriptionPlan.ESSENTIAL_MONTHLY) {
+            return true;
+        }
+        if (SubscriptionPlans.isAthletePlan(targetPlan) && SubscriptionPlans.isEssentialPlan(current)) {
+            return SubscriptionPlans.isMonthlyPlan(current) == SubscriptionPlans.isMonthlyPlan(targetPlan)
+                    || SubscriptionPlans.isYearlyPlan(current) && SubscriptionPlans.isYearlyPlan(targetPlan);
+        }
+        return false;
     }
 
     public int calcularValorCobranca(User user, SubscriptionPlan targetPlan) {
         int precoCheio = precoPlano(targetPlan);
-        if (ehUpgradeProporcional(user, targetPlan)) {
-            int diff = precoPlano(SubscriptionPlan.ATHLETE_YEARLY) - precoPlano(SubscriptionPlan.ATHLETE_MONTHLY);
-            long dias = ChronoUnit.DAYS.between(Instant.now(), user.getPlanValidUntil());
-            dias = Math.max(1, Math.min(dias, planCatalogService.monthlyPeriodDays()));
-            int proporcional = (int) Math.round(diff * (dias / (double) PERIODO_MENSAL_DIAS));
-            return Math.max(100, proporcional);
+        if (!ehUpgradeProporcional(user, targetPlan)) {
+            return precoCheio;
         }
-        return precoCheio;
+        SubscriptionPlan current = resolverPlanoEfetivo(user);
+        int diff = precoPlano(targetPlan) - precoPlano(current);
+        long dias = ChronoUnit.DAYS.between(Instant.now(), user.getPlanValidUntil());
+        int periodoAtual = periodoDias(current);
+        dias = Math.max(1, Math.min(dias, periodoAtual));
+        int proporcional = (int) Math.round(diff * (dias / (double) periodoAtual));
+        return Math.max(100, proporcional);
     }
 
     public PlanQuoteResponse montarCotacao(User user, SubscriptionPlan targetPlan) {
@@ -145,19 +160,19 @@ public class SubscriptionService {
         if (user.getPlanValidUntil() == null) {
             return;
         }
-        if (Instant.now().isAfter(user.getPlanValidUntil()) && isPlanoPago(user.getSubscriptionPlan())) {
+        if (Instant.now().isAfter(user.getPlanValidUntil()) && SubscriptionPlans.isPaidB2cPlan(user.getSubscriptionPlan())) {
             user.setSubscriptionPlan(SubscriptionPlan.FREE);
             user.setPlanValidUntil(null);
             user.setPlanCancelledAt(null);
             user.setAutoRenew(false);
             user.setDefaultCardId(null);
             userRepository.save(user);
-            syncAthleteModeOnExpiry(user);
+            syncTierFeatures(user, SubscriptionPlan.FREE);
         }
     }
 
     public SubscriptionPlan resolverPlanoEfetivo(User user) {
-        if (!isPlanoPago(user.getSubscriptionPlan())) {
+        if (!SubscriptionPlans.isPaidB2cPlan(user.getSubscriptionPlan())) {
             return user.getSubscriptionPlan();
         }
         if (user.getPlanValidUntil() != null && Instant.now().isAfter(user.getPlanValidUntil())) {
@@ -170,10 +185,10 @@ public class SubscriptionService {
         if (emTrial(user)) {
             return SubscriptionStatus.TRIAL;
         }
-        if (!isPlanoPago(user.getSubscriptionPlan()) || user.getPlanValidUntil() == null) {
+        if (!SubscriptionPlans.isPaidB2cPlan(user.getSubscriptionPlan()) || user.getPlanValidUntil() == null) {
             if (user.getPlanValidUntil() != null
                     && Instant.now().isAfter(user.getPlanValidUntil())
-                    && isPlanoPago(user.getSubscriptionPlan())) {
+                    && SubscriptionPlans.isPaidB2cPlan(user.getSubscriptionPlan())) {
                 return SubscriptionStatus.EXPIRED;
             }
             return SubscriptionStatus.NONE;
@@ -217,11 +232,30 @@ public class SubscriptionService {
     }
 
     public boolean temAssinaturaPaga(User user) {
-        return isPlanoPago(user.getSubscriptionPlan()) && periodoAindaValido(user);
+        return SubscriptionPlans.isPaidB2cPlan(user.getSubscriptionPlan()) && periodoAindaValido(user);
     }
 
+    /** Modo atleta: plano Atleta pago ou trial (acesso total durante trial). */
     public boolean temAcessoAtleta(User user) {
-        return temAssinaturaPaga(user) || emTrial(user);
+        if (emTrial(user)) {
+            return true;
+        }
+        if (!temAssinaturaPaga(user)) {
+            return false;
+        }
+        return SubscriptionPlans.isAthletePlan(resolverPlanoEfetivo(user));
+    }
+
+    /** Essencial ou superior (pago ou trial). */
+    public boolean temAcessoEssencial(User user) {
+        if (emTrial(user)) {
+            return true;
+        }
+        if (!temAssinaturaPaga(user)) {
+            return false;
+        }
+        SubscriptionPlan plan = resolverPlanoEfetivo(user);
+        return SubscriptionPlans.isEssentialPlan(plan) || SubscriptionPlans.isAthletePlan(plan);
     }
 
     public boolean emTrial(User user) {
@@ -246,17 +280,21 @@ public class SubscriptionService {
         if (dias > 0) {
             return dias;
         }
-        return plan == SubscriptionPlan.ATHLETE_YEARLY ? PERIODO_ANUAL_DIAS : PERIODO_MENSAL_DIAS;
+        return SubscriptionPlans.isYearlyPlan(plan) ? PERIODO_ANUAL_DIAS : PERIODO_MENSAL_DIAS;
     }
 
     private void validarPlanoPago(SubscriptionPlan plan) {
-        if (plan != SubscriptionPlan.ATHLETE_MONTHLY && plan != SubscriptionPlan.ATHLETE_YEARLY) {
+        if (!SubscriptionPlans.isPaidB2cPlan(plan)) {
             throw new IllegalArgumentException("Plano inválido para cotação");
         }
     }
 
-    private boolean isPlanoPago(SubscriptionPlan plan) {
-        return plan == SubscriptionPlan.ATHLETE_MONTHLY || plan == SubscriptionPlan.ATHLETE_YEARLY;
+    private void syncTierFeatures(User user, SubscriptionPlan plan) {
+        if (SubscriptionPlans.isAthletePlan(plan)) {
+            syncAthleteModeOnActivation(user);
+        } else {
+            syncAthleteModeOnExpiry(user);
+        }
     }
 
     private String formatarValor(int amountCents) {

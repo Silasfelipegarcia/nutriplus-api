@@ -179,16 +179,18 @@ public class SubscriptionPlanCatalogService {
 
     private static int fallbackPrice(SubscriptionPlan plan) {
         return switch (plan) {
-            case ATHLETE_MONTHLY -> 2490;
-            case ATHLETE_YEARLY -> 19900;
+            case ESSENTIAL_MONTHLY -> 1990;
+            case ESSENTIAL_YEARLY -> 17900;
+            case ATHLETE_MONTHLY -> 2990;
+            case ATHLETE_YEARLY -> 26900;
             default -> 0;
         };
     }
 
     private static int fallbackPeriodDays(SubscriptionPlan plan) {
         return switch (plan) {
-            case ATHLETE_YEARLY -> 365;
-            case ATHLETE_MONTHLY -> 30;
+            case ESSENTIAL_YEARLY, ATHLETE_YEARLY -> 365;
+            case ESSENTIAL_MONTHLY, ATHLETE_MONTHLY -> 30;
             default -> 0;
         };
     }
@@ -196,6 +198,8 @@ public class SubscriptionPlanCatalogService {
     private static String fallbackName(SubscriptionPlan plan) {
         return switch (plan) {
             case FREE -> "Grátis";
+            case ESSENTIAL_MONTHLY -> "Essencial Mensal";
+            case ESSENTIAL_YEARLY -> "Essencial Anual";
             case ATHLETE_MONTHLY -> "Atleta Mensal";
             case ATHLETE_YEARLY -> "Atleta Anual";
         };

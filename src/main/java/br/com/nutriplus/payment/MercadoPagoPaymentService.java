@@ -2,6 +2,7 @@ package br.com.nutriplus.payment;
 
 import br.com.nutriplus.infrastructure.config.MercadoPagoProperties;
 import br.com.nutriplus.domain.enums.SubscriptionPlan;
+import br.com.nutriplus.domain.enums.SubscriptionPlans;
 import br.com.nutriplus.dto.request.ChargePlanRequest;
 import br.com.nutriplus.dto.request.CheckoutSyncRequest;
 import br.com.nutriplus.dto.response.ChargePlanResponse;
@@ -78,7 +79,7 @@ public class MercadoPagoPaymentService {
     @Transactional
     public CheckoutResponse criarCheckout(Long userId, SubscriptionPlan plan) {
         billingEnforcementService.requireBillingEnabled();
-        if (plan != SubscriptionPlan.ATHLETE_MONTHLY && plan != SubscriptionPlan.ATHLETE_YEARLY) {
+        if (!SubscriptionPlans.isPaidB2cPlan(plan)) {
             throw new IllegalArgumentException("Plano inválido para checkout");
         }
         planCatalogService.requireEnabledPlan(plan);
@@ -159,7 +160,7 @@ public class MercadoPagoPaymentService {
     }
 
     public PlanQuoteResponse obterCotacao(Long userId, SubscriptionPlan plan) {
-        if (plan != SubscriptionPlan.ATHLETE_MONTHLY && plan != SubscriptionPlan.ATHLETE_YEARLY) {
+        if (!SubscriptionPlans.isPaidB2cPlan(plan)) {
             throw new IllegalArgumentException("Plano inválido para cotação");
         }
         User user = userRepository.findById(userId)
@@ -311,7 +312,7 @@ public class MercadoPagoPaymentService {
     public ChargePlanResponse cobrarPlano(Long userId, ChargePlanRequest request) {
         billingEnforcementService.requireBillingEnabled();
         SubscriptionPlan plan = request.getPlan();
-        if (plan != SubscriptionPlan.ATHLETE_MONTHLY && plan != SubscriptionPlan.ATHLETE_YEARLY) {
+        if (!SubscriptionPlans.isPaidB2cPlan(plan)) {
             throw new IllegalArgumentException("Plano inválido para cobrança");
         }
         planCatalogService.requireEnabledPlan(plan);
@@ -848,8 +849,14 @@ public class MercadoPagoPaymentService {
 
     private String descricaoPagamento(SubscriptionPlan plan, boolean upgrade) {
         if (upgrade) {
-            return "Upgrade Nutri+ Atleta Anual (proporcional)";
+            return "Upgrade Nutri+ (proporcional)";
         }
-        return plan == SubscriptionPlan.ATHLETE_MONTHLY ? "Nutri+ Atleta Mensal" : "Nutri+ Atleta Anual";
+        return switch (plan) {
+            case ESSENTIAL_MONTHLY -> "Nutri+ Essencial Mensal";
+            case ESSENTIAL_YEARLY -> "Nutri+ Essencial Anual";
+            case ATHLETE_MONTHLY -> "Nutri+ Atleta Mensal";
+            case ATHLETE_YEARLY -> "Nutri+ Atleta Anual";
+            default -> "Nutri+ Assinatura";
+        };
     }
 }

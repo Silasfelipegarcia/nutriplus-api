@@ -107,10 +107,11 @@ Referência de preços: [PRICING.md](./PRICING.md).
 | Fonte | Mecanismo | Status |
 |-------|-----------|--------|
 | Assinatura atleta | Mensal / anual via Mercado Pago | Implementado (flag) |
+| Assinatura essencial | R$ 19,90/mês, trial 7 dias | Implementado (flag) |
 | Taxa marketplace | % sobre consulta Stripe Connect | Implementado |
 | Gratuito | Aquisição | Ativo |
 
-Valores sugeridos: atleta R$ 19,90–29,90/mês; consulta R$ 49–149. Ver [PRICING.md](./PRICING.md).
+Valores (Opção A): Essencial R$ 19,90/mês; Atleta R$ 29,90/mês. Ver [PRICING.md](./PRICING.md).
 
 ---
 

@@ -52,6 +52,7 @@ public class MealPlanService {
     private final ResponseMapper responseMapper;
     private final AuthorizationService authorizationService;
     private final UserRepository userRepository;
+    private final MealPlanGenerationQuotaService generationQuotaService;
 
     public MealPlanService(CurrentUser currentUser,
                            NutritionProfileService nutritionProfileService,
@@ -61,7 +62,8 @@ public class MealPlanService {
                            MealPlanGenerationWorker generationWorker,
                            ResponseMapper responseMapper,
                            AuthorizationService authorizationService,
-                           UserRepository userRepository) {
+                           UserRepository userRepository,
+                           MealPlanGenerationQuotaService generationQuotaService) {
         this.currentUser = currentUser;
         this.nutritionProfileService = nutritionProfileService;
         this.mealPlanRepository = mealPlanRepository;
@@ -71,6 +73,7 @@ public class MealPlanService {
         this.responseMapper = responseMapper;
         this.authorizationService = authorizationService;
         this.userRepository = userRepository;
+        this.generationQuotaService = generationQuotaService;
     }
 
     @Transactional
@@ -87,6 +90,7 @@ public class MealPlanService {
 
     private MealPlanGenerationStatusResponse enqueueGenerationInternal(User user) {
         nutritionProfileService.getEntityForUser(user);
+        generationQuotaService.assertCanGenerate(user);
 
         List<MealPlanGenerationJob> active = jobRepository.findByUserIdAndStatusIn(user.getId(), ACTIVE_STATUSES);
         failStaleJobs(active);

@@ -37,7 +37,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
               AND u.planValidUntil IS NOT NULL
               AND u.planValidUntil <= :limite
               AND u.defaultCardId IS NOT NULL
-              AND u.subscriptionPlan IN (br.com.nutriplus.domain.enums.SubscriptionPlan.ATHLETE_MONTHLY,
+              AND u.subscriptionPlan IN (br.com.nutriplus.domain.enums.SubscriptionPlan.ESSENTIAL_MONTHLY,
+                                         br.com.nutriplus.domain.enums.SubscriptionPlan.ESSENTIAL_YEARLY,
+                                         br.com.nutriplus.domain.enums.SubscriptionPlan.ATHLETE_MONTHLY,
                                          br.com.nutriplus.domain.enums.SubscriptionPlan.ATHLETE_YEARLY)
             """)
     List<User> findDueForRenewal(@Param("limite") Instant limite);
@@ -46,7 +48,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
             SELECT u FROM User u
             WHERE u.trialAte IS NOT NULL
               AND u.trialAte <= :now
-              AND u.subscriptionPlan = br.com.nutriplus.domain.enums.SubscriptionPlan.ATHLETE_MONTHLY
               AND (u.planValidUntil IS NULL OR u.planValidUntil <= :now)
             """)
     List<User> findTrialsExpirados(@Param("now") Instant now);

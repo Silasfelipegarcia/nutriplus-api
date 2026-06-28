@@ -2,6 +2,7 @@ package br.com.nutriplus.service;
 
 import br.com.nutriplus.domain.entity.User;
 import br.com.nutriplus.domain.enums.SubscriptionPlan;
+import br.com.nutriplus.domain.enums.SubscriptionPlans;
 import br.com.nutriplus.dto.request.ChargePlanRequest;
 import br.com.nutriplus.dto.response.ChargePlanResponse;
 import br.com.nutriplus.payment.MercadoPagoPaymentService;
@@ -52,21 +53,15 @@ public class TrialService {
 
         user.setTrialUtilizado(true);
         user.setTrialAte(Instant.now().plus(7, ChronoUnit.DAYS));
-        user.setSubscriptionPlan(SubscriptionPlan.ATHLETE_MONTHLY);
+        user.setSubscriptionPlan(SubscriptionPlan.ESSENTIAL_MONTHLY);
         user.setAutoRenew(true);
         user = userRepository.save(user);
-        athleteAccessService.syncAthleteModeOnActivation(user);
         return user;
     }
 
     @Transactional
     public void expirarTrialSeNecessario(User user) {
         if (user.getTrialAte() == null || !Instant.now().isAfter(user.getTrialAte())) {
-            return;
-        }
-        if (user.getSubscriptionPlan() != SubscriptionPlan.ATHLETE_MONTHLY) {
-            user.setTrialAte(null);
-            userRepository.save(user);
             return;
         }
         if (user.getPlanValidUntil() != null && Instant.now().isBefore(user.getPlanValidUntil())) {
@@ -78,6 +73,7 @@ public class TrialService {
         if (tentarCobrarAposTrial(user)) {
             user.setTrialAte(null);
             userRepository.save(user);
+            athleteAccessService.syncAthleteModeOnExpiry(user);
             return;
         }
 
@@ -101,13 +97,13 @@ public class TrialService {
         }
         try {
             ChargePlanRequest request = new ChargePlanRequest();
-            request.setPlan(SubscriptionPlan.ATHLETE_MONTHLY);
+            request.setPlan(SubscriptionPlan.ESSENTIAL_MONTHLY);
             request.setCardId(user.getDefaultCardId());
             request.setRenewal(true);
             ChargePlanResponse response = paymentService.cobrarPlano(user.getId(), request);
             boolean aprovado = "APPROVED".equalsIgnoreCase(response.getStatus());
             if (aprovado) {
-                log.info("Trial convertido em assinatura paga para {}", user.getEmail());
+                log.info("Trial convertido em Essencial para {}", user.getEmail());
             }
             return aprovado;
         } catch (Exception e) {

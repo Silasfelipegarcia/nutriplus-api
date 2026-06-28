@@ -5,6 +5,7 @@ import br.com.nutriplus.domain.enums.MealPlanGenerationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,4 +26,9 @@ public interface MealPlanGenerationJobRepository extends JpaRepository<MealPlanG
     List<MealPlanGenerationJob> findByUserIdAndStatusIn(Long userId, List<MealPlanGenerationStatus> statuses);
 
     Optional<MealPlanGenerationJob> findTopByUserIdOrderByCreatedAtDesc(Long userId);
+
+    long countByUserIdAndStatusInAndCreatedAtGreaterThanEqual(
+            Long userId,
+            List<MealPlanGenerationStatus> statuses,
+            LocalDateTime createdAt);
 }

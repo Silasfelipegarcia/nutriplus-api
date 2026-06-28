@@ -1,6 +1,6 @@
 # Nutri+ — Assinaturas (estado implementado)
 
-Documentação do **comportamento atual** do billing B2C (modo atleta). Para planos futuros (e-mail, paywall completo), ver [BILLING_AND_AUTH_ROADMAP.md](./BILLING_AND_AUTH_ROADMAP.md) — **roadmap, não estado atual**.
+Documentação do **comportamento atual** do billing B2C (Essencial + Atleta). Para e-mail transacional e paywall web completo, ver [BILLING_AND_AUTH_ROADMAP.md](./BILLING_AND_AUTH_ROADMAP.md).
 
 Negócio: [BUSINESS_MODEL.md](./BUSINESS_MODEL.md). Preços: [PRICING.md](./PRICING.md). Setup MP: [MERCADOPAGO_SETUP.md](./MERCADOPAGO_SETUP.md).
 
@@ -10,13 +10,31 @@ Negócio: [BUSINESS_MODEL.md](./BUSINESS_MODEL.md). Preços: [PRICING.md](./PRIC
 
 | Plano | Enum | Descrição |
 |-------|------|-----------|
-| Grátis | `FREE` | IA, plano, check-ins, evolução |
-| Atleta mensal | `ATHLETE_MONTHLY` | Modo atleta + treinos |
-| Atleta anual | `ATHLETE_YEARLY` | Mesmo escopo, período anual |
+| Grátis | `FREE` | 1 geração de plano/mês (com billing ativo), check-ins, evolução |
+| Essencial mensal | `ESSENTIAL_MONTHLY` | Plano IA + 1 regeneração/mês |
+| Essencial anual | `ESSENTIAL_YEARLY` | Essencial com desconto anual |
+| Atleta mensal | `ATHLETE_MONTHLY` | Essencial + treinos + regens ilimitadas |
+| Atleta anual | `ATHLETE_YEARLY` | Atleta com desconto anual |
 
-Catálogo configurável: tabela `subscription_plan_catalog` + admin `/admin/subscription-plans`.
+Catálogo: `subscription_plan_catalog` + admin `/admin/subscription-plans`.
 
-Preços default (env): `MERCADOPAGO_ATHLETE_MONTHLY_PRICE_CENTS=2490`, `MERCADOPAGO_ATHLETE_YEARLY_PRICE_CENTS=19900`.
+Preços default (V45): Essencial R$ 19,90 / R$ 179 ano; Atleta R$ 29,90 / R$ 269 ano.
+
+---
+
+## Limites de geração de plano
+
+Serviço: `MealPlanGenerationQuotaService`.
+
+| Tier | Regenerações/mês |
+|------|------------------|
+| Grátis (billing on) | 1 |
+| Essencial | 1 |
+| Atleta | Ilimitado |
+| Trial | Ilimitado |
+| Beta (billing off) | Ilimitado |
+
+Excesso retorna **402** `SUBSCRIPTION_REQUIRED`.
 
 ---
 
@@ -43,13 +61,14 @@ Implementação: `SubscriptionService.statusAssinatura()`.
 3. Redirect Mercado Pago (ou mock se `MERCADOPAGO_MOCK_MODE=true`)
 4. Webhook ou `POST /payments/checkout/sync` confirma pagamento
 5. `SubscriptionService.ativarPeriodoPago()` — define plano, `planValidUntil`, `autoRenew=true`
-6. Modo atleta ativado no perfil nutricional
+6. Modo atleta ativado **somente** se plano Atleta (`SubscriptionPlans.isAthletePlan`)
 
 ### Trial
 
 - `POST /payments/trial` (via `TrialController`)
-- Exige cartão cadastrado (`POST /payments/cards`) — implementado no portal web
-- Define `trialAte`; acesso atleta durante trial
+- Exige cartão cadastrado
+- 7 dias com **acesso completo** (Essencial + Atleta)
+- Ao expirar: cobrança automática **Essencial Mensal** (R$ 19,90) ou downgrade para FREE
 
 ### Cancelar renovação
 
