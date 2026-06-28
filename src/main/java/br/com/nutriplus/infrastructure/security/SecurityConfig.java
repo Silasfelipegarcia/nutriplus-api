@@ -194,6 +194,8 @@ public class SecurityConfig {
             "https://nutriplus-web.vercel.app",
             "https://nutriplus.com.br",
             "https://www.nutriplus.com.br",
+            "https://nutriplus.app.br",
+            "https://www.nutriplus.app.br",
             "https://*.vercel.app"
     );
 

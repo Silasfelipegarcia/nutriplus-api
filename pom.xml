@@ -231,6 +231,9 @@
                     <locations>
                         <location>classpath:db/migration</location>
                     </locations>
+                    <ignoreMigrationPatterns>
+                        <ignoreMigrationPattern>*:missing</ignoreMigrationPattern>
+                    </ignoreMigrationPatterns>
                 </configuration>
             </plugin>
         </plugins>
