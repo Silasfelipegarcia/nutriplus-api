@@ -73,9 +73,10 @@ class AdminNutritionistServiceTest {
         when(authorizationService.hasRole(UserRole.ADMIN)).thenReturn(true);
         when(nutritionistRepository.findById(8L)).thenReturn(Optional.of(nutritionist));
 
-        service.reject(8L);
+        service.reject(8L, "CRN inválido");
 
         assertThat(nutritionist.isCrnVerified()).isFalse();
         assertThat(nutritionist.isMarketplaceVisible()).isFalse();
+        verify(betaAccessNotificationService).notifyNutritionistVerificationRejected(user, "CRN inválido");
     }
 }

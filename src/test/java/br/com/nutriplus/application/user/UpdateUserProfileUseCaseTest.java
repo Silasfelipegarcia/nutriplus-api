@@ -86,7 +86,8 @@ class UpdateUserProfileUseCaseTest {
                 null,
                 null,
                 LocalDateTime.now(),
-                LocalDateTime.now()
+                LocalDateTime.now(),
+                null
         );
     }
 }

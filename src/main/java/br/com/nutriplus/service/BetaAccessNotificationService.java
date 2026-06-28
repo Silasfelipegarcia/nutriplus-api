@@ -44,6 +44,53 @@ public class BetaAccessNotificationService {
         }
     }
 
+    public boolean notifyRejected(User user, String reason) {
+        if (user == null || user.getEmail() == null || user.getEmail().isBlank()) {
+            return false;
+        }
+        String normalizedReason = normalizeReason(reason);
+        try {
+            emailSender.sendBetaAccessRejected(
+                    user.getEmail(),
+                    user.getName(),
+                    normalizedReason,
+                    user.getRole() != null ? user.getRole() : UserRole.PATIENT);
+            auditLogService.log("BETA_ACCESS_REJECT_EMAIL_SENT", "USER", user);
+            return true;
+        } catch (RuntimeException ex) {
+            log.error("Falha ao enviar e-mail de recusa beta para userId={}: {}", user.getId(), ex.getMessage());
+            auditLogService.log("BETA_ACCESS_REJECT_EMAIL_FAILED", "USER", user);
+            return false;
+        }
+    }
+
+    public boolean notifyNutritionistVerificationRejected(User user, String reason) {
+        if (user == null || user.getEmail() == null || user.getEmail().isBlank()) {
+            return false;
+        }
+        String normalizedReason = normalizeReason(reason);
+        try {
+            emailSender.sendNutritionistVerificationRejected(
+                    user.getEmail(),
+                    user.getName(),
+                    normalizedReason);
+            auditLogService.log("NUTRITIONIST_REJECT_EMAIL_SENT", "USER", user);
+            return true;
+        } catch (RuntimeException ex) {
+            log.error("Falha ao enviar e-mail de recusa CRN para userId={}: {}", user.getId(), ex.getMessage());
+            auditLogService.log("NUTRITIONIST_REJECT_EMAIL_FAILED", "USER", user);
+            return false;
+        }
+    }
+
+    private static String normalizeReason(String reason) {
+        if (reason == null) {
+            return null;
+        }
+        String trimmed = reason.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
     private String buildLoginLink(User user) {
         String base = emailProperties.getFrontendUrl().replaceAll("/$", "");
         if (user.getRole() == UserRole.NUTRITIONIST) {

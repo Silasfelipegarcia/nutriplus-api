@@ -58,7 +58,8 @@ public class UpdateUserProfileUseCase {
                 current.termsVersion(),
                 current.privacyPolicyAcceptedAt(),
                 current.createdAt(),
-                current.updatedAt()
+                current.updatedAt(),
+                current.accessRejectedAt()
         );
         return userUpdatePort.save(updated);
     }
