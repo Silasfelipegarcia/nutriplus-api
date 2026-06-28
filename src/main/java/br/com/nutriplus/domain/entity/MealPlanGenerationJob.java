@@ -1,6 +1,7 @@
 package br.com.nutriplus.domain.entity;
 
 import br.com.nutriplus.domain.enums.MealPlanGenerationStatus;
+import br.com.nutriplus.domain.enums.PlanRegenerationReason;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -39,6 +40,13 @@ public class MealPlanGenerationJob {
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "regeneration_reason", length = 40)
+    private PlanRegenerationReason regenerationReason;
+
+    @Column(name = "progress_review_id")
+    private Long progressReviewId;
+
     protected MealPlanGenerationJob() {
     }
 
@@ -51,6 +59,8 @@ public class MealPlanGenerationJob {
         this.createdAt = builder.createdAt;
         this.startedAt = builder.startedAt;
         this.completedAt = builder.completedAt;
+        this.regenerationReason = builder.regenerationReason;
+        this.progressReviewId = builder.progressReviewId;
     }
 
     public static Builder builder() {
@@ -109,6 +119,22 @@ public class MealPlanGenerationJob {
         this.completedAt = completedAt;
     }
 
+    public PlanRegenerationReason getRegenerationReason() {
+        return regenerationReason;
+    }
+
+    public void setRegenerationReason(PlanRegenerationReason regenerationReason) {
+        this.regenerationReason = regenerationReason;
+    }
+
+    public Long getProgressReviewId() {
+        return progressReviewId;
+    }
+
+    public void setProgressReviewId(Long progressReviewId) {
+        this.progressReviewId = progressReviewId;
+    }
+
     public static final class Builder {
         private Long id;
         private User user;
@@ -118,6 +144,8 @@ public class MealPlanGenerationJob {
         private LocalDateTime createdAt;
         private LocalDateTime startedAt;
         private LocalDateTime completedAt;
+        private PlanRegenerationReason regenerationReason;
+        private Long progressReviewId;
 
         public Builder id(Long id) {
             this.id = id;
@@ -156,6 +184,16 @@ public class MealPlanGenerationJob {
 
         public Builder completedAt(LocalDateTime completedAt) {
             this.completedAt = completedAt;
+            return this;
+        }
+
+        public Builder regenerationReason(PlanRegenerationReason regenerationReason) {
+            this.regenerationReason = regenerationReason;
+            return this;
+        }
+
+        public Builder progressReviewId(Long progressReviewId) {
+            this.progressReviewId = progressReviewId;
             return this;
         }
 

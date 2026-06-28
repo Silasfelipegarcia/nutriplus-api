@@ -22,6 +22,7 @@ import br.com.nutriplus.repository.ShoppingListRepository;
 import br.com.nutriplus.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
@@ -51,6 +52,7 @@ public class MealPlanGenerationProcessor {
     private final ObjectMapper objectMapper;
     private final AuditLogService auditLogService;
     private final NutriCacheEvictionService cacheEvictionService;
+    private final PlanRegenerationPolicyService regenerationPolicyService;
 
     public MealPlanGenerationProcessor(MealPlanGenerationJobRepository jobRepository,
                                        UserRepository userRepository,
@@ -64,7 +66,8 @@ public class MealPlanGenerationProcessor {
                                        AppProperties appProperties,
                                        ObjectMapper objectMapper,
                                        AuditLogService auditLogService,
-                                       NutriCacheEvictionService cacheEvictionService) {
+                                       NutriCacheEvictionService cacheEvictionService,
+                                       PlanRegenerationPolicyService regenerationPolicyService) {
         this.jobRepository = jobRepository;
         this.userRepository = userRepository;
         this.nutritionProfileRepository = nutritionProfileRepository;
@@ -78,20 +81,13 @@ public class MealPlanGenerationProcessor {
         this.objectMapper = objectMapper;
         this.auditLogService = auditLogService;
         this.cacheEvictionService = cacheEvictionService;
+        this.regenerationPolicyService = regenerationPolicyService;
     }
 
-    @Transactional
     public void run(Long jobId, Long userId, long startMs) throws Exception {
-        MealPlanGenerationJob job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new IllegalStateException("Job não encontrado"));
-
-        if (job.getStatus() != MealPlanGenerationStatus.PENDING) {
+        if (!markRunning(jobId)) {
             return;
         }
-
-        job.setStatus(MealPlanGenerationStatus.RUNNING);
-        job.setStartedAt(LocalDateTime.now());
-        jobRepository.save(job);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalStateException("Usuário não encontrado"));
@@ -100,6 +96,38 @@ public class MealPlanGenerationProcessor {
 
         String requestJson = objectMapper.writeValueAsString(profile.getId());
         AiMealPlanGenerateResponse aiResponse = aiAgentClient.generateMealPlan(profile);
+
+        persistSuccess(jobId, user, profile, aiResponse, requestJson, startMs);
+    }
+
+    @Transactional
+    public boolean markRunning(Long jobId) {
+        MealPlanGenerationJob job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new IllegalStateException("Job não encontrado"));
+
+        if (job.getStatus() != MealPlanGenerationStatus.PENDING) {
+            return false;
+        }
+
+        job.setStatus(MealPlanGenerationStatus.RUNNING);
+        job.setStartedAt(LocalDateTime.now());
+        jobRepository.save(job);
+        return true;
+    }
+
+    @Transactional
+    public void persistSuccess(Long jobId,
+                               User user,
+                               NutritionProfile profile,
+                               AiMealPlanGenerateResponse aiResponse,
+                               String requestJson,
+                               long startMs) throws Exception {
+        MealPlanGenerationJob job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new IllegalStateException("Job não encontrado"));
+
+        if (job.getStatus() != MealPlanGenerationStatus.RUNNING) {
+            return;
+        }
 
         MealPlan mealPlan = MealPlan.builder()
                 .user(user)
@@ -160,6 +188,8 @@ public class MealPlanGenerationProcessor {
         job.setCompletedAt(LocalDateTime.now());
         jobRepository.save(job);
 
+        regenerationPolicyService.onGenerationCompleted(user, profile, job);
+
         cacheEvictionService.evictMealPlanCaches(user.getId());
 
         aiRequestLogService.log(user, AiRequestType.GENERATE_MEAL_PLAN, requestJson,
@@ -169,7 +199,7 @@ public class MealPlanGenerationProcessor {
         auditLogService.log("MEAL_PLAN_GENERATED", "MEAL_PLAN", String.valueOf(mealPlan.getId()), user, null);
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void markFailed(Long jobId, String message) {
         jobRepository.findById(jobId).ifPresent(job -> {
             job.setStatus(MealPlanGenerationStatus.FAILED);

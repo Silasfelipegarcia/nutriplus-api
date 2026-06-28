@@ -6,6 +6,9 @@ public record AiProgressAnalyzeResponse(
         String trend,
         String summary,
         List<String> recommendations,
-        String confidence
+        String confidence,
+        Boolean planChangeSuggested,
+        String planChangeRationale,
+        String keepPlanMessage
 ) {
 }

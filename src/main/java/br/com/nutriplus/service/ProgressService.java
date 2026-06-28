@@ -12,6 +12,7 @@ import br.com.nutriplus.domain.enums.ProgressReviewStatus;
 import br.com.nutriplus.domain.enums.EvolutionMetricStatus;
 import br.com.nutriplus.domain.enums.ProgressTrend;
 import br.com.nutriplus.dto.request.BodyMeasurementRequest;
+import br.com.nutriplus.dto.request.ProgressReviewRequest;
 import br.com.nutriplus.dto.response.BodyMeasurementResponse;
 import br.com.nutriplus.dto.response.EvolutionReportResponse;
 import br.com.nutriplus.dto.response.EvolutionMetricResponse;
@@ -86,7 +87,7 @@ public class ProgressService {
         return getScheduleForUser(user.getId(), profile);
     }
 
-    private ProgressScheduleResponse getScheduleForUser(Long userId, NutritionProfile profile) {
+    public ProgressScheduleResponse getScheduleForUser(Long userId, NutritionProfile profile) {
         int intervalDays = profile.getProgressReviewIntervalDays();
 
         LocalDate anchor = resolveAnchorDate(userId, profile);
@@ -197,7 +198,7 @@ public class ProgressService {
     }
 
     @Transactional
-    public ProgressReviewResponse generateReview() {
+    public ProgressReviewResponse generateReview(ProgressReviewRequest request) {
         User user = currentUser.get();
         NutritionProfile profile = requireProfile(user.getId());
         ProgressScheduleResponse schedule = getSchedule();
@@ -220,6 +221,11 @@ public class ProgressService {
         review.setPreviousSession(previous);
         review.setStatus(ProgressReviewStatus.RUNNING);
         review.setWeekAdherencePercent(checkinService.getStats().weekAdherencePercent());
+        if (request != null) {
+            review.setPhysicalDiscomforts(trimToNull(request.physicalDiscomforts()));
+            review.setPositiveChanges(trimToNull(request.positiveChanges()));
+            review.setGeneralNotes(trimToNull(request.generalNotes()));
+        }
         review = reviewRepository.save(review);
 
         try {
@@ -227,7 +233,10 @@ public class ProgressService {
                     profile,
                     current,
                     previous,
-                    review.getWeekAdherencePercent()
+                    review.getWeekAdherencePercent(),
+                    review.getPhysicalDiscomforts(),
+                    review.getPositiveChanges(),
+                    review.getGeneralNotes()
             );
             review.setTrend(ProgressTrend.valueOf(ai.trend()));
             review.setSummary(ai.summary());
@@ -236,6 +245,10 @@ public class ProgressService {
             } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
                 review.setRecommendations(String.join("\n", ai.recommendations()));
             }
+            review.setPlanChangeSuggested(ai.planChangeSuggested());
+            review.setPlanChangeRationale(ai.planChangeRationale());
+            review.setKeepPlanMessage(ai.keepPlanMessage());
+            review.setConfidence(ai.confidence());
             review.setStatus(ProgressReviewStatus.COMPLETED);
             review.setCompletedAt(LocalDateTime.now());
         } catch (Exception e) {
@@ -247,6 +260,14 @@ public class ProgressService {
 
         review = reviewRepository.save(review);
         return toReviewResponse(review);
+    }
+
+    private static String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     public ProgressReviewResponse getLatestReview() {
@@ -452,7 +473,11 @@ public class ProgressService {
                 review.getWeekAdherencePercent(),
                 toResponse(review.getCurrentSession()),
                 review.getPreviousSession() != null ? toResponse(review.getPreviousSession()) : null,
-                review.getCompletedAt()
+                review.getCompletedAt(),
+                review.getPlanChangeSuggested(),
+                review.getPlanChangeRationale(),
+                review.getKeepPlanMessage(),
+                review.getConfidence()
         );
     }
 }

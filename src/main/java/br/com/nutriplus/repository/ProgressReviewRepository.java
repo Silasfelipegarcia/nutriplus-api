@@ -8,4 +8,6 @@ import java.util.Optional;
 public interface ProgressReviewRepository extends JpaRepository<ProgressReview, Long> {
 
     Optional<ProgressReview> findFirstByUserIdOrderByCreatedAtDesc(Long userId);
+
+    Optional<ProgressReview> findByIdAndUserId(Long id, Long userId);
 }

@@ -7,6 +7,8 @@ public record MealPlanGenerationStatusResponse(
         MealPlanGenerationStatus status,
         Long mealPlanId,
         String errorMessage,
-        String progressHint
+        String progressHint,
+        Integer progressStep,
+        Integer progressTotalSteps
 ) {
 }

@@ -9,7 +9,7 @@ class TrainingServiceCatalogTest {
 
     @Test
     void sportCatalogIncludesExpandedPractices() {
-        TrainingService service = new TrainingService(null, null, null, null, null, null, null, null);
+        TrainingService service = new TrainingService(null, null, null, null, null, null, null, null, null);
         var catalog = service.getSportCatalog();
 
         assertFalse(catalog.isEmpty());

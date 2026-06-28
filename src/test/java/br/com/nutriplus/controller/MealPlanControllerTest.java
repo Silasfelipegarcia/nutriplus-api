@@ -1,8 +1,11 @@
 package br.com.nutriplus.controller;
 
 import br.com.nutriplus.domain.enums.MealPlanGenerationStatus;
+import br.com.nutriplus.domain.enums.PlanRegenerationReason;
+import br.com.nutriplus.dto.request.MealPlanGenerateRequest;
 import br.com.nutriplus.dto.response.MealPlanGenerationStatusResponse;
 import br.com.nutriplus.dto.response.MealPlanResponse;
+import br.com.nutriplus.dto.response.PlanRegenerationEligibilityResponse;
 import br.com.nutriplus.exception.ResourceNotFoundException;
 import br.com.nutriplus.infrastructure.web.ApiExceptionHandler;
 import br.com.nutriplus.service.MealPlanService;
@@ -39,11 +42,15 @@ class MealPlanControllerTest extends WebMvcTestSupport {
 
     @Test
     void generateReturnsAccepted() throws Exception {
-        when(mealPlanService.enqueueGeneration()).thenReturn(
-                new MealPlanGenerationStatusResponse(1L, MealPlanGenerationStatus.PENDING, null, null, "Analisando…")
+        when(mealPlanService.enqueueGeneration(org.mockito.ArgumentMatchers.any(MealPlanGenerateRequest.class)))
+                .thenReturn(
+                new MealPlanGenerationStatusResponse(
+                        1L, MealPlanGenerationStatus.PENDING, null, null, "Analisando…", 1, 5)
         );
 
-        mockMvc.perform(post("/meal-plans/generate"))
+        mockMvc.perform(post("/meal-plans/generate")
+                        .contentType("application/json")
+                        .content("{\"reason\":\"FIRST_PLAN\"}"))
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.jobId").value(1))
                 .andExpect(jsonPath("$.status").value("PENDING"));
@@ -52,7 +59,8 @@ class MealPlanControllerTest extends WebMvcTestSupport {
     @Test
     void generationStatusReturnsOk() throws Exception {
         when(mealPlanService.getGenerationStatus()).thenReturn(
-                new MealPlanGenerationStatusResponse(2L, MealPlanGenerationStatus.RUNNING, null, null, "Montando refeições…")
+                new MealPlanGenerationStatusResponse(
+                        2L, MealPlanGenerationStatus.RUNNING, null, null, "Montando refeições…", 2, 5)
         );
 
         mockMvc.perform(get("/meal-plans/generation-status"))

@@ -12,6 +12,10 @@ public record ProgressReviewResponse(
         Integer weekAdherencePercent,
         BodyMeasurementResponse current,
         BodyMeasurementResponse previous,
-        LocalDateTime completedAt
+        LocalDateTime completedAt,
+        Boolean planChangeSuggested,
+        String planChangeRationale,
+        String keepPlanMessage,
+        String confidence
 ) {
 }

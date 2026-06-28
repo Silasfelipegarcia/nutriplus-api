@@ -41,6 +41,7 @@ public class TrainingService {
     private final CoachInsightService coachInsightService;
     private final AthleteAccessService athleteAccessService;
     private final SubscriptionService subscriptionService;
+    private final PlanRegenerationPolicyService regenerationPolicyService;
 
     public TrainingService(CurrentUser currentUser,
                            NutritionProfileRepository nutritionProfileRepository,
@@ -49,7 +50,8 @@ public class TrainingService {
                            ResponseMapper responseMapper,
                            CoachInsightService coachInsightService,
                            AthleteAccessService athleteAccessService,
-                           SubscriptionService subscriptionService) {
+                           SubscriptionService subscriptionService,
+                           PlanRegenerationPolicyService regenerationPolicyService) {
         this.currentUser = currentUser;
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.activityRepository = activityRepository;
@@ -58,6 +60,7 @@ public class TrainingService {
         this.coachInsightService = coachInsightService;
         this.athleteAccessService = athleteAccessService;
         this.subscriptionService = subscriptionService;
+        this.regenerationPolicyService = regenerationPolicyService;
     }
 
     @Cacheable(value = NutriCacheNames.SPORT_CATALOG, key = "'catalog'")
@@ -84,12 +87,16 @@ public class TrainingService {
     public TrainingProfileResponse saveProfile(TrainingProfileRequest request) {
         User user = currentUser.get();
         NutritionProfile profile = requireProfile(user.getId());
+        boolean wasAthlete = profile.isAthleteModeEnabled();
 
         if (Boolean.TRUE.equals(request.athleteModeEnabled()) && !athleteAccessService.hasAthleteAccess(user)) {
             throw new SubscriptionRequiredException("Assine o plano Atleta para ativar o modo atleta.");
         }
 
         profile.setAthleteModeEnabled(Boolean.TRUE.equals(request.athleteModeEnabled()));
+        if (!wasAthlete && profile.isAthleteModeEnabled()) {
+            regenerationPolicyService.markAthleteRegenEligible(profile);
+        }
         if (!profile.isAthleteModeEnabled()) {
             profile.setTrainingDailyExtraKcal(null);
         }

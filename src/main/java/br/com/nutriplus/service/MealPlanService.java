@@ -3,10 +3,14 @@ package br.com.nutriplus.service;
 import br.com.nutriplus.domain.entity.Meal;
 import br.com.nutriplus.domain.entity.MealPlan;
 import br.com.nutriplus.domain.entity.MealPlanGenerationJob;
+import br.com.nutriplus.domain.entity.NutritionProfile;
 import br.com.nutriplus.domain.entity.User;
 import br.com.nutriplus.domain.enums.MealPlanGenerationStatus;
+import br.com.nutriplus.domain.enums.PlanRegenerationReason;
+import br.com.nutriplus.dto.request.MealPlanGenerateRequest;
 import br.com.nutriplus.dto.response.MealPlanGenerationStatusResponse;
 import br.com.nutriplus.dto.response.MealPlanResponse;
+import br.com.nutriplus.dto.response.PlanRegenerationEligibilityResponse;
 import br.com.nutriplus.exception.ResourceNotFoundException;
 import br.com.nutriplus.mapper.ResponseMapper;
 import br.com.nutriplus.repository.MealPlanGenerationJobRepository;
@@ -15,6 +19,7 @@ import br.com.nutriplus.repository.UserRepository;
 import br.com.nutriplus.security.AuthorizationService;
 import br.com.nutriplus.security.CurrentUser;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.cache.annotation.Cacheable;
 import br.com.nutriplus.infrastructure.config.NutriCacheNames;
@@ -53,6 +58,7 @@ public class MealPlanService {
     private final AuthorizationService authorizationService;
     private final UserRepository userRepository;
     private final MealPlanGenerationQuotaService generationQuotaService;
+    private final PlanRegenerationPolicyService regenerationPolicyService;
 
     public MealPlanService(CurrentUser currentUser,
                            NutritionProfileService nutritionProfileService,
@@ -63,7 +69,8 @@ public class MealPlanService {
                            ResponseMapper responseMapper,
                            AuthorizationService authorizationService,
                            UserRepository userRepository,
-                           MealPlanGenerationQuotaService generationQuotaService) {
+                           MealPlanGenerationQuotaService generationQuotaService,
+                           PlanRegenerationPolicyService regenerationPolicyService) {
         this.currentUser = currentUser;
         this.nutritionProfileService = nutritionProfileService;
         this.mealPlanRepository = mealPlanRepository;
@@ -74,22 +81,31 @@ public class MealPlanService {
         this.authorizationService = authorizationService;
         this.userRepository = userRepository;
         this.generationQuotaService = generationQuotaService;
+        this.regenerationPolicyService = regenerationPolicyService;
+    }
+
+    public PlanRegenerationEligibilityResponse getRegenerationEligibility() {
+        User user = currentUser.get();
+        NutritionProfile profile = nutritionProfileService.getEntityForUser(user);
+        return regenerationPolicyService.getEligibility(user, profile);
     }
 
     @Transactional
     public MealPlanGenerationStatusResponse enqueueGenerationForUser(Long userId) {
         authorizationService.requireCareAccessForNutritionistByPatientId(userId);
+        MealPlanGenerateRequest request = new MealPlanGenerateRequest(PlanRegenerationReason.NUTRITIONIST_BYPASS, null);
         return enqueueGenerationInternal(userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado.")));
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado.")), request);
     }
 
     @Transactional
-    public MealPlanGenerationStatusResponse enqueueGeneration() {
-        return enqueueGenerationInternal(currentUser.get());
+    public MealPlanGenerationStatusResponse enqueueGeneration(MealPlanGenerateRequest request) {
+        return enqueueGenerationInternal(currentUser.get(), request);
     }
 
-    private MealPlanGenerationStatusResponse enqueueGenerationInternal(User user) {
-        nutritionProfileService.getEntityForUser(user);
+    private MealPlanGenerationStatusResponse enqueueGenerationInternal(User user, MealPlanGenerateRequest request) {
+        NutritionProfile profile = nutritionProfileService.getEntityForUser(user);
+        regenerationPolicyService.assertAllowed(user, profile, request.reason(), request.reviewId());
         generationQuotaService.assertCanGenerate(user);
 
         List<MealPlanGenerationJob> active = jobRepository.findByUserIdAndStatusIn(user.getId(), ACTIVE_STATUSES);
@@ -102,6 +118,8 @@ public class MealPlanService {
         MealPlanGenerationJob job = MealPlanGenerationJob.builder()
                 .user(user)
                 .status(MealPlanGenerationStatus.PENDING)
+                .regenerationReason(request.reason())
+                .progressReviewId(request.reviewId())
                 .build();
         job = jobRepository.save(job);
 
@@ -118,7 +136,7 @@ public class MealPlanService {
 
     public MealPlanGenerationStatusResponse getGenerationStatus() {
         User user = currentUser.get();
-        failStaleJobs(jobRepository.findByUserIdAndStatusIn(user.getId(), ACTIVE_STATUSES));
+        cleanupStaleJobsForUser(user.getId());
         return jobRepository.findTopByUserIdOrderByCreatedAtDesc(user.getId())
                 .map(this::toStatusResponse)
                 .orElse(new MealPlanGenerationStatusResponse(
@@ -126,8 +144,15 @@ public class MealPlanService {
                         MealPlanGenerationStatus.NONE,
                         null,
                         null,
-                        null
+                        null,
+                        null,
+                        PROGRESS_HINTS.length
                 ));
+    }
+
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void cleanupStaleJobsForUser(Long userId) {
+        failStaleJobs(jobRepository.findByUserIdAndStatusIn(userId, ACTIVE_STATUSES));
     }
 
     @Cacheable(value = NutriCacheNames.MEAL_PLAN_LATEST, keyGenerator = "userIdCacheKeyGenerator")
@@ -144,25 +169,38 @@ public class MealPlanService {
 
     private MealPlanGenerationStatusResponse toStatusResponse(MealPlanGenerationJob job) {
         Long mealPlanId = job.getMealPlan() != null ? job.getMealPlan().getId() : null;
+        int progressIndex = progressIndex(job);
         return new MealPlanGenerationStatusResponse(
                 job.getId(),
                 job.getStatus(),
                 mealPlanId,
                 job.getErrorMessage(),
-                progressHint(job)
+                progressHint(job, progressIndex),
+                job.getStatus() == MealPlanGenerationStatus.COMPLETED
+                        || job.getStatus() == MealPlanGenerationStatus.FAILED
+                        ? null
+                        : progressIndex + 1,
+                PROGRESS_HINTS.length
         );
     }
 
-    private String progressHint(MealPlanGenerationJob job) {
+    private int progressIndex(MealPlanGenerationJob job) {
+        if (job.getStatus() == MealPlanGenerationStatus.COMPLETED
+                || job.getStatus() == MealPlanGenerationStatus.FAILED) {
+            return PROGRESS_HINTS.length - 1;
+        }
+        LocalDateTime ref = job.getStartedAt() != null ? job.getStartedAt() : job.getCreatedAt();
+        long seconds = Duration.between(ref, LocalDateTime.now()).getSeconds();
+        return (int) Math.min(PROGRESS_HINTS.length - 1, seconds / 8);
+    }
+
+    private String progressHint(MealPlanGenerationJob job, int index) {
         if (job.getStatus() == MealPlanGenerationStatus.COMPLETED) {
             return "Seu plano está pronto!";
         }
         if (job.getStatus() == MealPlanGenerationStatus.FAILED) {
             return null;
         }
-        LocalDateTime ref = job.getStartedAt() != null ? job.getStartedAt() : job.getCreatedAt();
-        long seconds = Duration.between(ref, LocalDateTime.now()).getSeconds();
-        int index = (int) Math.min(PROGRESS_HINTS.length - 1, seconds / 8);
         return PROGRESS_HINTS[index];
     }
 

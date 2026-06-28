@@ -41,6 +41,25 @@ jobs:
             exit 1
           fi
 
+      - name: Run endpoint audit (Tier S)
+        env:
+          BASE_URL: ${{ github.event.inputs.base_url || env.HOMOLOG_URL }}
+          PERF_TEST_EMAIL: ${{ secrets.PERF_TEST_EMAIL }}
+          PERF_TEST_PASSWORD: ${{ secrets.PERF_TEST_PASSWORD }}
+        run: |
+          OUT="perf/results/audit-ci-$(date +%Y%m%d-%H%M%S).json"
+          python3 perf/audit-endpoints.py "$BASE_URL" --env homolog --samples 2 --skip-mutations --out "$OUT"
+          python3 << 'PY'
+          import json, sys
+          from pathlib import Path
+          audits = sorted(Path("perf/results").glob("audit-ci-*.json"))
+          data = json.loads(audits[-1].read_text())
+          failures = data.get("summary", {}).get("critical_failures", 0)
+          print(f"critical_failures={failures}")
+          if failures:
+              sys.exit(1)
+          PY
+
       - name: Run Tier S smoke
         env:
           BASE_URL: ${{ github.event.inputs.base_url || env.HOMOLOG_URL }}

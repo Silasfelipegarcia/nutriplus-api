@@ -110,6 +110,13 @@ Resumo — detalhes em [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md) e [docs/C4
 
 Ver [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md). Resumo: MDC nos logs, propagação ao agente, `audit_log` / `ai_requests_log`, Prometheus, JSON em `prod`.
 
+## Performance
+
+- Baseline e tiers: [docs/PERFORMANCE.md](docs/PERFORMANCE.md), [docs/PERFORMANCE_BASELINE.md](docs/PERFORMANCE_BASELINE.md)
+- Auditoria local/prod: `./perf/run-baseline.sh prod` (requer `PERF_TEST_EMAIL` / `PERF_TEST_PASSWORD` em homolog/prod)
+- Admin console: `GET /admin/performance/summary` (latência Tier S ao vivo)
+- k6 nightly: `.github/workflows/k6-nightly.yml`
+
 ## Rate limit
 
 Filtro em memória — adequado para **instância única**. Para múltiplas réplicas, usar Redis ou rate limit no gateway.

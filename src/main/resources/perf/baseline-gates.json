@@ -1,0 +1,24 @@
+{
+  "version": 2,
+  "description": "Gates de performance Tier S (ms). Espelha perf/k6/baseline.json.",
+  "thresholds": {
+    "tier_s_p95_ms": 200,
+    "dashboard_flow_p95_ms": 800,
+    "regression_factor": 1.2,
+    "http_req_failed_rate_max": 0.05
+  },
+  "environments": {
+    "local": {
+      "tier_s_p95_ms": 120,
+      "dashboard_flow_p95_ms": 600
+    },
+    "homolog": {
+      "tier_s_p95_ms": 180,
+      "dashboard_flow_p95_ms": 800
+    },
+    "prod": {
+      "tier_s_p95_ms": 200,
+      "dashboard_flow_p95_ms": 800
+    }
+  }
+}

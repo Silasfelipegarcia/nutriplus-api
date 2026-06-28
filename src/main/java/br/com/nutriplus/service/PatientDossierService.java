@@ -177,7 +177,11 @@ public class PatientDossierService {
                 review.getWeekAdherencePercent(),
                 toMeasurement(review.getCurrentSession()),
                 review.getPreviousSession() != null ? toMeasurement(review.getPreviousSession()) : null,
-                review.getCompletedAt()
+                review.getCompletedAt(),
+                review.getPlanChangeSuggested(),
+                review.getPlanChangeRationale(),
+                review.getKeepPlanMessage(),
+                review.getConfidence()
         );
     }
 }

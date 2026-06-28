@@ -27,22 +27,10 @@ export default function (data) {
   const params = { headers: data.authHeaders, tags: { tier: 'S' } };
   const start = Date.now();
 
-  const urls = [
-    `${BASE_URL}/users/me`,
-    `${BASE_URL}/nutrition-profile`,
-    `${BASE_URL}/meal-plans/latest`,
-    `${BASE_URL}/shopping-list/latest`,
-    `${BASE_URL}/checkins/today`,
-    `${BASE_URL}/checkins/stats`,
-    `${BASE_URL}/progress/schedule`,
-  ];
-
-  for (const url of urls) {
-    const res = http.get(url, params);
-    check(res, {
-      [`${url} ok`]: (r) => r.status === 200 || r.status === 404,
-    });
-  }
+  const bootstrapRes = http.get(`${BASE_URL}/app/bootstrap`, params);
+  check(bootstrapRes, {
+    'bootstrap ok': (r) => r.status === 200,
+  });
 
   dashboardFlow.add(Date.now() - start);
   sleep(0.5);

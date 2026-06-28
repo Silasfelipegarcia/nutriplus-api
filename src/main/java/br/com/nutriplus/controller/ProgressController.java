@@ -1,6 +1,7 @@
 package br.com.nutriplus.controller;
 
 import br.com.nutriplus.dto.request.BodyMeasurementRequest;
+import br.com.nutriplus.dto.request.ProgressReviewRequest;
 import br.com.nutriplus.dto.response.BodyMeasurementResponse;
 import br.com.nutriplus.dto.response.EvolutionReportResponse;
 import br.com.nutriplus.dto.response.ProgressReviewResponse;
@@ -35,8 +36,8 @@ public class ProgressController {
     }
 
     @PostMapping("/reviews")
-    public ProgressReviewResponse generateReview() {
-        return progressService.generateReview();
+    public ProgressReviewResponse generateReview(@RequestBody(required = false) ProgressReviewRequest request) {
+        return progressService.generateReview(request);
     }
 
     @GetMapping("/reviews/latest")

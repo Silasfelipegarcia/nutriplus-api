@@ -72,6 +72,16 @@ public class AiAgentClient {
                                                      BodyMeasurementSession current,
                                                      BodyMeasurementSession previous,
                                                      Integer weekAdherencePercent) {
+        return analyzeProgress(profile, current, previous, weekAdherencePercent, null, null, null);
+    }
+
+    public AiProgressAnalyzeResponse analyzeProgress(NutritionProfile profile,
+                                                     BodyMeasurementSession current,
+                                                     BodyMeasurementSession previous,
+                                                     Integer weekAdherencePercent,
+                                                     String physicalDiscomforts,
+                                                     String positiveChanges,
+                                                     String generalNotes) {
         Map<String, Object> body = new HashMap<>();
         body.put("agentId", profile.getAgentPersona().toAgentId());
         body.put("goal", profile.getGoal().name());
@@ -80,6 +90,15 @@ public class AiAgentClient {
         body.put("current", sessionToMap(current));
         if (previous != null) {
             body.put("previous", sessionToMap(previous));
+        }
+        if (physicalDiscomforts != null && !physicalDiscomforts.isBlank()) {
+            body.put("physicalDiscomforts", physicalDiscomforts);
+        }
+        if (positiveChanges != null && !positiveChanges.isBlank()) {
+            body.put("positiveChanges", positiveChanges);
+        }
+        if (generalNotes != null && !generalNotes.isBlank()) {
+            body.put("generalNotes", generalNotes);
         }
         return post("/api/v1/progress/analyze", body, AiProgressAnalyzeResponse.class);
     }

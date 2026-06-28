@@ -53,6 +53,30 @@ public class ProgressReview {
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
+    @Column(name = "physical_discomforts", columnDefinition = "TEXT")
+    private String physicalDiscomforts;
+
+    @Column(name = "positive_changes", columnDefinition = "TEXT")
+    private String positiveChanges;
+
+    @Column(name = "general_notes", columnDefinition = "TEXT")
+    private String generalNotes;
+
+    @Column(name = "plan_change_suggested")
+    private Boolean planChangeSuggested;
+
+    @Column(name = "plan_change_rationale", columnDefinition = "TEXT")
+    private String planChangeRationale;
+
+    @Column(name = "keep_plan_message", columnDefinition = "TEXT")
+    private String keepPlanMessage;
+
+    @Column(name = "confidence", length = 20)
+    private String confidence;
+
+    @Column(name = "plan_regen_consumed", nullable = false)
+    private boolean planRegenConsumed = false;
+
     protected ProgressReview() {
     }
 
@@ -146,5 +170,69 @@ public class ProgressReview {
 
     public void setCompletedAt(LocalDateTime completedAt) {
         this.completedAt = completedAt;
+    }
+
+    public String getPhysicalDiscomforts() {
+        return physicalDiscomforts;
+    }
+
+    public void setPhysicalDiscomforts(String physicalDiscomforts) {
+        this.physicalDiscomforts = physicalDiscomforts;
+    }
+
+    public String getPositiveChanges() {
+        return positiveChanges;
+    }
+
+    public void setPositiveChanges(String positiveChanges) {
+        this.positiveChanges = positiveChanges;
+    }
+
+    public String getGeneralNotes() {
+        return generalNotes;
+    }
+
+    public void setGeneralNotes(String generalNotes) {
+        this.generalNotes = generalNotes;
+    }
+
+    public Boolean getPlanChangeSuggested() {
+        return planChangeSuggested;
+    }
+
+    public void setPlanChangeSuggested(Boolean planChangeSuggested) {
+        this.planChangeSuggested = planChangeSuggested;
+    }
+
+    public String getPlanChangeRationale() {
+        return planChangeRationale;
+    }
+
+    public void setPlanChangeRationale(String planChangeRationale) {
+        this.planChangeRationale = planChangeRationale;
+    }
+
+    public String getKeepPlanMessage() {
+        return keepPlanMessage;
+    }
+
+    public void setKeepPlanMessage(String keepPlanMessage) {
+        this.keepPlanMessage = keepPlanMessage;
+    }
+
+    public String getConfidence() {
+        return confidence;
+    }
+
+    public void setConfidence(String confidence) {
+        this.confidence = confidence;
+    }
+
+    public boolean isPlanRegenConsumed() {
+        return planRegenConsumed;
+    }
+
+    public void setPlanRegenConsumed(boolean planRegenConsumed) {
+        this.planRegenConsumed = planRegenConsumed;
     }
 }

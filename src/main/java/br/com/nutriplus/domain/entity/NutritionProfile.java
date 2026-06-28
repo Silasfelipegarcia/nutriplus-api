@@ -109,6 +109,18 @@ public class NutritionProfile {
     @Column(name = "athlete_mode_enabled", nullable = false)
     private boolean athleteModeEnabled = false;
 
+    @Column(name = "one_time_correction_used_at")
+    private LocalDateTime oneTimeCorrectionUsedAt;
+
+    @Column(name = "last_athlete_regen_at")
+    private LocalDateTime lastAthleteRegenAt;
+
+    @Column(name = "athlete_regen_eligible", nullable = false)
+    private boolean athleteRegenEligible = false;
+
+    @Column(name = "plan_regen_locked_until")
+    private LocalDate planRegenLockedUntil;
+
     @Column(name = "training_daily_extra_kcal", precision = 8, scale = 2)
     private BigDecimal trainingDailyExtraKcal;
 
@@ -207,6 +219,10 @@ public class NutritionProfile {
         this.progressReviewIntervalDays = builder.progressReviewIntervalDays != null
                 ? builder.progressReviewIntervalDays : 15;
         this.athleteModeEnabled = builder.athleteModeEnabled;
+        this.oneTimeCorrectionUsedAt = builder.oneTimeCorrectionUsedAt;
+        this.lastAthleteRegenAt = builder.lastAthleteRegenAt;
+        this.athleteRegenEligible = builder.athleteRegenEligible;
+        this.planRegenLockedUntil = builder.planRegenLockedUntil;
         this.trainingDailyExtraKcal = builder.trainingDailyExtraKcal;
         this.bmrKcal = builder.bmrKcal;
         this.tdeeKcal = builder.tdeeKcal;
@@ -458,6 +474,38 @@ public class NutritionProfile {
         this.athleteModeEnabled = athleteModeEnabled;
     }
 
+    public LocalDateTime getOneTimeCorrectionUsedAt() {
+        return oneTimeCorrectionUsedAt;
+    }
+
+    public void setOneTimeCorrectionUsedAt(LocalDateTime oneTimeCorrectionUsedAt) {
+        this.oneTimeCorrectionUsedAt = oneTimeCorrectionUsedAt;
+    }
+
+    public LocalDateTime getLastAthleteRegenAt() {
+        return lastAthleteRegenAt;
+    }
+
+    public void setLastAthleteRegenAt(LocalDateTime lastAthleteRegenAt) {
+        this.lastAthleteRegenAt = lastAthleteRegenAt;
+    }
+
+    public boolean isAthleteRegenEligible() {
+        return athleteRegenEligible;
+    }
+
+    public void setAthleteRegenEligible(boolean athleteRegenEligible) {
+        this.athleteRegenEligible = athleteRegenEligible;
+    }
+
+    public LocalDate getPlanRegenLockedUntil() {
+        return planRegenLockedUntil;
+    }
+
+    public void setPlanRegenLockedUntil(LocalDate planRegenLockedUntil) {
+        this.planRegenLockedUntil = planRegenLockedUntil;
+    }
+
     public BigDecimal getTrainingDailyExtraKcal() {
         return trainingDailyExtraKcal;
     }
@@ -655,6 +703,10 @@ public class NutritionProfile {
         private BigDecimal muscleMassKg;
         private Integer progressReviewIntervalDays;
         private boolean athleteModeEnabled;
+        private LocalDateTime oneTimeCorrectionUsedAt;
+        private LocalDateTime lastAthleteRegenAt;
+        private boolean athleteRegenEligible;
+        private LocalDate planRegenLockedUntil;
         private BigDecimal trainingDailyExtraKcal;
         private BigDecimal bmrKcal;
         private BigDecimal tdeeKcal;
@@ -814,6 +866,26 @@ public class NutritionProfile {
 
         public Builder athleteModeEnabled(boolean athleteModeEnabled) {
             this.athleteModeEnabled = athleteModeEnabled;
+            return this;
+        }
+
+        public Builder oneTimeCorrectionUsedAt(LocalDateTime oneTimeCorrectionUsedAt) {
+            this.oneTimeCorrectionUsedAt = oneTimeCorrectionUsedAt;
+            return this;
+        }
+
+        public Builder lastAthleteRegenAt(LocalDateTime lastAthleteRegenAt) {
+            this.lastAthleteRegenAt = lastAthleteRegenAt;
+            return this;
+        }
+
+        public Builder athleteRegenEligible(boolean athleteRegenEligible) {
+            this.athleteRegenEligible = athleteRegenEligible;
+            return this;
+        }
+
+        public Builder planRegenLockedUntil(LocalDate planRegenLockedUntil) {
+            this.planRegenLockedUntil = planRegenLockedUntil;
             return this;
         }
 
