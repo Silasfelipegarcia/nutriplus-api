@@ -11,9 +11,13 @@ MERCADOPAGO_WEBHOOK_SECRET=
 MERCADOPAGO_MOCK_MODE=true           # dev: ativa plano sem MP
 MERCADOPAGO_ATHLETE_MONTHLY_PRICE_CENTS=2490
 MERCADOPAGO_ATHLETE_YEARLY_PRICE_CENTS=19900
-FRONTEND_URL=https://nutriplus.com.br
+FRONTEND_URL=https://nutriplus.app.br
 API_PUBLIC_URL=https://nutriplus-api-production.up.railway.app
 ```
+
+## CSP (Vercel)
+
+O `vercel.json` do web deve permitir `sdk.mercadopago.com`, `api.mercadopago.com` e frames do Mercado Pago para cadastro de cartão e checkout.
 
 ## Webhook
 

@@ -17,7 +17,12 @@ public final class IdempotencySupport {
     public static final String REPLAYED_HEADER = "Idempotency-Replayed";
     public static final String MDC_KEY = "idempotencyKey";
 
-    private static final Set<String> EXCLUDED_AUTH_PATHS = Set.of("/auth/login", "/auth/refresh");
+    private static final Set<String> EXCLUDED_AUTH_PATHS = Set.of(
+            "/auth/login",
+            "/auth/refresh",
+            "/auth/forgot-password",
+            "/auth/reset-password"
+    );
     private static final int MAX_KEY_LENGTH = 128;
 
     private IdempotencySupport() {
