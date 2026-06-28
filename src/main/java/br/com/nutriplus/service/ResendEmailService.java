@@ -38,7 +38,23 @@ public class ResendEmailService implements EmailSender {
         String subject = "Seu acesso ao Nutri+ foi liberado";
         String html = buildBetaApprovedHtml(name, loginLink, role);
         String text = buildBetaApprovedText(name, loginLink, role);
-        dispatch(email, subject, html, text, "beta-access");
+        dispatch(email, subject, html, text, "beta-access-approved");
+    }
+
+    @Override
+    public void sendBetaAccessRejected(String email, String name, String reason, UserRole role) {
+        String subject = "Sobre sua solicitação de acesso ao Nutri+";
+        String html = buildBetaRejectedHtml(name, reason, role);
+        String text = buildBetaRejectedText(name, reason, role);
+        dispatch(email, subject, html, text, "beta-access-rejected");
+    }
+
+    @Override
+    public void sendNutritionistVerificationRejected(String email, String name, String reason) {
+        String subject = "Sobre sua verificação no Nutri+ Pro";
+        String html = buildNutritionistRejectedHtml(name, reason);
+        String text = buildNutritionistRejectedText(name, reason);
+        dispatch(email, subject, html, text, "nutritionist-verification-rejected");
     }
 
     @Override
@@ -172,6 +188,90 @@ public class ResendEmailService implements EmailSender {
 
                 — Equipe Nutri+
                 """.formatted(greeting, intro, loginLink);
+    }
+
+    private String buildBetaRejectedHtml(String name, String reason, UserRole role) {
+        String greeting = greetingHtml(name);
+        String intro = role == UserRole.NUTRITIONIST
+                ? "Agradecemos o interesse no Nutri+ Pro. Neste momento não foi possível aprovar sua solicitação de acesso."
+                : "Agradecemos o interesse no Nutri+. Neste momento não foi possível aprovar sua solicitação de acesso ao beta.";
+        String reasonBlock = formatReasonHtml(reason);
+        return """
+                <!DOCTYPE html>
+                <html lang="pt-BR">
+                <body style="font-family: Arial, sans-serif; line-height: 1.5; color: #1f2937;">
+                  <p>%s</p>
+                  <p>%s</p>
+                  %s
+                  <p>Você pode tentar novamente no futuro se as condições do programa mudarem.</p>
+                  <p>— Equipe Nutri+</p>
+                </body>
+                </html>
+                """.formatted(greeting, intro, reasonBlock);
+    }
+
+    private String buildBetaRejectedText(String name, String reason, UserRole role) {
+        String greeting = greetingText(name);
+        String intro = role == UserRole.NUTRITIONIST
+                ? "Agradecemos o interesse no Nutri+ Pro. Neste momento não foi possível aprovar sua solicitação de acesso."
+                : "Agradecemos o interesse no Nutri+. Neste momento não foi possível aprovar sua solicitação de acesso ao beta.";
+        String reasonBlock = formatReasonText(reason);
+        return """
+                %s
+
+                %s
+                %s
+
+                Você pode tentar novamente no futuro se as condições do programa mudarem.
+
+                — Equipe Nutri+
+                """.formatted(greeting, intro, reasonBlock);
+    }
+
+    private String buildNutritionistRejectedHtml(String name, String reason) {
+        String greeting = greetingHtml(name);
+        String reasonBlock = formatReasonHtml(reason);
+        return """
+                <!DOCTYPE html>
+                <html lang="pt-BR">
+                <body style="font-family: Arial, sans-serif; line-height: 1.5; color: #1f2937;">
+                  <p>%s</p>
+                  <p>Após análise, não foi possível concluir a verificação do seu CRN para o marketplace do Nutri+ Pro.</p>
+                  %s
+                  <p>Se acredita que houve um engano, responda a este e-mail com seus dados atualizados.</p>
+                  <p>— Equipe Nutri+</p>
+                </body>
+                </html>
+                """.formatted(greeting, reasonBlock);
+    }
+
+    private String buildNutritionistRejectedText(String name, String reason) {
+        String greeting = greetingText(name);
+        String reasonBlock = formatReasonText(reason);
+        return """
+                %s
+
+                Após análise, não foi possível concluir a verificação do seu CRN para o marketplace do Nutri+ Pro.
+                %s
+
+                Se acredita que houve um engano, responda a este e-mail com seus dados atualizados.
+
+                — Equipe Nutri+
+                """.formatted(greeting, reasonBlock);
+    }
+
+    private String formatReasonHtml(String reason) {
+        if (reason == null || reason.isBlank()) {
+            return "";
+        }
+        return "<p><strong>Observação da equipe:</strong> " + escapeHtml(reason.trim()) + "</p>";
+    }
+
+    private String formatReasonText(String reason) {
+        if (reason == null || reason.isBlank()) {
+            return "";
+        }
+        return "\nObservação da equipe: " + reason.trim() + "\n";
     }
 
     private String greetingHtml(String name) {

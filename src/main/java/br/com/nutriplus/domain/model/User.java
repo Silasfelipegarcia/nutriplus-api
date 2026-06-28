@@ -20,12 +20,17 @@ public record User(
         String termsVersion,
         LocalDateTime privacyPolicyAcceptedAt,
         LocalDateTime createdAt,
-        LocalDateTime updatedAt
+        LocalDateTime updatedAt,
+        LocalDateTime accessRejectedAt
 ) {
     public String photoForClient() {
         if (photoThumbnailUrl != null && !photoThumbnailUrl.isBlank()) {
             return photoThumbnailUrl;
         }
         return null;
+    }
+
+    public boolean accessRejected() {
+        return accessRejectedAt != null;
     }
 }

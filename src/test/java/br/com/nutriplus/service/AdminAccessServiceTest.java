@@ -4,6 +4,7 @@ import br.com.nutriplus.domain.entity.Nutritionist;
 import br.com.nutriplus.domain.entity.User;
 import br.com.nutriplus.domain.enums.RegistrationSource;
 import br.com.nutriplus.domain.enums.UserRole;
+import br.com.nutriplus.dto.request.RejectUserAccessRequest;
 import br.com.nutriplus.dto.request.UpdateLoginEnabledRequest;
 import br.com.nutriplus.dto.request.UpdateUserAdminRequest;
 import br.com.nutriplus.exception.BusinessException;
@@ -18,6 +19,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -130,6 +132,66 @@ class AdminAccessServiceTest {
         service.setLoginEnabled(4L, new UpdateLoginEnabledRequest(true));
 
         verify(betaAccessNotificationService, never()).notifyApproved(any());
+    }
+
+    @Test
+    void rejectAccessMarksUserAndSendsEmail() {
+        User user = patient(6L);
+        user.setLoginEnabled(false);
+        when(authorizationService.hasRole(UserRole.ADMIN)).thenReturn(true);
+        when(userRepository.findById(6L)).thenReturn(Optional.of(user));
+        when(authorizationService.currentUserId()).thenReturn(1L);
+        when(nutritionProfileRepository.findByUserId(6L)).thenReturn(Optional.empty());
+
+        service.rejectAccess(6L, new RejectUserAccessRequest("Perfil fora do beta atual"));
+
+        assertThat(user.isAccessRejected()).isTrue();
+        assertThat(user.getAccessRejectionReason()).isEqualTo("Perfil fora do beta atual");
+        assertThat(user.isLoginEnabled()).isFalse();
+        verify(betaAccessNotificationService).notifyRejected(user, "Perfil fora do beta atual");
+        verify(userRepository).save(user);
+    }
+
+    @Test
+    void rejectAccessFailsWhenAlreadyApproved() {
+        User user = patient(7L);
+        user.setLoginEnabled(true);
+        when(authorizationService.hasRole(UserRole.ADMIN)).thenReturn(true);
+        when(userRepository.findById(7L)).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> service.rejectAccess(7L, new RejectUserAccessRequest(null)))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("já possui login liberado");
+    }
+
+    @Test
+    void rejectAccessFailsWhenAlreadyRejected() {
+        User user = patient(8L);
+        user.setAccessRejectedAt(LocalDateTime.now());
+        when(authorizationService.hasRole(UserRole.ADMIN)).thenReturn(true);
+        when(userRepository.findById(8L)).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> service.rejectAccess(8L, new RejectUserAccessRequest(null)))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("já foi recusado");
+    }
+
+    @Test
+    void setLoginEnabledClearsRejectionWhenApproving() {
+        User user = patient(9L);
+        user.setLoginEnabled(false);
+        user.setAccessRejectedAt(LocalDateTime.now());
+        user.setAccessRejectionReason("motivo");
+        when(authorizationService.hasRole(UserRole.ADMIN)).thenReturn(true);
+        when(userRepository.findById(9L)).thenReturn(Optional.of(user));
+        when(authorizationService.currentUserId()).thenReturn(1L);
+        when(nutritionProfileRepository.findByUserId(9L)).thenReturn(Optional.empty());
+
+        service.setLoginEnabled(9L, new UpdateLoginEnabledRequest(true));
+
+        assertThat(user.isAccessRejected()).isFalse();
+        assertThat(user.getAccessRejectionReason()).isNull();
+        assertThat(user.isLoginEnabled()).isTrue();
     }
 
     private static User patient(long id) {

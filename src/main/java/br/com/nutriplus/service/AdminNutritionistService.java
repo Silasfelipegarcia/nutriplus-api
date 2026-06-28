@@ -64,13 +64,21 @@ public class AdminNutritionistService {
     }
 
     @Transactional
-    public void reject(Long nutritionistId) {
+    public void reject(Long nutritionistId, String reason) {
         requireAdmin();
         Nutritionist n = nutritionistRepository.findById(nutritionistId)
                 .orElseThrow(() -> new ResourceNotFoundException("Nutricionista não encontrado."));
         n.setCrnVerified(false);
         n.setMarketplaceVisible(false);
         nutritionistRepository.save(n);
+        User user = n.getUser();
+        if (user != null) {
+            betaAccessNotificationService.notifyNutritionistVerificationRejected(user, reason);
+        }
+    }
+
+    public void reject(Long nutritionistId) {
+        reject(nutritionistId, null);
     }
 
     private NutritionistPendingResponse toPending(Nutritionist n) {

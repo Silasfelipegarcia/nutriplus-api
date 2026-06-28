@@ -40,6 +40,15 @@ public class User {
     @Column(name = "login_enabled_by")
     private Long loginEnabledBy;
 
+    @Column(name = "access_rejected_at")
+    private LocalDateTime accessRejectedAt;
+
+    @Column(name = "access_rejected_by")
+    private Long accessRejectedBy;
+
+    @Column(name = "access_rejection_reason", length = 500)
+    private String accessRejectionReason;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "registration_source", nullable = false, length = 32)
     private RegistrationSource registrationSource = RegistrationSource.OPEN;
@@ -225,6 +234,34 @@ public class User {
 
     public void setLoginEnabledBy(Long loginEnabledBy) {
         this.loginEnabledBy = loginEnabledBy;
+    }
+
+    public LocalDateTime getAccessRejectedAt() {
+        return accessRejectedAt;
+    }
+
+    public void setAccessRejectedAt(LocalDateTime accessRejectedAt) {
+        this.accessRejectedAt = accessRejectedAt;
+    }
+
+    public Long getAccessRejectedBy() {
+        return accessRejectedBy;
+    }
+
+    public void setAccessRejectedBy(Long accessRejectedBy) {
+        this.accessRejectedBy = accessRejectedBy;
+    }
+
+    public String getAccessRejectionReason() {
+        return accessRejectionReason;
+    }
+
+    public void setAccessRejectionReason(String accessRejectionReason) {
+        this.accessRejectionReason = accessRejectionReason;
+    }
+
+    public boolean isAccessRejected() {
+        return accessRejectedAt != null;
     }
 
     public RegistrationSource getRegistrationSource() {
