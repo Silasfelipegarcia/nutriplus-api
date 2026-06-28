@@ -55,6 +55,7 @@ public class ProgressService {
     private final ObjectMapper objectMapper;
     private final EvolutionReportBuilder evolutionReportBuilder;
     private final HealthReferenceService healthReferenceService;
+    private final ProgressScheduleService progressScheduleService;
 
     public ProgressService(CurrentUser currentUser,
                            NutritionProfileRepository nutritionProfileRepository,
@@ -66,7 +67,8 @@ public class ProgressService {
                            AiAgentClient aiAgentClient,
                            ObjectMapper objectMapper,
                            EvolutionReportBuilder evolutionReportBuilder,
-                           HealthReferenceService healthReferenceService) {
+                           HealthReferenceService healthReferenceService,
+                           ProgressScheduleService progressScheduleService) {
         this.currentUser = currentUser;
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.measurementRepository = measurementRepository;
@@ -78,6 +80,7 @@ public class ProgressService {
         this.objectMapper = objectMapper;
         this.evolutionReportBuilder = evolutionReportBuilder;
         this.healthReferenceService = healthReferenceService;
+        this.progressScheduleService = progressScheduleService;
     }
 
     @Cacheable(value = NutriCacheNames.PROGRESS_SCHEDULE, keyGenerator = "userIdCacheKeyGenerator")
@@ -88,32 +91,7 @@ public class ProgressService {
     }
 
     public ProgressScheduleResponse getScheduleForUser(Long userId, NutritionProfile profile) {
-        int intervalDays = profile.getProgressReviewIntervalDays();
-
-        LocalDate anchor = resolveAnchorDate(userId, profile);
-        LocalDate nextDueOn = anchor.plusDays(intervalDays);
-        LocalDate today = LocalDate.now();
-        long daysUntil = ChronoUnit.DAYS.between(today, nextDueOn);
-        boolean due = !today.isBefore(nextDueOn);
-
-        LocalDateTime lastReviewAt = reviewRepository.findFirstByUserIdOrderByCreatedAtDesc(userId)
-                .filter(r -> r.getStatus() == ProgressReviewStatus.COMPLETED)
-                .map(ProgressReview::getCompletedAt)
-                .orElse(null);
-
-        LocalDate lastMeasurementOn = measurementRepository
-                .findFirstByUserIdOrderByMeasuredOnDescIdDesc(userId)
-                .map(BodyMeasurementSession::getMeasuredOn)
-                .orElse(null);
-
-        return new ProgressScheduleResponse(
-                intervalDays,
-                due,
-                due ? 0 : (int) daysUntil,
-                nextDueOn,
-                lastReviewAt,
-                lastMeasurementOn
-        );
+        return progressScheduleService.getScheduleForUser(userId, profile);
     }
 
     @Transactional

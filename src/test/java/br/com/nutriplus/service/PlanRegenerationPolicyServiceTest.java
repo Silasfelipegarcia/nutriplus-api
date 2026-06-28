@@ -34,7 +34,7 @@ class PlanRegenerationPolicyServiceTest {
     @Mock
     private ProgressReviewRepository reviewRepository;
     @Mock
-    private ProgressService progressService;
+    private ProgressScheduleService progressScheduleService;
 
     private PlanRegenerationPolicyService service;
     private User user;
@@ -47,7 +47,7 @@ class PlanRegenerationPolicyServiceTest {
                 mealPlanRepository,
                 jobRepository,
                 reviewRepository,
-                progressService
+                progressScheduleService
         );
         user = org.mockito.Mockito.mock(User.class);
         org.mockito.Mockito.when(user.getId()).thenReturn(1L);

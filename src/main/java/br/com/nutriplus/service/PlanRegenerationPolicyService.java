@@ -33,23 +33,23 @@ public class PlanRegenerationPolicyService {
     private final MealPlanRepository mealPlanRepository;
     private final MealPlanGenerationJobRepository jobRepository;
     private final ProgressReviewRepository reviewRepository;
-    private final ProgressService progressService;
+    private final ProgressScheduleService progressScheduleService;
 
     public PlanRegenerationPolicyService(NutritionProfileRepository nutritionProfileRepository,
                                          MealPlanRepository mealPlanRepository,
                                          MealPlanGenerationJobRepository jobRepository,
                                          ProgressReviewRepository reviewRepository,
-                                         ProgressService progressService) {
+                                         ProgressScheduleService progressScheduleService) {
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.mealPlanRepository = mealPlanRepository;
         this.jobRepository = jobRepository;
         this.reviewRepository = reviewRepository;
-        this.progressService = progressService;
+        this.progressScheduleService = progressScheduleService;
     }
 
     public PlanRegenerationEligibilityResponse getEligibility(User user, NutritionProfile profile) {
         boolean hasMealPlan = !mealPlanRepository.findByUserIdOrderByCreatedAtDesc(user.getId()).isEmpty();
-        ProgressScheduleResponse schedule = progressService.getScheduleForUser(user.getId(), profile);
+        ProgressScheduleResponse schedule = progressScheduleService.getScheduleForUser(user.getId(), profile);
         LocalDate today = LocalDate.now();
         LocalDate lockedUntil = profile.getPlanRegenLockedUntil();
         int daysUntilUnlock = lockedUntil == null || !today.isBefore(lockedUntil)
@@ -125,7 +125,7 @@ public class PlanRegenerationPolicyService {
             }
             case CYCLE_REVIEW -> {
                 requireMealPlan(user.getId());
-                assertCycleReviewAllowed(user.getId(), reviewId);
+                assertCycleReviewAllowed(user.getId(), reviewId, profile);
             }
             default -> throw new BusinessException("Motivo de geração inválido.");
         }
@@ -231,7 +231,7 @@ public class PlanRegenerationPolicyService {
         return review.getCompletedAt().isAfter(LocalDateTime.now().minusMinutes(CYCLE_REVIEW_GRACE_MINUTES));
     }
 
-    private void assertCycleReviewAllowed(Long userId, Long reviewId) {
+    private void assertCycleReviewAllowed(Long userId, Long reviewId, NutritionProfile profile) {
         if (reviewId == null) {
             throw new BusinessException("Informe a reavaliação que autoriza a nova geração.");
         }
@@ -241,7 +241,7 @@ public class PlanRegenerationPolicyService {
             throw new BusinessException(
                     "Esta reavaliação não autoriza nova geração. Conclua uma reavaliação com sugestão de mudança.");
         }
-        ProgressScheduleResponse schedule = progressService.getSchedule();
+        ProgressScheduleResponse schedule = progressScheduleService.getScheduleForUser(userId, profile);
         if (!schedule.due()) {
             throw new BusinessException(
                     "A reavaliação periódica ainda não está disponível.");
