@@ -77,7 +77,7 @@ SELECT
     'registration source',
     'SQL',
     'V38__registration_source.sql',
-    -1915003087,
+    1519232797,
     'manual-recovery',
     NOW(),
     0,
@@ -88,7 +88,7 @@ HAVING NOT EXISTS (
 );
 ```
 
-**Checksum `-1915003087`** = conteúdo atual de `V38__registration_source.sql` no repositório.
+**Checksum `1519232797`** = conteúdo atual de `V38__registration_source.sql` no repositório (sem cláusula `AFTER`).
 
 ### Passo 4 — Validar
 

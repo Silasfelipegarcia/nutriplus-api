@@ -30,7 +30,7 @@ WHERE version = '38' AND success = 0;
 -- SELECT
 --     COALESCE(MAX(installed_rank), 0) + 1,
 --     '38', 'registration source', 'SQL', 'V38__registration_source.sql',
---     -1915003087, 'manual-recovery', NOW(), 0, 1
+--     1519232797, 'manual-recovery', NOW(), 0, 1
 -- FROM flyway_schema_history
 -- HAVING NOT EXISTS (
 --     SELECT 1 FROM flyway_schema_history h WHERE h.version = '38' AND h.success = 1
