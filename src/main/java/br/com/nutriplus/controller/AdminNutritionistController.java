@@ -1,7 +1,9 @@
 package br.com.nutriplus.controller;
 
+import br.com.nutriplus.dto.request.RejectNutritionistVerificationRequest;
 import br.com.nutriplus.dto.response.NutritionistPendingResponse;
 import br.com.nutriplus.service.AdminNutritionistService;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -27,7 +29,9 @@ public class AdminNutritionistController {
     }
 
     @PostMapping("/{id}/reject")
-    public void reject(@PathVariable Long id) {
-        adminNutritionistService.reject(id);
+    public void reject(@PathVariable Long id,
+                       @Valid @RequestBody(required = false) RejectNutritionistVerificationRequest request) {
+        String reason = request != null ? request.reason() : null;
+        adminNutritionistService.reject(id, reason);
     }
 }

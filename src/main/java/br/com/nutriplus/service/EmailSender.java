@@ -8,5 +8,9 @@ public interface EmailSender {
 
     void sendBetaAccessApproved(String email, String name, String loginLink, UserRole role);
 
+    void sendBetaAccessRejected(String email, String name, String reason, UserRole role);
+
+    void sendNutritionistVerificationRejected(String email, String name, String reason);
+
     void sendTestEmail(String email, String name);
 }

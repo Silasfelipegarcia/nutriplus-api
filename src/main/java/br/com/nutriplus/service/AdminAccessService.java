@@ -3,6 +3,7 @@ package br.com.nutriplus.service;
 import br.com.nutriplus.domain.entity.User;
 import br.com.nutriplus.domain.enums.RegistrationSource;
 import br.com.nutriplus.domain.enums.UserRole;
+import br.com.nutriplus.dto.request.RejectUserAccessRequest;
 import br.com.nutriplus.dto.request.UpdateLoginEnabledRequest;
 import br.com.nutriplus.dto.request.UpdateUserAdminRequest;
 import br.com.nutriplus.dto.response.AdminAccessSummaryResponse;
@@ -42,7 +43,7 @@ public class AdminAccessService {
 
     public AdminAccessSummaryResponse summary() {
         requireAdmin();
-        long pending = userRepository.countByLoginEnabledFalse();
+        long pending = userRepository.countByLoginEnabledFalseAndAccessRejectedAtIsNull();
         long enabled = userRepository.countByLoginEnabledTrue();
         long admins = userRepository.countByRole(UserRole.ADMIN);
         long pendingNutritionists = nutritionistRepository.countByCrnVerifiedFalse();
@@ -58,7 +59,7 @@ public class AdminAccessService {
 
     public List<AdminUserAccessResponse> listPending() {
         requireAdmin();
-        return userRepository.findByLoginEnabledFalseOrderByCreatedAtAsc().stream()
+        return userRepository.findByLoginEnabledFalseAndAccessRejectedAtIsNullOrderByCreatedAtAsc().stream()
                 .map(this::toResponse)
                 .toList();
     }
@@ -85,6 +86,7 @@ public class AdminAccessService {
         if (enabled) {
             user.setLoginEnabledAt(LocalDateTime.now());
             user.setLoginEnabledBy(authorizationService.currentUserId());
+            clearAccessRejection(user);
             if (user.getRole() == UserRole.NUTRITIONIST) {
                 nutritionistRepository.findByUserId(user.getId()).ifPresent(n -> {
                     n.setCrnVerified(true);
@@ -99,6 +101,30 @@ public class AdminAccessService {
         if (enabled && !wasEnabled) {
             betaAccessNotificationService.notifyApproved(user);
         }
+        return toResponse(user);
+    }
+
+    @Transactional
+    public AdminUserAccessResponse rejectAccess(Long userId, RejectUserAccessRequest request) {
+        requireAdmin();
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado."));
+        if (user.getRole() == UserRole.ADMIN) {
+            throw new BusinessException("Não é possível recusar o acesso de um administrador.");
+        }
+        if (user.isLoginEnabled()) {
+            throw new BusinessException("Este usuário já possui login liberado.");
+        }
+        if (user.isAccessRejected()) {
+            throw new BusinessException("Este cadastro já foi recusado.");
+        }
+
+        String reason = request != null ? request.reason() : null;
+        user.setAccessRejectedAt(LocalDateTime.now());
+        user.setAccessRejectedBy(authorizationService.currentUserId());
+        user.setAccessRejectionReason(normalizeReason(reason));
+        userRepository.save(user);
+        betaAccessNotificationService.notifyRejected(user, reason);
         return toResponse(user);
     }
 
@@ -139,6 +165,20 @@ public class AdminAccessService {
             return UserRole.NUTRITIONIST;
         }
         return UserRole.PATIENT;
+    }
+
+    private void clearAccessRejection(User user) {
+        user.setAccessRejectedAt(null);
+        user.setAccessRejectedBy(null);
+        user.setAccessRejectionReason(null);
+    }
+
+    private static String normalizeReason(String reason) {
+        if (reason == null) {
+            return null;
+        }
+        String trimmed = reason.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private AdminUserAccessResponse toResponse(User user) {

@@ -1,5 +1,6 @@
 package br.com.nutriplus.controller;
 
+import br.com.nutriplus.dto.request.RejectUserAccessRequest;
 import br.com.nutriplus.dto.request.UpdateLoginEnabledRequest;
 import br.com.nutriplus.dto.request.UpdateUserAdminRequest;
 import br.com.nutriplus.dto.response.AdminAccessSummaryResponse;
@@ -44,6 +45,12 @@ public class AdminAccessController {
     public AdminUserAccessResponse setLoginEnabled(@PathVariable Long id,
                                                    @Valid @RequestBody UpdateLoginEnabledRequest request) {
         return adminAccessService.setLoginEnabled(id, request);
+    }
+
+    @PostMapping("/users/{id}/reject")
+    public AdminUserAccessResponse rejectAccess(@PathVariable Long id,
+                                                @Valid @RequestBody(required = false) RejectUserAccessRequest request) {
+        return adminAccessService.rejectAccess(id, request);
     }
 
     @PatchMapping("/users/{id}/admin")

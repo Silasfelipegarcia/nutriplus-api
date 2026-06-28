@@ -12,6 +12,9 @@ public final class LoginAccessPolicy {
     public static final String BETA_WAITLIST_MESSAGE =
             "Recebemos sua solicitação para o beta. Estamos selecionando participantes — você receberá acesso assim que validarmos seu perfil.";
 
+    public static final String REJECTED_MESSAGE =
+            "Sua solicitação de acesso ao Nutri+ não foi aprovada neste momento. Verifique o e-mail que enviamos com mais detalhes.";
+
     private LoginAccessPolicy() {
     }
 
@@ -19,8 +22,24 @@ public final class LoginAccessPolicy {
         if (user.role() == UserRole.ADMIN) {
             return;
         }
+        if (user.accessRejected()) {
+            throw new LoginDisabledException(REJECTED_MESSAGE);
+        }
         if (!user.loginEnabled()) {
             throw new LoginDisabledException(PENDING_MESSAGE);
         }
+    }
+
+    public static String messageFor(User user) {
+        if (user.role() == UserRole.ADMIN) {
+            return null;
+        }
+        if (user.accessRejected()) {
+            return REJECTED_MESSAGE;
+        }
+        if (!user.loginEnabled()) {
+            return PENDING_MESSAGE;
+        }
+        return null;
     }
 }

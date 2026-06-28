@@ -22,7 +22,8 @@ final class UserPersistenceMapper {
                 entity.getTermsVersion(),
                 entity.getPrivacyPolicyAcceptedAt(),
                 entity.getCreatedAt(),
-                entity.getUpdatedAt()
+                entity.getUpdatedAt(),
+                entity.getAccessRejectedAt()
         );
     }
 

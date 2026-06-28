@@ -18,11 +18,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByEmail(String email);
     boolean existsByCpfHash(String cpfHash);
 
-    List<User> findByLoginEnabledFalseOrderByCreatedAtAsc();
+    List<User> findByLoginEnabledFalseAndAccessRejectedAtIsNullOrderByCreatedAtAsc();
+
+    long countByLoginEnabledFalseAndAccessRejectedAtIsNull();
 
     List<User> findByLoginEnabledTrueOrderByCreatedAtDesc();
-
-    long countByLoginEnabledFalse();
 
     long countByLoginEnabledTrue();
 
