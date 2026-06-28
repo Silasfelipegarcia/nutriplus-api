@@ -26,13 +26,18 @@ class AdminNutritionistServiceTest {
     @Mock private NutritionistRepository nutritionistRepository;
     @Mock private UserRepository userRepository;
     @Mock private CpfProtectionService cpfProtectionService;
+    @Mock private BetaAccessNotificationService betaAccessNotificationService;
 
     private AdminNutritionistService service;
 
     @BeforeEach
     void setUp() {
         service = new AdminNutritionistService(
-                authorizationService, nutritionistRepository, userRepository, cpfProtectionService);
+                authorizationService,
+                nutritionistRepository,
+                userRepository,
+                cpfProtectionService,
+                betaAccessNotificationService);
     }
 
     @Test
@@ -56,6 +61,7 @@ class AdminNutritionistServiceTest {
         assertThat(user.isLoginEnabled()).isTrue();
         verify(userRepository).save(user);
         verify(nutritionistRepository).save(nutritionist);
+        verify(betaAccessNotificationService).notifyApproved(user);
     }
 
     @Test

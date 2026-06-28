@@ -6,6 +6,8 @@ import br.com.nutriplus.dto.response.AuthResponse;
 import br.com.nutriplus.dto.response.RegisterResponse;
 import br.com.nutriplus.dto.response.UserResponse;
 import br.com.nutriplus.service.AuthService;
+import br.com.nutriplus.service.NutritionistProService;
+import br.com.nutriplus.service.PasswordResetService;
 import br.com.nutriplus.support.WebMvcTestSupport;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -34,6 +36,12 @@ class AuthControllerTest extends WebMvcTestSupport {
     @MockBean
     private AuthService authService;
 
+    @MockBean
+    private NutritionistProService nutritionistProService;
+
+    @MockBean
+    private PasswordResetService passwordResetService;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
@@ -45,7 +53,7 @@ class AuthControllerTest extends WebMvcTestSupport {
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"name":"Test","email":"test@nutriplus.com","password":"secret123","cpf":"529.982.247-25","birthDate":"1990-06-15"}
+                                {"name":"Test","email":"test@nutriplus.com","password":"secret123","cpf":"529.982.247-25","birthDate":"1990-06-15","contactPhone":"11999999999"}
                                 """))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.loginEnabled").value(false))
@@ -64,5 +72,18 @@ class AuthControllerTest extends WebMvcTestSupport {
                                 new LoginRequest("test@nutriplus.com", "secret123"))))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.token").value("access"));
+    }
+
+    @Test
+    void forgotPasswordReturnsOk() throws Exception {
+        when(passwordResetService.requestReset("user@nutriplus.com"))
+                .thenReturn(new br.com.nutriplus.dto.response.ForgotPasswordResponse(
+                        "Se o e-mail estiver cadastrado, você receberá instruções para redefinir sua senha em instantes."));
+
+        mockMvc.perform(post("/auth/forgot-password")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"email\":\"user@nutriplus.com\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.message").exists());
     }
 }
