@@ -146,7 +146,8 @@ public class AdminAccessService {
                 user.getCreatedAt(),
                 hasProfile,
                 user.getRegistrationSource(),
-                user.getAcquisitionCampaign()
+                user.getAcquisitionCampaign(),
+                user.getContactPhone()
         );
     }
 

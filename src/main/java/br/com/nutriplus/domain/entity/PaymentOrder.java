@@ -11,7 +11,7 @@ import java.time.Instant;
 public class PaymentOrder {
 
     @Id
-    @Column(length = 36)
+    @Column(length = 36, columnDefinition = "CHAR(36)")
     private String id;
 
     @Column(name = "user_id", nullable = false)

@@ -24,6 +24,9 @@ public class User {
     @Column(nullable = false, unique = true, length = 255)
     private String email;
 
+    @Column(name = "contact_phone", length = 20)
+    private String contactPhone;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private UserRole role = UserRole.PATIENT;
@@ -70,6 +73,12 @@ public class User {
 
     @Column(name = "failed_login_attempts", nullable = false)
     private int failedLoginAttempts = 0;
+
+    @Column(name = "password_reset_token_hash", length = 64)
+    private String passwordResetTokenHash;
+
+    @Column(name = "password_reset_expires_at")
+    private Instant passwordResetExpiresAt;
 
     @Column(name = "password_must_change", nullable = false)
     private boolean passwordMustChange = false;
@@ -126,6 +135,7 @@ public class User {
         this.id = builder.id;
         this.name = builder.name;
         this.email = builder.email;
+        this.contactPhone = builder.contactPhone;
         this.role = builder.role != null ? builder.role : UserRole.PATIENT;
         this.loginEnabled = builder.loginEnabled;
         this.loginEnabledAt = builder.loginEnabledAt;
@@ -175,6 +185,14 @@ public class User {
 
     public void setEmail(String email) {
         this.email = email;
+    }
+
+    public String getContactPhone() {
+        return contactPhone;
+    }
+
+    public void setContactPhone(String contactPhone) {
+        this.contactPhone = contactPhone;
     }
 
     public UserRole getRole() {
@@ -295,6 +313,28 @@ public class User {
 
     public void setFailedLoginAttempts(int failedLoginAttempts) {
         this.failedLoginAttempts = failedLoginAttempts;
+    }
+
+    public String getPasswordResetTokenHash() {
+        return passwordResetTokenHash;
+    }
+
+    public void setPasswordResetTokenHash(String passwordResetTokenHash) {
+        this.passwordResetTokenHash = passwordResetTokenHash;
+    }
+
+    public Instant getPasswordResetExpiresAt() {
+        return passwordResetExpiresAt;
+    }
+
+    public void setPasswordResetExpiresAt(Instant passwordResetExpiresAt) {
+        this.passwordResetExpiresAt = passwordResetExpiresAt;
+    }
+
+    public boolean isPasswordResetTokenValid() {
+        return passwordResetTokenHash != null
+                && passwordResetExpiresAt != null
+                && passwordResetExpiresAt.isAfter(Instant.now());
     }
 
     public boolean isPasswordMustChange() {
@@ -421,6 +461,7 @@ public class User {
         private Long id;
         private String name;
         private String email;
+        private String contactPhone;
         private UserRole role;
         private boolean loginEnabled;
         private LocalDateTime loginEnabledAt;
@@ -455,6 +496,11 @@ public class User {
 
         public Builder email(String email) {
             this.email = email;
+            return this;
+        }
+
+        public Builder contactPhone(String contactPhone) {
+            this.contactPhone = contactPhone;
             return this;
         }
 

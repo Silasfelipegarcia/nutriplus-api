@@ -9,6 +9,7 @@ import br.com.nutriplus.application.port.UserQueryPort;
 import br.com.nutriplus.domain.entity.User;
 import br.com.nutriplus.domain.enums.RegistrationSource;
 import br.com.nutriplus.dto.request.LoginRequest;
+import br.com.nutriplus.domain.util.ContactPhoneNormalizer;
 import br.com.nutriplus.dto.request.RegisterRequest;
 import br.com.nutriplus.dto.response.AuthResponse;
 import br.com.nutriplus.dto.response.RegisterResponse;
@@ -84,6 +85,7 @@ public class AuthService {
         User user = User.builder()
                 .name(request.name())
                 .email(request.email())
+                .contactPhone(ContactPhoneNormalizer.normalize(request.contactPhone()))
                 .passwordHash(passwordHasherPort.encode(request.password()))
                 .loginEnabled(false)
                 .registrationSource(source)

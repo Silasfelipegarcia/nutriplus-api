@@ -9,6 +9,7 @@ import br.com.nutriplus.domain.enums.ServiceMode;
 import br.com.nutriplus.domain.enums.RegistrationSource;
 import br.com.nutriplus.domain.enums.UserRole;
 import br.com.nutriplus.domain.util.ServiceModeCodec;
+import br.com.nutriplus.domain.util.ContactPhoneNormalizer;
 import br.com.nutriplus.dto.request.NutritionistRegisterRequest;
 import br.com.nutriplus.dto.request.ProPricingUpdateRequest;
 import br.com.nutriplus.dto.request.ProProfileUpdateRequest;
@@ -100,6 +101,7 @@ public class NutritionistProService {
         User user = User.builder()
                 .name(request.name())
                 .email(request.email())
+                .contactPhone(ContactPhoneNormalizer.normalize(request.contactPhone()))
                 .passwordHash(passwordHasherPort.encode(request.password()))
                 .role(UserRole.NUTRITIONIST)
                 .loginEnabled(false)
@@ -108,9 +110,11 @@ public class NutritionistProService {
         cpfRegistrationService.applyCpf(user, request.cpf());
         user = userRepository.save(user);
 
+        String phone = user.getContactPhone();
         Nutritionist nutritionist = Nutritionist.createFor(
                 user, request.crn(), request.bio(), request.specialties(),
                 guidelines.getSuggestedPriceCents(), guidelines.getCareDurationDaysDefault());
+        nutritionist.setWhatsappPhone(phone);
         nutritionistRepository.save(nutritionist);
         return user;
     }

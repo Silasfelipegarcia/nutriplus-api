@@ -15,6 +15,7 @@ public record AdminUserAccessResponse(
         LocalDateTime createdAt,
         boolean hasNutritionProfile,
         RegistrationSource registrationSource,
-        String acquisitionCampaign
+        String acquisitionCampaign,
+        String contactPhone
 ) {
 }

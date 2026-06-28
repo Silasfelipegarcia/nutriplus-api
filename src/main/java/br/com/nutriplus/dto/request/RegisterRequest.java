@@ -14,6 +14,7 @@ public record RegisterRequest(
         @NotBlank @Size(min = 6, max = 100) String password,
         @NotBlank @ValidCpf String cpf,
         @NotNull LocalDate birthDate,
+        @NotBlank @Size(max = 20) String contactPhone,
         @Size(max = 64) String acquisitionSource,
         @Size(max = 64) String acquisitionMedium,
         @Size(max = 128) String acquisitionCampaign,
