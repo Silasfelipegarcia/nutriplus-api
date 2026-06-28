@@ -22,15 +22,18 @@ public class AdminNutritionistService {
     private final NutritionistRepository nutritionistRepository;
     private final UserRepository userRepository;
     private final CpfProtectionService cpfProtectionService;
+    private final BetaAccessNotificationService betaAccessNotificationService;
 
     public AdminNutritionistService(AuthorizationService authorizationService,
                                     NutritionistRepository nutritionistRepository,
                                     UserRepository userRepository,
-                                    CpfProtectionService cpfProtectionService) {
+                                    CpfProtectionService cpfProtectionService,
+                                    BetaAccessNotificationService betaAccessNotificationService) {
         this.authorizationService = authorizationService;
         this.nutritionistRepository = nutritionistRepository;
         this.userRepository = userRepository;
         this.cpfProtectionService = cpfProtectionService;
+        this.betaAccessNotificationService = betaAccessNotificationService;
     }
 
     public List<NutritionistPendingResponse> listPendingVerification() {
@@ -47,6 +50,7 @@ public class AdminNutritionistService {
                 .orElseThrow(() -> new ResourceNotFoundException("Nutricionista não encontrado."));
         n.setCrnVerified(true);
         User user = n.getUser();
+        boolean wasEnabled = user.isLoginEnabled();
         if (!user.isLoginEnabled()) {
             user.setLoginEnabled(true);
             user.setLoginEnabledAt(LocalDateTime.now());
@@ -54,6 +58,9 @@ public class AdminNutritionistService {
             userRepository.save(user);
         }
         nutritionistRepository.save(n);
+        if (!wasEnabled && user.isLoginEnabled()) {
+            betaAccessNotificationService.notifyApproved(user);
+        }
     }
 
     @Transactional

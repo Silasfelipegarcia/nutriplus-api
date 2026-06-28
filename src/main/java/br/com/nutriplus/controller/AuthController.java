@@ -1,13 +1,17 @@
 package br.com.nutriplus.controller;
 
+import br.com.nutriplus.dto.request.ForgotPasswordRequest;
 import br.com.nutriplus.dto.request.LoginRequest;
 import br.com.nutriplus.dto.request.RefreshTokenRequest;
 import br.com.nutriplus.dto.request.RegisterRequest;
+import br.com.nutriplus.dto.request.ResetPasswordRequest;
 import br.com.nutriplus.dto.request.NutritionistRegisterRequest;
 import br.com.nutriplus.dto.response.AuthResponse;
+import br.com.nutriplus.dto.response.ForgotPasswordResponse;
 import br.com.nutriplus.dto.response.RegisterResponse;
 import br.com.nutriplus.service.AuthService;
 import br.com.nutriplus.service.NutritionistProService;
+import br.com.nutriplus.service.PasswordResetService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -18,10 +22,14 @@ public class AuthController {
 
     private final AuthService authService;
     private final NutritionistProService nutritionistProService;
+    private final PasswordResetService passwordResetService;
 
-    public AuthController(AuthService authService, NutritionistProService nutritionistProService) {
+    public AuthController(AuthService authService,
+                          NutritionistProService nutritionistProService,
+                          PasswordResetService passwordResetService) {
         this.authService = authService;
         this.nutritionistProService = nutritionistProService;
+        this.passwordResetService = passwordResetService;
     }
 
     @PostMapping("/register")
@@ -50,5 +58,16 @@ public class AuthController {
     @PostMapping("/refresh")
     public AuthResponse refresh(@Valid @RequestBody RefreshTokenRequest request) {
         return authService.refresh(request.refreshToken());
+    }
+
+    @PostMapping("/forgot-password")
+    public ForgotPasswordResponse forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        return passwordResetService.requestReset(request.email());
+    }
+
+    @PostMapping("/reset-password")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        passwordResetService.resetPassword(request);
     }
 }

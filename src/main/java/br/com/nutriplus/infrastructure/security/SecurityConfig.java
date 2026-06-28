@@ -4,6 +4,7 @@ import br.com.nutriplus.infrastructure.web.CorrelationIdFilter;
 import br.com.nutriplus.infrastructure.web.MdcUserFilter;
 import br.com.nutriplus.infrastructure.web.RequestPerformanceFilter;
 import br.com.nutriplus.infrastructure.config.CorsProperties;
+import br.com.nutriplus.infrastructure.config.EmailProperties;
 import br.com.nutriplus.infrastructure.config.IdempotencyProperties;
 import br.com.nutriplus.infrastructure.web.IdempotencyFilter;
 import br.com.nutriplus.infrastructure.web.IdempotencySupport;
@@ -49,7 +50,7 @@ import java.util.stream.Collectors;
 
 @Configuration
 @EnableMethodSecurity
-@EnableConfigurationProperties({RateLimitProperties.class, CorsProperties.class, IdempotencyProperties.class})
+@EnableConfigurationProperties({RateLimitProperties.class, CorsProperties.class, IdempotencyProperties.class, EmailProperties.class})
 public class SecurityConfig {
 
     @Bean

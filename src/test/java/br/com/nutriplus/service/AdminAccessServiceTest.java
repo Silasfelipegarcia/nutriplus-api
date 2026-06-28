@@ -34,13 +34,18 @@ class AdminAccessServiceTest {
     @Mock private UserRepository userRepository;
     @Mock private NutritionProfileRepository nutritionProfileRepository;
     @Mock private NutritionistRepository nutritionistRepository;
+    @Mock private BetaAccessNotificationService betaAccessNotificationService;
 
     private AdminAccessService service;
 
     @BeforeEach
     void setUp() {
         service = new AdminAccessService(
-                authorizationService, userRepository, nutritionProfileRepository, nutritionistRepository);
+                authorizationService,
+                userRepository,
+                nutritionProfileRepository,
+                nutritionistRepository,
+                betaAccessNotificationService);
     }
 
     @Test
@@ -97,6 +102,34 @@ class AdminAccessServiceTest {
 
         assertThat(nutritionist.isCrnVerified()).isTrue();
         verify(nutritionistRepository).save(nutritionist);
+    }
+
+    @Test
+    void setLoginEnabledSendsBetaApprovalEmailOnFirstEnable() {
+        User user = patient(3L);
+        user.setLoginEnabled(false);
+        when(authorizationService.hasRole(UserRole.ADMIN)).thenReturn(true);
+        when(userRepository.findById(3L)).thenReturn(Optional.of(user));
+        when(authorizationService.currentUserId()).thenReturn(1L);
+        when(nutritionProfileRepository.findByUserId(3L)).thenReturn(Optional.empty());
+
+        service.setLoginEnabled(3L, new UpdateLoginEnabledRequest(true));
+
+        verify(betaAccessNotificationService).notifyApproved(user);
+    }
+
+    @Test
+    void setLoginEnabledDoesNotSendEmailWhenAlreadyEnabled() {
+        User user = patient(4L);
+        user.setLoginEnabled(true);
+        when(authorizationService.hasRole(UserRole.ADMIN)).thenReturn(true);
+        when(userRepository.findById(4L)).thenReturn(Optional.of(user));
+        when(authorizationService.currentUserId()).thenReturn(1L);
+        when(nutritionProfileRepository.findByUserId(4L)).thenReturn(Optional.empty());
+
+        service.setLoginEnabled(4L, new UpdateLoginEnabledRequest(true));
+
+        verify(betaAccessNotificationService, never()).notifyApproved(any());
     }
 
     private static User patient(long id) {

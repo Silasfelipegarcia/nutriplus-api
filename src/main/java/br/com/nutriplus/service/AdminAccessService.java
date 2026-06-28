@@ -26,15 +26,18 @@ public class AdminAccessService {
     private final UserRepository userRepository;
     private final NutritionProfileRepository nutritionProfileRepository;
     private final NutritionistRepository nutritionistRepository;
+    private final BetaAccessNotificationService betaAccessNotificationService;
 
     public AdminAccessService(AuthorizationService authorizationService,
                               UserRepository userRepository,
                               NutritionProfileRepository nutritionProfileRepository,
-                              NutritionistRepository nutritionistRepository) {
+                              NutritionistRepository nutritionistRepository,
+                              BetaAccessNotificationService betaAccessNotificationService) {
         this.authorizationService = authorizationService;
         this.userRepository = userRepository;
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.nutritionistRepository = nutritionistRepository;
+        this.betaAccessNotificationService = betaAccessNotificationService;
     }
 
     public AdminAccessSummaryResponse summary() {
@@ -77,6 +80,7 @@ public class AdminAccessService {
         }
 
         boolean enabled = request.enabled();
+        boolean wasEnabled = user.isLoginEnabled();
         user.setLoginEnabled(enabled);
         if (enabled) {
             user.setLoginEnabledAt(LocalDateTime.now());
@@ -92,6 +96,9 @@ public class AdminAccessService {
             user.setLoginEnabledBy(null);
         }
         userRepository.save(user);
+        if (enabled && !wasEnabled) {
+            betaAccessNotificationService.notifyApproved(user);
+        }
         return toResponse(user);
     }
 
