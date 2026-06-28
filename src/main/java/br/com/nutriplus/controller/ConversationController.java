@@ -25,8 +25,10 @@ public class ConversationController {
     }
 
     @GetMapping("/{threadId}")
-    public ConversationResponse get(@PathVariable Long threadId) {
-        return messagingService.getConversation(threadId);
+    public ConversationResponse get(@PathVariable Long threadId,
+                                    @RequestParam(defaultValue = "0") int page,
+                                    @RequestParam(defaultValue = "50") int size) {
+        return messagingService.getConversation(threadId, page, size);
     }
 
     @PostMapping("/{threadId}/messages")

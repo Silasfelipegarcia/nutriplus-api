@@ -7,6 +7,7 @@ import br.com.nutriplus.repository.MealRepository;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -24,6 +25,14 @@ public class MealLoader {
 
     public List<Meal> mealsForPlan(Long mealPlanId) {
         return mealRepository.findByMealPlanIdOrderBySortOrderAsc(mealPlanId);
+    }
+
+    public Map<Long, List<Meal>> mealsByPlanIds(Collection<Long> mealPlanIds) {
+        if (mealPlanIds == null || mealPlanIds.isEmpty()) {
+            return Map.of();
+        }
+        return mealRepository.findByMealPlanIdInOrderByMealPlanIdAscSortOrderAsc(mealPlanIds).stream()
+                .collect(Collectors.groupingBy(meal -> meal.getMealPlan().getId()));
     }
 
     public Map<Long, List<MealItem>> itemsByMealId(List<Meal> meals) {

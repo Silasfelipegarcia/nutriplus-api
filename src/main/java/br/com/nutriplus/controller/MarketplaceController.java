@@ -35,7 +35,7 @@ public class MarketplaceController {
             @RequestParam(required = false) ServiceMode mode,
             @RequestParam(required = false) String state,
             @RequestParam(required = false) String city) {
-        return careService.listMarketplace(mode, state, city).stream().map(proMapper::toPublic).toList();
+        return proMapper.toPublicList(careService.listMarketplace(mode, state, city));
     }
 
     @GetMapping("/nutritionists/{id}")

@@ -41,6 +41,7 @@ class AuthServiceBetaRequestTest {
     @Mock private CpfRegistrationService cpfRegistrationService;
     @Mock private UserRegistrationValidator userRegistrationValidator;
     @Mock private FeatureFlagService featureFlagService;
+    @Mock private CacheWarmService cacheWarmService;
 
     private AuthService authService;
 
@@ -58,7 +59,8 @@ class AuthServiceBetaRequestTest {
                 auditLogService,
                 cpfRegistrationService,
                 userRegistrationValidator,
-                featureFlagService);
+                featureFlagService,
+                cacheWarmService);
     }
 
     @Test

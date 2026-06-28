@@ -8,7 +8,10 @@ on:
       base_url:
         description: 'API base URL'
         required: false
-        default: 'http://localhost:8080'
+        default: 'https://nutriplus-api-production.up.railway.app'
+
+env:
+  HOMOLOG_URL: https://nutriplus-api-production.up.railway.app
 
 jobs:
   k6-smoke:
@@ -27,53 +30,107 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y k6
 
+      - name: Preflight API health
+        env:
+          BASE_URL: ${{ github.event.inputs.base_url || env.HOMOLOG_URL }}
+        run: |
+          code="$(curl -s -o /dev/null -w '%{http_code}' "$BASE_URL/health")"
+          echo "health=$code"
+          if [ "$code" != "200" ]; then
+            echo "API unreachable at $BASE_URL"
+            exit 1
+          fi
+
       - name: Run Tier S smoke
         env:
-          BASE_URL: ${{ github.event.inputs.base_url || 'http://localhost:8080' }}
+          BASE_URL: ${{ github.event.inputs.base_url || env.HOMOLOG_URL }}
+          PERF_TEST_EMAIL: ${{ secrets.PERF_TEST_EMAIL }}
+          PERF_TEST_PASSWORD: ${{ secrets.PERF_TEST_PASSWORD }}
         run: |
           mkdir -p perf/k6/results
           k6 run --summary-export perf/k6/results/smoke-summary.json \
             -e BASE_URL="$BASE_URL" \
+            -e K6_P95_MS=200 \
             perf/k6/smoke.js
 
       - name: Run portal flow
         env:
-          BASE_URL: ${{ github.event.inputs.base_url || 'http://localhost:8080' }}
+          BASE_URL: ${{ github.event.inputs.base_url || env.HOMOLOG_URL }}
+          PERF_TEST_EMAIL: ${{ secrets.PERF_TEST_EMAIL }}
+          PERF_TEST_PASSWORD: ${{ secrets.PERF_TEST_PASSWORD }}
         run: |
           k6 run --summary-export perf/k6/results/portal-summary.json \
             -e BASE_URL="$BASE_URL" \
+            -e K6_P95_MS=200 \
             perf/k6/tier-s-portal.js
 
-      - name: Regression gate (p95 Tier S)
+      - name: Run dashboard flow
+        env:
+          BASE_URL: ${{ github.event.inputs.base_url || env.HOMOLOG_URL }}
+          PERF_TEST_EMAIL: ${{ secrets.PERF_TEST_EMAIL }}
+          PERF_TEST_PASSWORD: ${{ secrets.PERF_TEST_PASSWORD }}
+        run: |
+          k6 run --summary-export perf/k6/results/dashboard-summary.json \
+            -e BASE_URL="$BASE_URL" \
+            -e K6_P95_MS=800 \
+            -e K6_TIER_S_P95_MS=200 \
+            perf/k6/tier-s-full-dashboard.js
+
+      - name: Regression gate (p95 Tier S + dashboard + failures)
+        env:
+          BASE_URL: ${{ github.event.inputs.base_url || env.HOMOLOG_URL }}
         run: |
           python3 << 'PY'
           import json, sys
           from pathlib import Path
 
           baseline = json.loads(Path("perf/k6/baseline.json").read_text())
-          limit = baseline["metrics"]["http_req_duration{tier:S}"]["p95_ms"] * baseline["thresholds"]["regression_factor"]
+          env_name = "homolog" if "localhost" not in "${{ github.event.inputs.base_url || env.HOMOLOG_URL }}" else "local"
+          env_cfg = baseline.get("environments", {}).get(env_name, {})
+          tier_limit = env_cfg.get("tier_s_p95_ms", baseline["metrics"]["http_req_duration{tier:S}"]["p95_ms"])
+          tier_limit *= baseline["thresholds"]["regression_factor"]
+          dash_limit = env_cfg.get("dashboard_flow_p95_ms", baseline["thresholds"]["dashboard_flow_p95_ms"])
+          dash_limit *= baseline["thresholds"]["regression_factor"]
+          fail_limit = baseline["thresholds"].get("http_req_failed_rate_max", 0.05)
 
-          summary_path = Path("perf/k6/results/smoke-summary.json")
-          if not summary_path.exists():
-              print("No k6 summary — skip gate when API unreachable")
-              sys.exit(0)
+          smoke = json.loads(Path("perf/k6/results/smoke-summary.json").read_text())
+          dash = json.loads(Path("perf/k6/results/dashboard-summary.json").read_text())
 
-          summary = json.loads(summary_path.read_text())
-          metrics = summary.get("metrics", {})
-          tier_key = None
-          for key in metrics:
-              if "tier:S" in key and "http_req_duration" in key:
-                  tier_key = key
-                  break
+          def metric_p95(summary, suffix):
+              for key, value in summary.get("metrics", {}).items():
+                  if suffix in key and "p(95)" in value.get("values", {}):
+                      return value["values"]["p(95)"]
+              return None
 
-          if not tier_key:
-              print("Tier S metric not found in summary — skipping gate")
-              sys.exit(0)
+          tier_p95 = metric_p95(smoke, "tier:S")
+          dash_p95 = metric_p95(dash, "dashboard_flow_duration")
+          failed_rate = smoke.get("metrics", {}).get("http_req_failed", {}).get("values", {}).get("rate")
 
-          p95 = metrics[tier_key]["p(95)"]
-          print(f"Tier S p95={p95:.2f}ms limit={limit:.2f}ms")
-          if p95 > limit:
-              print(f"REGRESSION: p95 exceeded baseline by {baseline['thresholds']['regression_factor']}x")
+          if tier_p95 is None:
+              print("Tier S metric missing")
+              sys.exit(1)
+          if dash_p95 is None:
+              print("Dashboard flow metric missing")
+              sys.exit(1)
+          if failed_rate is None:
+              print("http_req_failed metric missing")
+              sys.exit(1)
+
+          print(f"Tier S p95={tier_p95:.2f}ms limit={tier_limit:.2f}ms")
+          print(f"Dashboard p95={dash_p95:.2f}ms limit={dash_limit:.2f}ms")
+          print(f"http_req_failed rate={failed_rate:.4f} limit={fail_limit:.4f}")
+
+          failed = False
+          if tier_p95 > tier_limit:
+              print("REGRESSION: Tier S p95 exceeded gate")
+              failed = True
+          if dash_p95 > dash_limit:
+              print("REGRESSION: dashboard flow p95 exceeded gate")
+              failed = True
+          if failed_rate > fail_limit:
+              print("REGRESSION: http_req_failed rate exceeded gate")
+              failed = True
+          if failed:
               sys.exit(1)
           PY
 

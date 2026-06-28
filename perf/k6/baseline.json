@@ -1,13 +1,32 @@
 {
-  "version": 1,
+  "version": 2,
   "description": "Referência p95 Tier S (ms). Atualizar após otimizações intencionais.",
   "thresholds": {
     "tier_s_p95_ms": 200,
-    "regression_factor": 1.2
+    "dashboard_flow_p95_ms": 800,
+    "regression_factor": 1.2,
+    "http_req_failed_rate_max": 0.05
+  },
+  "environments": {
+    "local": {
+      "tier_s_p95_ms": 120,
+      "dashboard_flow_p95_ms": 600
+    },
+    "homolog": {
+      "tier_s_p95_ms": 180,
+      "dashboard_flow_p95_ms": 800
+    },
+    "prod": {
+      "tier_s_p95_ms": 200,
+      "dashboard_flow_p95_ms": 800
+    }
   },
   "metrics": {
     "http_req_duration{tier:S}": {
       "p95_ms": 180
+    },
+    "dashboard_flow_duration": {
+      "p95_ms": 800
     }
   }
 }

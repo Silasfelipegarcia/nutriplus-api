@@ -8,7 +8,10 @@ import br.com.nutriplus.repository.CareRatingRepository;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Component
@@ -21,19 +24,44 @@ public class ProMapper {
     }
 
     public NutritionistPublicResponse toPublic(Nutritionist n) {
-        return toNutritionistResponse(n, false);
+        return toNutritionistResponse(n, false, loadRatings(List.of(n.getId())).getOrDefault(n.getId(), NutritionistRatingSummary.empty()));
+    }
+
+    public NutritionistPublicResponse toPublic(Nutritionist n, NutritionistRatingSummary rating) {
+        return toNutritionistResponse(n, false, rating);
+    }
+
+    public List<NutritionistPublicResponse> toPublicList(List<Nutritionist> nutritionists) {
+        if (nutritionists.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, NutritionistRatingSummary> ratings = loadRatings(nutritionists.stream().map(Nutritionist::getId).toList());
+        return nutritionists.stream()
+                .map(n -> toNutritionistResponse(n, false, ratings.getOrDefault(n.getId(), NutritionistRatingSummary.empty())))
+                .toList();
+    }
+
+    public Map<Long, NutritionistRatingSummary> loadRatings(Collection<Long> nutritionistIds) {
+        if (nutritionistIds == null || nutritionistIds.isEmpty()) {
+            return Map.of();
+        }
+        Map<Long, NutritionistRatingSummary> ratings = new HashMap<>();
+        for (Object[] row : careRatingRepository.avgStarsAndCountByNutritionistIds(nutritionistIds)) {
+            Long id = ((Number) row[0]).longValue();
+            ratings.put(id, NutritionistRatingSummary.fromRow(row));
+        }
+        return ratings;
     }
 
     public NutritionistPublicResponse toProfile(Nutritionist n) {
-        return toNutritionistResponse(n, true);
+        return toNutritionistResponse(n, true, loadRatings(List.of(n.getId())).getOrDefault(n.getId(), NutritionistRatingSummary.empty()));
     }
 
-    private NutritionistPublicResponse toNutritionistResponse(Nutritionist n, boolean includePrivateContact) {
+    private NutritionistPublicResponse toNutritionistResponse(Nutritionist n, boolean includePrivateContact,
+                                                              NutritionistRatingSummary rating) {
         User u = n.getUser();
         Set<ServiceMode> modes = ServiceModeCodec.decode(n.getServiceModes());
         List<String> modeNames = modes.stream().map(Enum::name).sorted().toList();
-        Double avg = careRatingRepository.averageStarsByNutritionistId(n.getId());
-        long count = careRatingRepository.countByNutritionistId(n.getId());
         return new NutritionistPublicResponse(
                 n.getId(),
                 u.getName(),
@@ -49,8 +77,8 @@ public class ProMapper {
                 n.getStateCode(),
                 buildLocationLabel(n, modes),
                 includePrivateContact ? n.getWhatsappPhone() : null,
-                avg != null ? avg : 0.0,
-                count
+                rating.averageStars(),
+                rating.count()
         );
     }
 

@@ -27,6 +27,18 @@ public class AsyncConfig {
         return executor;
     }
 
+    @Bean(name = "cacheWarmExecutor")
+    public Executor cacheWarmExecutor() {
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(1);
+        executor.setMaxPoolSize(2);
+        executor.setQueueCapacity(100);
+        executor.setThreadNamePrefix("cache-warm-");
+        executor.setTaskDecorator(new MdcTaskDecorator());
+        executor.initialize();
+        return executor;
+    }
+
     static final class MdcTaskDecorator implements TaskDecorator {
 
         @Override

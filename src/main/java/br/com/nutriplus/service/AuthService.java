@@ -34,6 +34,7 @@ public class AuthService {
     private final CpfRegistrationService cpfRegistrationService;
     private final UserRegistrationValidator userRegistrationValidator;
     private final FeatureFlagService featureFlagService;
+    private final CacheWarmService cacheWarmService;
 
     public AuthService(UserRepository userRepository,
                        NutritionProfileRepository nutritionProfileRepository,
@@ -46,7 +47,8 @@ public class AuthService {
                        AuditLogService auditLogService,
                        CpfRegistrationService cpfRegistrationService,
                        UserRegistrationValidator userRegistrationValidator,
-                       FeatureFlagService featureFlagService) {
+                       FeatureFlagService featureFlagService,
+                       CacheWarmService cacheWarmService) {
         this.userRepository = userRepository;
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.passwordHasherPort = passwordHasherPort;
@@ -59,6 +61,7 @@ public class AuthService {
         this.cpfRegistrationService = cpfRegistrationService;
         this.userRegistrationValidator = userRegistrationValidator;
         this.featureFlagService = featureFlagService;
+        this.cacheWarmService = cacheWarmService;
     }
 
     @Transactional
@@ -120,13 +123,17 @@ public class AuthService {
         LoginUseCase.Response result = loginUseCase.execute(
                 new LoginUseCase.Request(request.email(), request.password()));
         auditLogService.log("LOGIN_SUCCESS", "USER", toEntity(result.user()));
-        return fromLoginResponse(result);
+        AuthResponse response = fromLoginResponse(result);
+        cacheWarmService.warmTierSCaches(result.accessToken());
+        return response;
     }
 
     public AuthResponse refresh(String refreshToken) {
         LoginUseCase.Response result = refreshTokenUseCase.execute(refreshToken);
         auditLogService.log("TOKEN_REFRESH", "USER", toEntity(result.user()));
-        return fromLoginResponse(result);
+        AuthResponse response = fromLoginResponse(result);
+        cacheWarmService.warmTierSCaches(result.accessToken());
+        return response;
     }
 
     private AuthResponse toAuthResponse(br.com.nutriplus.domain.model.User user) {

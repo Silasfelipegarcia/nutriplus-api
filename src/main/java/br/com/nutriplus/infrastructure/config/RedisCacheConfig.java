@@ -33,9 +33,9 @@ public class RedisCacheConfig {
 
     private boolean enabled;
     private long mealPlanTtlSeconds = 60;
-    private long nutritionProfileTtlSeconds = 120;
+    private long nutritionProfileTtlSeconds = 300;
     private long shoppingListTtlSeconds = 60;
-    private long checkinsTtlSeconds = 30;
+    private long checkinsTtlSeconds = 60;
     private long progressTtlSeconds = 60;
     private long userMeTtlSeconds = 60;
     private long staticContentTtlSeconds = 3600;

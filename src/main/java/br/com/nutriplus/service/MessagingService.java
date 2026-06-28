@@ -12,14 +12,19 @@ import br.com.nutriplus.repository.ConversationThreadRepository;
 import br.com.nutriplus.repository.MessageRepository;
 import br.com.nutriplus.security.AuthorizationService;
 import br.com.nutriplus.security.CurrentUser;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 public class MessagingService {
+
+    private static final int DEFAULT_PAGE_SIZE = 50;
+    private static final int MAX_PAGE_SIZE = 100;
 
     private final CurrentUser currentUser;
     private final AuthorizationService authorizationService;
@@ -42,14 +47,14 @@ public class MessagingService {
     public List<ConversationResponse> listConversations() {
         User user = currentUser.get();
         return threadRepository.findByParticipantUserId(user.getId()).stream()
-                .map(t -> toConversation(t, user.getId()))
+                .map(t -> toConversationSummary(t, user.getId()))
                 .toList();
     }
 
-    public ConversationResponse getConversation(Long threadId) {
+    public ConversationResponse getConversation(Long threadId, int page, int size) {
         User user = currentUser.get();
         ConversationThread thread = requireThreadAccess(threadId, user);
-        return toConversation(thread, user.getId());
+        return toConversationWithMessages(thread, user.getId(), page, size);
     }
 
     @Transactional
@@ -83,19 +88,42 @@ public class MessagingService {
         return thread;
     }
 
-    private ConversationResponse toConversation(ConversationThread thread, Long currentUserId) {
+    private ConversationResponse toConversationSummary(ConversationThread thread, Long currentUserId) {
         CareRelationship care = thread.getCareRelationship();
         String participantName = currentUserId.equals(care.getPatient().getId())
                 ? care.getNutritionist().getUser().getName()
                 : care.getPatient().getName();
-        List<MessageResponse> messages = messageRepository.findByThreadIdOrderByCreatedAtAsc(thread.getId())
-                .stream().map(m -> proMapper.toMessage(m, currentUserId)).toList();
         return new ConversationResponse(
                 thread.getId(),
                 care.getId(),
                 participantName,
                 proMapper.toCare(care),
-                messages
+                List.of()
+        );
+    }
+
+    private ConversationResponse toConversationWithMessages(ConversationThread thread, Long currentUserId,
+                                                            int page, int size) {
+        CareRelationship care = thread.getCareRelationship();
+        String participantName = currentUserId.equals(care.getPatient().getId())
+                ? care.getNutritionist().getUser().getName()
+                : care.getPatient().getName();
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
+        Pageable pageable = PageRequest.of(safePage, safeSize);
+        Page<Message> messagePage = messageRepository.findByThreadIdOrderByCreatedAtAsc(thread.getId(), pageable);
+        List<MessageResponse> messages = messagePage.getContent().stream()
+                .map(m -> proMapper.toMessage(m, currentUserId))
+                .toList();
+        return new ConversationResponse(
+                thread.getId(),
+                care.getId(),
+                participantName,
+                proMapper.toCare(care),
+                messages,
+                safePage,
+                safeSize,
+                messagePage.getTotalElements()
         );
     }
 }

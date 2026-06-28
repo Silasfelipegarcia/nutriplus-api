@@ -1,5 +1,6 @@
 package br.com.nutriplus.service;
 
+import br.com.nutriplus.domain.entity.Meal;
 import br.com.nutriplus.domain.entity.MealPlan;
 import br.com.nutriplus.domain.entity.Nutritionist;
 import br.com.nutriplus.domain.entity.PlanRevision;
@@ -15,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class PlanReviewService {
@@ -39,9 +41,15 @@ public class PlanReviewService {
 
     public List<MealPlanResponse> listPatientMealPlans(Long patientId) {
         authorizationService.requireCareAccessForNutritionistByPatientId(patientId);
-        return mealPlanRepository.findByUserIdOrderByCreatedAtDesc(patientId).stream()
+        List<MealPlan> plans = mealPlanRepository.findByUserIdOrderByCreatedAtDesc(patientId);
+        if (plans.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, List<Meal>> mealsByPlanId =
+                mealLoader.mealsByPlanIds(plans.stream().map(MealPlan::getId).toList());
+        return plans.stream()
                 .map(plan -> {
-                    var meals = mealLoader.mealsForPlan(plan.getId());
+                    var meals = mealsByPlanId.getOrDefault(plan.getId(), List.of());
                     var items = mealLoader.itemsByMealId(meals);
                     return responseMapper.toMealPlanResponse(plan, meals, items);
                 })
