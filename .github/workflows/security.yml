@@ -41,7 +41,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Trivy filesystem scan
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           scan-ref: .
@@ -58,7 +58,7 @@ jobs:
       - name: Build image for scan
         run: docker build -t nutriplus-api:security .
       - name: Trivy container scan
-        uses: aquasecurity/trivy-action@0.28.0
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: nutriplus-api:security
           severity: CRITICAL,HIGH
