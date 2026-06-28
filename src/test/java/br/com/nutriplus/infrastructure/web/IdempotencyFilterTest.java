@@ -52,6 +52,22 @@ class IdempotencyFilterTest {
     }
 
     @Test
+    void passesThroughForgotPasswordWithoutKey() throws Exception {
+        IdempotencyFilter filter = new IdempotencyFilter(
+                new IdempotencyProperties(true, true, 24, 120),
+                store,
+                objectMapper
+        );
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", "/auth/forgot-password");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, new MockFilterChain());
+
+        verify(store, never()).find(anyString(), anyLong(), anyString(), anyString());
+        assertThat(response.getStatus()).isEqualTo(200);
+    }
+
+    @Test
     void requiresKeyWhenEnabled() throws Exception {
         IdempotencyFilter filter = new IdempotencyFilter(
                 new IdempotencyProperties(true, true, 24, 120),
