@@ -19,6 +19,7 @@ import br.com.nutriplus.dto.response.CheckinStatsResponse;
 import br.com.nutriplus.dto.response.DailyAdherenceResponse;
 import br.com.nutriplus.dto.response.CoachInsightResponse;
 import br.com.nutriplus.dto.response.DailyFoodExtraResponse;
+import br.com.nutriplus.dto.response.MealItemResponse;
 import br.com.nutriplus.dto.response.TodayCheckinsResponse;
 import br.com.nutriplus.dto.response.TodayMealCheckinResponse;
 import br.com.nutriplus.exception.ResourceNotFoundException;
@@ -110,13 +111,15 @@ public class CheckinService {
 
         List<TodayMealCheckinResponse> items = meals.stream()
                 .map(meal -> {
-                    int mealKcal = mealCalories(itemsByMeal.getOrDefault(meal.getId(), List.of()));
+                    List<MealItem> mealItems = itemsByMeal.getOrDefault(meal.getId(), List.of());
+                    int mealKcal = mealCalories(mealItems);
                     return new TodayMealCheckinResponse(
                             meal.getId(),
                             meal.getMealType(),
                             meal.getName(),
                             statusByMeal.get(meal.getId()),
-                            mealKcal > 0 ? mealKcal : null
+                            mealKcal > 0 ? mealKcal : null,
+                            toItemResponses(mealItems)
                     );
                 })
                 .toList();
@@ -161,13 +164,15 @@ public class CheckinService {
         checkin.setNotes(request.notes());
         checkinRepository.save(checkin);
 
-        int mealKcal = mealCalories(mealLoader.itemsForMeal(meal.getId()));
+        List<MealItem> mealItems = mealLoader.itemsForMeal(meal.getId());
+        int mealKcal = mealCalories(mealItems);
         return new TodayMealCheckinResponse(
                 meal.getId(),
                 meal.getMealType(),
                 meal.getName(),
                 checkin.getStatus(),
-                mealKcal > 0 ? mealKcal : null
+                mealKcal > 0 ? mealKcal : null,
+                toItemResponses(mealItems)
         );
     }
 
@@ -414,6 +419,20 @@ public class CheckinService {
                 .filter(Objects::nonNull)
                 .mapToInt(BigDecimal::intValue)
                 .sum();
+    }
+
+    private List<MealItemResponse> toItemResponses(List<MealItem> items) {
+        return items.stream()
+                .map(item -> new MealItemResponse(
+                        item.getId(),
+                        item.getFoodName(),
+                        item.getQuantityG(),
+                        item.getCalories(),
+                        item.getProteinG(),
+                        item.getCarbsG(),
+                        item.getFatG()
+                ))
+                .toList();
     }
 
     private int calculateStreak(Long userId, LocalDate today) {
