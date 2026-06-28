@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -51,4 +52,23 @@ public interface UserRepository extends JpaRepository<User, Long> {
               AND (u.planValidUntil IS NULL OR u.planValidUntil <= :now)
             """)
     List<User> findTrialsExpirados(@Param("now") Instant now);
+
+    @Query("""
+            SELECT COUNT(u) FROM User u
+            WHERE u.subscriptionPlan IN :plans
+              AND u.planValidUntil > :now
+            """)
+    long countActivePaidSubscriptions(
+            @Param("plans") Collection<SubscriptionPlan> plans,
+            @Param("now") Instant now);
+
+    @Query("""
+            SELECT u.subscriptionPlan, COUNT(u) FROM User u
+            WHERE u.subscriptionPlan IN :plans
+              AND u.planValidUntil > :now
+            GROUP BY u.subscriptionPlan
+            """)
+    List<Object[]> countActiveSubscriptionsByPlan(
+            @Param("plans") Collection<SubscriptionPlan> plans,
+            @Param("now") Instant now);
 }
