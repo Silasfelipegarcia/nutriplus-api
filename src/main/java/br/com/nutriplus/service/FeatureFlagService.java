@@ -26,7 +26,7 @@ public class FeatureFlagService {
     }
 
     public List<FeatureFlagResponse> listPublic() {
-        return featureFlagRepository.findAllByOrderByCodeAsc().stream()
+        return featureFlagRepository.findAllByOrderByCategoryAscCodeAsc().stream()
                 .map(this::toResponse)
                 .toList();
     }
@@ -58,6 +58,7 @@ public class FeatureFlagService {
                 flag.getCode(),
                 flag.getName(),
                 flag.getDescription(),
+                flag.getCategory(),
                 flag.isEnabled(),
                 flag.getUpdatedAt()
         );

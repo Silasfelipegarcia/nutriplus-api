@@ -9,5 +9,5 @@ import java.util.Optional;
 public interface AppFeatureFlagRepository extends JpaRepository<AppFeatureFlag, Long> {
     Optional<AppFeatureFlag> findByCode(String code);
 
-    List<AppFeatureFlag> findAllByOrderByCodeAsc();
+    List<AppFeatureFlag> findAllByOrderByCategoryAscCodeAsc();
 }

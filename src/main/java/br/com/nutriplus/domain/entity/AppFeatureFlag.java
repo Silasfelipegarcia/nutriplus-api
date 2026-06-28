@@ -22,6 +22,9 @@ public class AppFeatureFlag {
     @Column(length = 512)
     private String description;
 
+    @Column(nullable = false, length = 32)
+    private String category = "PLATAFORMA";
+
     @Column(nullable = false)
     private boolean enabled;
 
@@ -49,6 +52,10 @@ public class AppFeatureFlag {
 
     public String getDescription() {
         return description;
+    }
+
+    public String getCategory() {
+        return category;
     }
 
     public boolean isEnabled() {
