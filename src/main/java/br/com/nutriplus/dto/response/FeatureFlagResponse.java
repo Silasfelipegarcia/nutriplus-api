@@ -6,6 +6,7 @@ public record FeatureFlagResponse(
         String code,
         String name,
         String description,
+        String category,
         boolean enabled,
         LocalDateTime updatedAt
 ) {

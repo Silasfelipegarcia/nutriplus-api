@@ -4,6 +4,7 @@ import br.com.nutriplus.domain.entity.Consultation;
 import br.com.nutriplus.domain.enums.ConsultationStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -23,4 +24,26 @@ public interface ConsultationRepository extends JpaRepository<Consultation, Long
             """)
     List<Consultation> findPaidByNutritionistBetween(
             Long nutritionistId, ConsultationStatus status, LocalDateTime from, LocalDateTime to);
+
+    @Query("""
+            SELECT COALESCE(SUM(c.platformFeeCents), 0) FROM Consultation c
+            WHERE c.status = :status
+              AND c.paidAt >= :from
+              AND c.paidAt < :to
+            """)
+    long sumPlatformFeeBetween(
+            @Param("status") ConsultationStatus status,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to);
+
+    @Query("""
+            SELECT COUNT(c) FROM Consultation c
+            WHERE c.status = :status
+              AND c.paidAt >= :from
+              AND c.paidAt < :to
+            """)
+    long countPaidBetween(
+            @Param("status") ConsultationStatus status,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to);
 }
