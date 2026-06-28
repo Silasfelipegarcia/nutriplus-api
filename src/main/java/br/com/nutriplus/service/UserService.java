@@ -5,20 +5,25 @@ import br.com.nutriplus.application.shared.ActingUserResolver;
 import br.com.nutriplus.application.user.ChangePasswordUseCase;
 import br.com.nutriplus.application.user.GetCurrentUserUseCase;
 import br.com.nutriplus.application.user.UpdateUserProfileUseCase;
+import br.com.nutriplus.domain.entity.UserLegalAcceptance;
+import br.com.nutriplus.domain.enums.LegalDocumentType;
 import br.com.nutriplus.dto.request.AcceptTermsRequest;
 import br.com.nutriplus.dto.request.ChangePasswordRequest;
 import br.com.nutriplus.dto.request.UpdateUserProfileRequest;
 import br.com.nutriplus.dto.response.AuthResponse;
 import br.com.nutriplus.dto.response.UserResponse;
+import br.com.nutriplus.exception.BusinessException;
+import br.com.nutriplus.infrastructure.config.LegalProperties;
+import br.com.nutriplus.infrastructure.config.NutriCacheNames;
 import br.com.nutriplus.mapper.ResponseMapper;
 import br.com.nutriplus.repository.NutritionProfileRepository;
+import br.com.nutriplus.repository.UserLegalAcceptanceRepository;
 import br.com.nutriplus.repository.UserRepository;
 import br.com.nutriplus.security.CurrentUser;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import br.com.nutriplus.infrastructure.config.NutriCacheNames;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -33,6 +38,8 @@ public class UserService {
     private final ResponseMapper responseMapper;
     private final CurrentUser currentUser;
     private final UserRepository userRepository;
+    private final UserLegalAcceptanceRepository legalAcceptanceRepository;
+    private final LegalProperties legalProperties;
 
     public UserService(ActingUserResolver actingUserResolver,
                        GetCurrentUserUseCase getCurrentUserUseCase,
@@ -41,7 +48,9 @@ public class UserService {
                        NutritionProfileRepository nutritionProfileRepository,
                        ResponseMapper responseMapper,
                        CurrentUser currentUser,
-                       UserRepository userRepository) {
+                       UserRepository userRepository,
+                       UserLegalAcceptanceRepository legalAcceptanceRepository,
+                       LegalProperties legalProperties) {
         this.actingUserResolver = actingUserResolver;
         this.getCurrentUserUseCase = getCurrentUserUseCase;
         this.updateUserProfileUseCase = updateUserProfileUseCase;
@@ -50,6 +59,8 @@ public class UserService {
         this.responseMapper = responseMapper;
         this.currentUser = currentUser;
         this.userRepository = userRepository;
+        this.legalAcceptanceRepository = legalAcceptanceRepository;
+        this.legalProperties = legalProperties;
     }
 
     @Cacheable(value = NutriCacheNames.USER_ME, keyGenerator = "userIdCacheKeyGenerator")
@@ -84,12 +95,29 @@ public class UserService {
     @Transactional
     @CacheEvict(value = NutriCacheNames.USER_ME, keyGenerator = "userIdCacheKeyGenerator")
     public UserResponse acceptTerms(AcceptTermsRequest request) {
+        validateLegalVersions(request);
+        if (!Boolean.TRUE.equals(request.healthEligibilityAccepted())) {
+            throw new BusinessException("É necessário confirmar a elegibilidade para sugestões automáticas de plano.");
+        }
+
         var entity = currentUser.get();
         LocalDateTime now = LocalDateTime.now();
         entity.setTermsAcceptedAt(now);
         entity.setTermsVersion(request.termsVersion());
         entity.setPrivacyPolicyAcceptedAt(now);
+        entity.setPrivacyPolicyVersion(request.privacyVersion());
+        entity.setHealthEligibilityAcceptedAt(now);
+        entity.setHealthEligibilityVersion(request.healthEligibilityVersion());
         userRepository.save(entity);
+
+        String platform = request.appPlatform() != null ? request.appPlatform() : "MOBILE";
+        legalAcceptanceRepository.save(UserLegalAcceptance.record(
+                entity, LegalDocumentType.TERMS, request.termsVersion(), platform, "ONBOARDING"));
+        legalAcceptanceRepository.save(UserLegalAcceptance.record(
+                entity, LegalDocumentType.PRIVACY, request.privacyVersion(), platform, "ONBOARDING"));
+        legalAcceptanceRepository.save(UserLegalAcceptance.record(
+                entity, LegalDocumentType.HEALTH_ELIGIBILITY, request.healthEligibilityVersion(), platform, "ONBOARDING"));
+
         boolean hasProfile = nutritionProfileRepository.findByUserId(entity.getId()).isPresent();
         return responseMapper.toUserResponse(entity, hasProfile);
     }
@@ -98,5 +126,17 @@ public class UserService {
     public void deleteAccount() {
         var entity = currentUser.get();
         userRepository.delete(entity);
+    }
+
+    private void validateLegalVersions(AcceptTermsRequest request) {
+        if (!legalProperties.version().equals(request.termsVersion())) {
+            throw new BusinessException("Versão dos Termos de Uso desatualizada. Atualize o app e aceite novamente.");
+        }
+        if (!legalProperties.privacyVersion().equals(request.privacyVersion())) {
+            throw new BusinessException("Versão da Política de Privacidade desatualizada. Atualize o app e aceite novamente.");
+        }
+        if (!legalProperties.healthEligibilityVersion().equals(request.healthEligibilityVersion())) {
+            throw new BusinessException("Versão da declaração de elegibilidade desatualizada. Atualize o app e aceite novamente.");
+        }
     }
 }

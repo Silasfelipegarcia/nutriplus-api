@@ -1,6 +1,6 @@
 # Termos de Uso — NutriPlus
 
-**Versão:** 2026-06-1  
+**Versão:** 2026-06-2  
 **Última atualização:** junho de 2026
 
 ## 1. Aceitação
@@ -17,27 +17,40 @@ O NutriPlus é um aplicativo de **organização alimentar e bem-estar** que util
 - Análises de evolução corporal são **estimativas educativas**, não diagnósticos.
 - Você é responsável por validar informações importantes com um profissional.
 
-## 4. Uso adequado
+## 4. Elegibilidade para sugestões automáticas
 
-É proibido usar o app para fins ilegais, para terceiros sem autorização, ou ignorando orientação médica relevante ao seu caso (gestação, doenças metabólicas, transtornos alimentares, etc.).
+As sugestões automáticas de plano alimentar por IA **não estão disponíveis** para:
 
-## 5. Conta e dados
+- Gestantes ou lactantes;
+- Pessoas com transtorno alimentar diagnosticado ou em tratamento;
+- Pessoas em diálise ou com doença renal avançada e restrição alimentar prescrita;
+- Menores de 18 anos (o cadastro é restrito a adultos).
+
+Nesses casos, você pode utilizar outras funcionalidades do app e contratar acompanhamento com nutricionista pelo NutriPlus.
+
+Ao usar o app, você **declara** que as informações de saúde informadas são verdadeiras e que entende que as sugestões têm caráter informativo, não clínico.
+
+## 5. Uso adequado
+
+É proibido usar o app para fins ilegais, para terceiros sem autorização, ou ignorando orientação médica relevante ao seu caso.
+
+## 6. Conta e dados
 
 Você pode solicitar exclusão da conta pelo app. O tratamento de dados pessoais está na Política de Privacidade.
 
-## 6. Limitação de responsabilidade
+## 7. Limitação de responsabilidade
 
 Na extensão permitida pela lei, o NutriPlus e seus operadores não se responsabilizam por danos decorrentes do uso das sugestões do app. O serviço é fornecido "como está".
 
-## 7. Alterações
+## 8. Alterações
 
 Podemos atualizar estes Termos. Versões novas podem exigir novo aceite no app.
 
-## 8. Lei aplicável
+## 9. Lei aplicável
 
 Estes Termos são regidos pelas leis da República Federativa do Brasil.
 
-## 9. Contato
+## 10. Contato
 
 **[PREENCHER — razão social / CNPJ]**  
 E-mail: **[PREENCHER — suporte@nutriplus.com]**

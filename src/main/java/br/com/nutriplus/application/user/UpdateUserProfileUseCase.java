@@ -57,6 +57,9 @@ public class UpdateUserProfileUseCase {
                 current.termsAcceptedAt(),
                 current.termsVersion(),
                 current.privacyPolicyAcceptedAt(),
+                current.privacyPolicyVersion(),
+                current.healthEligibilityAcceptedAt(),
+                current.healthEligibilityVersion(),
                 current.createdAt(),
                 current.updatedAt(),
                 current.accessRejectedAt()

@@ -13,6 +13,9 @@ public record PlanRegenerationEligibilityResponse(
         int daysUntilReview,
         LocalDate nextReviewDue,
         boolean hasMealPlan,
-        Long pendingCycleReviewId
+        Long pendingCycleReviewId,
+        boolean aiPlanEligible,
+        String aiPlanIneligibleReason,
+        String aiPlanIneligibleMessagePt
 ) {
 }

@@ -12,6 +12,9 @@ public record UserResponse(
         String cpfMasked,
         LocalDateTime termsAcceptedAt,
         String termsVersion,
-        LocalDateTime privacyPolicyAcceptedAt
+        LocalDateTime privacyPolicyAcceptedAt,
+        String privacyPolicyVersion,
+        LocalDateTime healthEligibilityAcceptedAt,
+        String healthEligibilityVersion
 ) {
 }

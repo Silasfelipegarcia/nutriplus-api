@@ -65,6 +65,15 @@ public class LegalService {
         );
     }
 
+    @Cacheable(value = NutriCacheNames.LEGAL_DOCUMENTS, key = "#root.methodName")
+    public LegalDocumentResponse healthEligibility() {
+        return document(
+                legalProperties.healthEligibilityVersion(),
+                "Declaração de Elegibilidade",
+                "legal/HEALTH_ELIGIBILITY.md"
+        );
+    }
+
     private LegalDocumentResponse document(String version, String title, String classpath) {
         try {
             ClassPathResource resource = new ClassPathResource(classpath);

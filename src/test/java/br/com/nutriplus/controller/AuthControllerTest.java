@@ -62,7 +62,7 @@ class AuthControllerTest extends WebMvcTestSupport {
 
     @Test
     void loginReturnsOk() throws Exception {
-        var user = new UserResponse(1L, "Test", "test@nutriplus.com", LocalDateTime.now(), false, null, null, null, null, null);
+        var user = new UserResponse(1L, "Test", "test@nutriplus.com", LocalDateTime.now(), false, null, null, null, null, null, null, null, null);
         when(authService.login(any(LoginRequest.class)))
                 .thenReturn(new AuthResponse("access", "refresh", "Bearer", 3600L, user));
 

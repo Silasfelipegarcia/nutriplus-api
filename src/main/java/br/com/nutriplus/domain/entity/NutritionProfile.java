@@ -160,6 +160,28 @@ public class NutritionProfile {
     @Column(name = "health_notes", columnDefinition = "TEXT")
     private String healthNotes;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "pregnancy_status", nullable = false)
+    private PregnancyStatus pregnancyStatus = PregnancyStatus.NONE;
+
+    @Column(name = "eating_disorder_risk", nullable = false)
+    private boolean eatingDisorderRisk = false;
+
+    @Column(name = "severe_renal_restriction", nullable = false)
+    private boolean severeRenalRestriction = false;
+
+    @Column(name = "ai_plan_eligible", nullable = false)
+    private boolean aiPlanEligible = true;
+
+    @Column(name = "ai_plan_ineligible_reason", length = 30)
+    private String aiPlanIneligibleReason;
+
+    @Column(name = "health_eligibility_ack_at")
+    private LocalDateTime healthEligibilityAckAt;
+
+    @Column(name = "health_eligibility_version", length = 20)
+    private String healthEligibilityVersion;
+
     @Column(name = "eats_breakfast", nullable = false)
     private boolean eatsBreakfast = true;
 
@@ -236,6 +258,13 @@ public class NutritionProfile {
         this.medications = builder.medications;
         this.allergies = builder.allergies;
         this.healthNotes = builder.healthNotes;
+        this.pregnancyStatus = builder.pregnancyStatus != null ? builder.pregnancyStatus : PregnancyStatus.NONE;
+        this.eatingDisorderRisk = builder.eatingDisorderRisk;
+        this.severeRenalRestriction = builder.severeRenalRestriction;
+        this.aiPlanEligible = builder.aiPlanEligible;
+        this.aiPlanIneligibleReason = builder.aiPlanIneligibleReason;
+        this.healthEligibilityAckAt = builder.healthEligibilityAckAt;
+        this.healthEligibilityVersion = builder.healthEligibilityVersion;
         this.eatsBreakfast = builder.eatsBreakfast;
         this.eatsLunch = builder.eatsLunch;
         this.eatsAfternoonSnack = builder.eatsAfternoonSnack;
@@ -610,6 +639,62 @@ public class NutritionProfile {
         this.healthNotes = healthNotes;
     }
 
+    public PregnancyStatus getPregnancyStatus() {
+        return pregnancyStatus;
+    }
+
+    public void setPregnancyStatus(PregnancyStatus pregnancyStatus) {
+        this.pregnancyStatus = pregnancyStatus;
+    }
+
+    public boolean isEatingDisorderRisk() {
+        return eatingDisorderRisk;
+    }
+
+    public void setEatingDisorderRisk(boolean eatingDisorderRisk) {
+        this.eatingDisorderRisk = eatingDisorderRisk;
+    }
+
+    public boolean isSevereRenalRestriction() {
+        return severeRenalRestriction;
+    }
+
+    public void setSevereRenalRestriction(boolean severeRenalRestriction) {
+        this.severeRenalRestriction = severeRenalRestriction;
+    }
+
+    public boolean isAiPlanEligible() {
+        return aiPlanEligible;
+    }
+
+    public void setAiPlanEligible(boolean aiPlanEligible) {
+        this.aiPlanEligible = aiPlanEligible;
+    }
+
+    public String getAiPlanIneligibleReason() {
+        return aiPlanIneligibleReason;
+    }
+
+    public void setAiPlanIneligibleReason(String aiPlanIneligibleReason) {
+        this.aiPlanIneligibleReason = aiPlanIneligibleReason;
+    }
+
+    public LocalDateTime getHealthEligibilityAckAt() {
+        return healthEligibilityAckAt;
+    }
+
+    public void setHealthEligibilityAckAt(LocalDateTime healthEligibilityAckAt) {
+        this.healthEligibilityAckAt = healthEligibilityAckAt;
+    }
+
+    public String getHealthEligibilityVersion() {
+        return healthEligibilityVersion;
+    }
+
+    public void setHealthEligibilityVersion(String healthEligibilityVersion) {
+        this.healthEligibilityVersion = healthEligibilityVersion;
+    }
+
     public boolean isEatsBreakfast() {
         return eatsBreakfast;
     }
@@ -720,6 +805,13 @@ public class NutritionProfile {
         private String medications;
         private String allergies;
         private String healthNotes;
+        private PregnancyStatus pregnancyStatus = PregnancyStatus.NONE;
+        private boolean eatingDisorderRisk;
+        private boolean severeRenalRestriction;
+        private boolean aiPlanEligible = true;
+        private String aiPlanIneligibleReason;
+        private LocalDateTime healthEligibilityAckAt;
+        private String healthEligibilityVersion;
         private boolean eatsBreakfast = true;
         private boolean eatsLunch = true;
         private boolean eatsAfternoonSnack = false;
@@ -931,6 +1023,26 @@ public class NutritionProfile {
 
         public Builder updatedAt(LocalDateTime updatedAt) {
             this.updatedAt = updatedAt;
+            return this;
+        }
+
+        public Builder pregnancyStatus(PregnancyStatus pregnancyStatus) {
+            this.pregnancyStatus = pregnancyStatus;
+            return this;
+        }
+
+        public Builder eatingDisorderRisk(boolean eatingDisorderRisk) {
+            this.eatingDisorderRisk = eatingDisorderRisk;
+            return this;
+        }
+
+        public Builder severeRenalRestriction(boolean severeRenalRestriction) {
+            this.severeRenalRestriction = severeRenalRestriction;
+            return this;
+        }
+
+        public Builder aiPlanEligible(boolean aiPlanEligible) {
+            this.aiPlanEligible = aiPlanEligible;
             return this;
         }
 

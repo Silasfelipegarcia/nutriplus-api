@@ -47,7 +47,9 @@ public class PlanRegenerationPolicyService {
         this.progressScheduleService = progressScheduleService;
     }
 
-    public PlanRegenerationEligibilityResponse getEligibility(User user, NutritionProfile profile) {
+    public PlanRegenerationEligibilityResponse getEligibility(User user,
+                                                            NutritionProfile profile,
+                                                            HealthEligibilityService.EligibilityInfo eligibilityInfo) {
         boolean hasMealPlan = !mealPlanRepository.findByUserIdOrderByCreatedAtDesc(user.getId()).isEmpty();
         ProgressScheduleResponse schedule = progressScheduleService.getScheduleForUser(user.getId(), profile);
         LocalDate today = LocalDate.now();
@@ -87,7 +89,10 @@ public class PlanRegenerationPolicyService {
                 schedule.due() ? 0 : schedule.daysUntilDue(),
                 schedule.nextDueOn(),
                 hasMealPlan,
-                pendingReviewId
+                pendingReviewId,
+                eligibilityInfo.aiPlanEligible(),
+                eligibilityInfo.aiPlanIneligibleReason(),
+                eligibilityInfo.aiPlanIneligibleMessagePt()
         );
     }
 

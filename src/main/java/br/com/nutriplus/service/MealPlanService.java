@@ -59,6 +59,7 @@ public class MealPlanService {
     private final UserRepository userRepository;
     private final MealPlanGenerationQuotaService generationQuotaService;
     private final PlanRegenerationPolicyService regenerationPolicyService;
+    private final HealthEligibilityService healthEligibilityService;
 
     public MealPlanService(CurrentUser currentUser,
                            NutritionProfileService nutritionProfileService,
@@ -70,7 +71,8 @@ public class MealPlanService {
                            AuthorizationService authorizationService,
                            UserRepository userRepository,
                            MealPlanGenerationQuotaService generationQuotaService,
-                           PlanRegenerationPolicyService regenerationPolicyService) {
+                           PlanRegenerationPolicyService regenerationPolicyService,
+                           HealthEligibilityService healthEligibilityService) {
         this.currentUser = currentUser;
         this.nutritionProfileService = nutritionProfileService;
         this.mealPlanRepository = mealPlanRepository;
@@ -82,12 +84,14 @@ public class MealPlanService {
         this.userRepository = userRepository;
         this.generationQuotaService = generationQuotaService;
         this.regenerationPolicyService = regenerationPolicyService;
+        this.healthEligibilityService = healthEligibilityService;
     }
 
     public PlanRegenerationEligibilityResponse getRegenerationEligibility() {
         User user = currentUser.get();
         NutritionProfile profile = nutritionProfileService.getEntityForUser(user);
-        return regenerationPolicyService.getEligibility(user, profile);
+        var eligibilityInfo = healthEligibilityService.getEligibilityInfo(profile);
+        return regenerationPolicyService.getEligibility(user, profile, eligibilityInfo);
     }
 
     @Transactional
@@ -105,6 +109,7 @@ public class MealPlanService {
 
     private MealPlanGenerationStatusResponse enqueueGenerationInternal(User user, MealPlanGenerateRequest request) {
         NutritionProfile profile = nutritionProfileService.getEntityForUser(user);
+        healthEligibilityService.assertAiPlanAllowed(profile);
         regenerationPolicyService.assertAllowed(user, profile, request.reason(), request.reviewId());
         generationQuotaService.assertCanGenerate(user);
 

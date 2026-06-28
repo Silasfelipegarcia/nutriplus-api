@@ -37,6 +37,7 @@ public class NutritionProfileService {
     private final ResponseMapper responseMapper;
     private final ObjectMapper objectMapper;
     private final SubscriptionService subscriptionService;
+    private final HealthEligibilityService healthEligibilityService;
 
     public NutritionProfileService(CurrentUser currentUser,
                                    NutritionProfileRepository nutritionProfileRepository,
@@ -45,7 +46,8 @@ public class NutritionProfileService {
                                    AiRequestLogService aiRequestLogService,
                                    ResponseMapper responseMapper,
                                    ObjectMapper objectMapper,
-                                   SubscriptionService subscriptionService) {
+                                   SubscriptionService subscriptionService,
+                                   HealthEligibilityService healthEligibilityService) {
         this.currentUser = currentUser;
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.trainingService = trainingService;
@@ -54,6 +56,7 @@ public class NutritionProfileService {
         this.responseMapper = responseMapper;
         this.objectMapper = objectMapper;
         this.subscriptionService = subscriptionService;
+        this.healthEligibilityService = healthEligibilityService;
     }
 
     @Transactional
@@ -179,6 +182,12 @@ public class NutritionProfileService {
         profile.setMedications(request.medications());
         profile.setAllergies(request.allergies());
         profile.setHealthNotes(request.healthNotes());
+        healthEligibilityService.evaluateAndApply(
+                profile,
+                request.pregnancyStatus(),
+                request.eatingDisorderRisk(),
+                request.severeRenalRestriction()
+        );
     }
 
     private int resolveAge(NutritionProfileRequest request) {

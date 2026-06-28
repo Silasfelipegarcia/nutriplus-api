@@ -63,6 +63,11 @@ public record NutritionProfileResponse(
         String medications,
         String allergies,
         String healthNotes,
+        String pregnancyStatus,
+        boolean eatingDisorderRisk,
+        boolean severeRenalRestriction,
+        boolean aiPlanEligible,
+        String aiPlanIneligibleReason,
         HealthIndicatorResponse bmiSnapshot,
         SubscriptionStatusResponse subscriptionStatus
 ) {

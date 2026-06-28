@@ -19,6 +19,9 @@ public record User(
         LocalDateTime termsAcceptedAt,
         String termsVersion,
         LocalDateTime privacyPolicyAcceptedAt,
+        String privacyPolicyVersion,
+        LocalDateTime healthEligibilityAcceptedAt,
+        String healthEligibilityVersion,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
         LocalDateTime accessRejectedAt

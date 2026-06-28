@@ -42,7 +42,10 @@ public class ResponseMapper {
                 cpfProtectionService.maskFromEncrypted(user.getCpfEncrypted()),
                 user.getTermsAcceptedAt(),
                 user.getTermsVersion(),
-                user.getPrivacyPolicyAcceptedAt()
+                user.getPrivacyPolicyAcceptedAt(),
+                user.getPrivacyPolicyVersion(),
+                user.getHealthEligibilityAcceptedAt(),
+                user.getHealthEligibilityVersion()
         );
     }
 
@@ -57,7 +60,10 @@ public class ResponseMapper {
                 cpfProtectionService.maskFromEncrypted(user.cpfEncrypted()),
                 user.termsAcceptedAt(),
                 user.termsVersion(),
-                user.privacyPolicyAcceptedAt()
+                user.privacyPolicyAcceptedAt(),
+                user.privacyPolicyVersion(),
+                user.healthEligibilityAcceptedAt(),
+                user.healthEligibilityVersion()
         );
     }
 
@@ -126,6 +132,11 @@ public class ResponseMapper {
                 profile.getMedications(),
                 profile.getAllergies(),
                 profile.getHealthNotes(),
+                profile.getPregnancyStatus() != null ? profile.getPregnancyStatus().name() : "NONE",
+                profile.isEatingDisorderRisk(),
+                profile.isSevereRenalRestriction(),
+                profile.isAiPlanEligible(),
+                profile.getAiPlanIneligibleReason(),
                 healthReferenceService.buildBmiSnapshot(profile),
                 subscriptionStatus
         );

@@ -2,7 +2,7 @@
 
 ## Fluxo recomendado (web e mobile)
 
-1. Assistente → tipo de perfil → **treino (se atleta)** → preferências → métricas → dieta → saúde/rotina
+1. Assistente → tipo de perfil → **treino (se atleta)** → preferências → métricas → dieta → **elegibilidade** → saúde/rotina
 2. Persistência final:
    - **Modo geral:** `POST /nutrition-profile`
    - **Modo atleta:** `POST /onboarding/complete` (orquestra perfil + treino + `apply` em uma transação)
@@ -40,4 +40,4 @@ Para atletas, use `POST /onboarding/complete` para evitar estados intermediário
 - Treino: `GET/PUT /training/profile` + `POST /training/apply`
 - Perfil: `POST /nutrition-profile` (recalcula sem treino; atleta deve aplicar treino depois se necessário)
 
-Ver também [TRAINING_MODE.md](./TRAINING_MODE.md).
+Ver também [TRAINING_MODE.md](./TRAINING_MODE.md) e [HEALTH_ELIGIBILITY.md](./HEALTH_ELIGIBILITY.md).

@@ -6,15 +6,19 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public record LegalProperties(
         String version,
         String privacyVersion,
+        String healthEligibilityVersion,
         String termsTitle,
         String privacyTitle
 ) {
     public LegalProperties {
         if (version == null || version.isBlank()) {
-            version = "2026-06-1";
+            version = "2026-06-2";
         }
         if (privacyVersion == null || privacyVersion.isBlank()) {
             privacyVersion = version;
+        }
+        if (healthEligibilityVersion == null || healthEligibilityVersion.isBlank()) {
+            healthEligibilityVersion = version;
         }
         if (termsTitle == null || termsTitle.isBlank()) {
             termsTitle = "Termos de Uso";

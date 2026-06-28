@@ -41,7 +41,10 @@ public record NutritionProfileRequest(
         @Size(max = 2000) String healthConditions,
         @Size(max = 2000) String medications,
         @Size(max = 2000) String allergies,
-        @Size(max = 2000) String healthNotes
+        @Size(max = 2000) String healthNotes,
+        PregnancyStatus pregnancyStatus,
+        Boolean eatingDisorderRisk,
+        Boolean severeRenalRestriction
 ) {
     public CalculationMethod resolvedCalculationMethod() {
         return calculationMethod != null ? calculationMethod : CalculationMethod.ESTIMATE;

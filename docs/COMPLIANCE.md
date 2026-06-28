@@ -4,8 +4,11 @@ Use após cada release que toque em IA, dados de saúde ou textos legais.
 
 ## Produto
 
-- [ ] Termos e Política de Privacidade com versão atual (`nutriplus.legal.version`)
-- [ ] Aceite duplo no onboarding (termos + privacidade)
+- [ ] Termos e Política de Privacidade com versão atual (`nutriplus.legal.version` = `2026-06-2`)
+- [ ] Aceite triplo no onboarding (termos + privacidade + elegibilidade de saúde)
+- [ ] Questionário de elegibilidade (gravidez, TCA, renal) antes das condições clínicas
+- [ ] Bloqueio server-side de `POST /meal-plans/generate` quando `ai_plan_eligible=false`
+- [ ] Registro auditável em `user_legal_acceptances`
 - [ ] Links legais no Perfil
 - [ ] Exclusão de conta funcional (`DELETE /users/me`)
 - [ ] Disclaimer visível no plano alimentar

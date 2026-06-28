@@ -1,6 +1,6 @@
 # Política de Privacidade — NutriPlus
 
-**Versão:** 2026-06-1  
+**Versão:** 2026-06-2  
 **Última atualização:** junho de 2026
 
 Esta Política descreve como o NutriPlus trata dados pessoais em conformidade com a **Lei Geral de Proteção de Dados (LGPD — Lei nº 13.709/2018)**.
@@ -15,16 +15,18 @@ E-mail do encarregado (DPO): **[PREENCHER — privacidade@nutriplus.com]**
 
 | Categoria | Exemplos |
 |-----------|----------|
-| Cadastro | Nome, e-mail, senha (armazenada com hash) |
+| Cadastro | Nome, e-mail, CPF (criptografado em repouso), senha (armazenada com hash) |
 | Perfil nutricional | Idade, sexo, peso, altura, metas, preferências alimentares |
-| Dados sensíveis (art. 11 LGPD) | Peso, medidas corporais, % gordura informado por você, check-ins de refeições |
+| Dados sensíveis (art. 11 LGPD) | Peso, medidas corporais, condições de saúde, alergias, medicamentos, status gestacional/lactação, impedimentos a dietas rígidas, check-ins de refeições |
+| Aceites legais | Versão e data de aceite de Termos, Privacidade e Declaração de Elegibilidade (registro auditável) |
 | Uso do app | Logs técnicos, identificadores de sessão, chamadas à IA (auditoria) |
 | Opcional | Foto de perfil |
 
 ## 3. Finalidades
 
-- Criar e manter sua conta
-- Calcular metas nutricionais e sugerir planos alimentares
+- Criar e manter sua conta e identificar usuários de forma única (CPF)
+- Calcular metas nutricionais e sugerir planos alimentares (quando elegível)
+- Avaliar elegibilidade para sugestões automáticas por IA
 - Acompanhar hábitos e evolução corporal (estimativas)
 - Segurança, suporte e melhoria do serviço
 - Cumprir obrigações legais
@@ -47,7 +49,7 @@ Podemos compartilhar dados com:
 
 ## 6. Retenção
 
-Mantemos os dados enquanto sua conta estiver ativa. Após exclusão da conta, removemos ou anonimizamos dados em prazo razoável, salvo obrigação legal de retenção.
+Mantemos os dados enquanto sua conta estiver ativa. Após exclusão da conta, removemos ou anonimizamos dados em prazo razoável, salvo obrigação legal de retenção. Registros de aceite legal podem ser mantidos pelo prazo necessário para comprovação de consentimento.
 
 ## 7. Seus direitos (art. 18 LGPD)
 
@@ -55,11 +57,11 @@ Você pode solicitar: confirmação de tratamento, acesso, correção, exclusão
 
 ## 8. Segurança
 
-Utilizamos HTTPS, autenticação por token, hash de senha e controles de acesso. Nenhum sistema é 100% seguro; notifique-nos em caso de incidente.
+Utilizamos HTTPS, autenticação por token, hash de senha, criptografia do CPF (AES-256) e mascaramento nas respostas da API. O CPF completo não é exibido após o cadastro. Nenhum sistema é 100% seguro; notifique-nos em caso de incidente.
 
 ## 9. Crianças e adolescentes
 
-O NutriPlus é destinado a maiores de 18 anos.
+O NutriPlus é destinado exclusivamente a maiores de 18 anos. Não coletamos intencionalmente dados de menores.
 
 ## 10. Alterações
 

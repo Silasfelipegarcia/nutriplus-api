@@ -54,6 +54,12 @@ class TrainingServiceMacrosTest {
     private ResponseMapper responseMapper;
     @Mock
     private CoachInsightService coachInsightService;
+    @Mock
+    private AthleteAccessService athleteAccessService;
+    @Mock
+    private SubscriptionService subscriptionService;
+    @Mock
+    private PlanRegenerationPolicyService regenerationPolicyService;
 
     @InjectMocks
     private TrainingService trainingService;
@@ -80,6 +86,7 @@ class TrainingServiceMacrosTest {
                 .build();
 
         when(currentUser.get()).thenReturn(user);
+        when(athleteAccessService.hasAthleteAccess(user)).thenReturn(true);
         when(nutritionProfileRepository.findByUserId(1L)).thenReturn(Optional.of(profile));
         when(nutritionProfileRepository.save(any(NutritionProfile.class))).thenAnswer(inv -> inv.getArgument(0));
         when(coachInsightService.trainingReview(any(), any())).thenReturn(null);

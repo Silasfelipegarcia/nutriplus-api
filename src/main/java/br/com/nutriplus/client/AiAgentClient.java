@@ -241,6 +241,12 @@ public class AiAgentClient {
         if (profile.getHealthNotes() != null && !profile.getHealthNotes().isBlank()) {
             body.put("healthNotes", profile.getHealthNotes());
         }
+        body.put("aiPlanEligible", profile.isAiPlanEligible());
+        if (profile.getPregnancyStatus() != null) {
+            body.put("pregnancyStatus", profile.getPregnancyStatus().name());
+        }
+        body.put("eatingDisorderRisk", profile.isEatingDisorderRisk());
+        body.put("severeRenalRestriction", profile.isSevereRenalRestriction());
         return body;
     }
 

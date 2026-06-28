@@ -29,6 +29,7 @@ import br.com.nutriplus.repository.MealPlanRepository;
 import br.com.nutriplus.repository.MealRepository;
 import br.com.nutriplus.repository.NutritionProfileRepository;
 import br.com.nutriplus.security.CurrentUser;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.cache.annotation.CacheEvict;
@@ -68,7 +69,7 @@ public class CheckinService {
                           MealLoader mealLoader,
                           AiAgentClient aiAgentClient,
                           CoachInsightService coachInsightService,
-                          TrainingService trainingService) {
+                          @Lazy TrainingService trainingService) {
         this.currentUser = currentUser;
         this.mealPlanRepository = mealPlanRepository;
         this.mealRepository = mealRepository;

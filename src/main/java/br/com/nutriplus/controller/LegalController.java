@@ -36,6 +36,11 @@ public class LegalController {
         return legalService.dataSharingConsent();
     }
 
+    @GetMapping("/health-eligibility")
+    public LegalDocumentResponse healthEligibility() {
+        return legalService.healthEligibility();
+    }
+
     @GetMapping("/nutritionist-terms")
     public LegalDocumentResponse nutritionistTerms() {
         return legalService.nutritionistTerms();

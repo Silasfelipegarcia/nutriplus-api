@@ -65,7 +65,7 @@ class AdminPerformanceServiceTest {
         when(environment.getProperty("spring.data.redis.host")).thenReturn(null);
         when(featureFlagService.listPublic()).thenReturn(List.of());
         when(userService.getMe()).thenReturn(new UserResponse(
-                1L, "Admin", "admin@test.local", null, false, null, null, null, null, null));
+                1L, "Admin", "admin@test.local", null, false, null, null, null, null, null, null, null, null));
         when(appBootstrapService.bootstrap()).thenReturn(new AppBootstrapResponse(
                 null, null, null, null, null, null, null, null));
         when(mealPlanService.getGenerationStatus()).thenReturn(

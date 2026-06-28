@@ -101,6 +101,15 @@ public class User {
     @Column(name = "privacy_policy_accepted_at")
     private LocalDateTime privacyPolicyAcceptedAt;
 
+    @Column(name = "privacy_policy_version", length = 20)
+    private String privacyPolicyVersion;
+
+    @Column(name = "health_eligibility_accepted_at")
+    private LocalDateTime healthEligibilityAcceptedAt;
+
+    @Column(name = "health_eligibility_version", length = 20)
+    private String healthEligibilityVersion;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "subscription_plan", nullable = false, length = 30)
     private SubscriptionPlan subscriptionPlan = SubscriptionPlan.FREE;
@@ -164,6 +173,9 @@ public class User {
         this.termsAcceptedAt = builder.termsAcceptedAt;
         this.termsVersion = builder.termsVersion;
         this.privacyPolicyAcceptedAt = builder.privacyPolicyAcceptedAt;
+        this.privacyPolicyVersion = builder.privacyPolicyVersion;
+        this.healthEligibilityAcceptedAt = builder.healthEligibilityAcceptedAt;
+        this.healthEligibilityVersion = builder.healthEligibilityVersion;
         this.createdAt = builder.createdAt;
         this.updatedAt = builder.updatedAt;
     }
@@ -406,6 +418,30 @@ public class User {
         this.privacyPolicyAcceptedAt = privacyPolicyAcceptedAt;
     }
 
+    public String getPrivacyPolicyVersion() {
+        return privacyPolicyVersion;
+    }
+
+    public void setPrivacyPolicyVersion(String privacyPolicyVersion) {
+        this.privacyPolicyVersion = privacyPolicyVersion;
+    }
+
+    public LocalDateTime getHealthEligibilityAcceptedAt() {
+        return healthEligibilityAcceptedAt;
+    }
+
+    public void setHealthEligibilityAcceptedAt(LocalDateTime healthEligibilityAcceptedAt) {
+        this.healthEligibilityAcceptedAt = healthEligibilityAcceptedAt;
+    }
+
+    public String getHealthEligibilityVersion() {
+        return healthEligibilityVersion;
+    }
+
+    public void setHealthEligibilityVersion(String healthEligibilityVersion) {
+        this.healthEligibilityVersion = healthEligibilityVersion;
+    }
+
     public SubscriptionPlan getSubscriptionPlan() {
         return subscriptionPlan;
     }
@@ -518,6 +554,9 @@ public class User {
         private LocalDateTime termsAcceptedAt;
         private String termsVersion;
         private LocalDateTime privacyPolicyAcceptedAt;
+        private String privacyPolicyVersion;
+        private LocalDateTime healthEligibilityAcceptedAt;
+        private String healthEligibilityVersion;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
 
