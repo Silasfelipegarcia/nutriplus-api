@@ -7,7 +7,7 @@ public class EmailProperties {
 
     private boolean enabled = true;
     private String resendApiKey = "";
-    private String from = "noreply@nutriplus.com.br";
+    private String from = "noreply@nutriplus.app.br";
     private String fromName = "Nutri+";
     private String frontendUrl = "http://localhost:4200";
     private int resetTokenTtlHours = 1;

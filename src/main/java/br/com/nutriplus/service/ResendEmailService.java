@@ -41,6 +41,14 @@ public class ResendEmailService implements EmailSender {
         dispatch(email, subject, html, text, "beta-access");
     }
 
+    @Override
+    public void sendTestEmail(String email, String name) {
+        String subject = "Teste de e-mail — Nutri+";
+        String html = buildTestEmailHtml(name);
+        String text = buildTestEmailText(name);
+        dispatch(email, subject, html, text, "test");
+    }
+
     private void dispatch(String email, String subject, String html, String text, String kind) {
         if (!emailProperties.isEnabled() || resend == null) {
             log.info("E-mail {} (dev/log): destinatario={} assunto={}", kind, email, subject);
@@ -121,6 +129,31 @@ public class ResendEmailService implements EmailSender {
                 </body>
                 </html>
                 """.formatted(greeting, intro, loginLink, loginLink, loginLink);
+    }
+
+    private String buildTestEmailHtml(String name) {
+        String greeting = greetingHtml(name);
+        return """
+                <!DOCTYPE html>
+                <html lang="pt-BR">
+                <body style="font-family: Arial, sans-serif; line-height: 1.5; color: #1f2937;">
+                  <p>%s</p>
+                  <p>Este é um e-mail de teste do Nutri+. Se você recebeu esta mensagem, o Resend está configurado corretamente.</p>
+                  <p>— Equipe Nutri+</p>
+                </body>
+                </html>
+                """.formatted(greeting);
+    }
+
+    private String buildTestEmailText(String name) {
+        String greeting = greetingText(name);
+        return """
+                %s
+
+                Este é um e-mail de teste do Nutri+. Se você recebeu esta mensagem, o Resend está configurado corretamente.
+
+                — Equipe Nutri+
+                """.formatted(greeting);
     }
 
     private String buildBetaApprovedText(String name, String loginLink, UserRole role) {
