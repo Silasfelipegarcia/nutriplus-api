@@ -7,6 +7,7 @@ import br.com.nutriplus.domain.enums.SubscriptionPlans;
 import br.com.nutriplus.exception.BusinessException;
 import br.com.nutriplus.exception.SubscriptionRequiredException;
 import br.com.nutriplus.infrastructure.config.MealPlanGenerationQuotaProperties;
+import br.com.nutriplus.infrastructure.i18n.UserMessages;
 import br.com.nutriplus.repository.MealPlanGenerationJobRepository;
 import org.springframework.stereotype.Service;
 
@@ -31,18 +32,24 @@ public class MealPlanGenerationQuotaService {
     private final SubscriptionService subscriptionService;
     private final MealPlanGenerationJobRepository jobRepository;
     private final MealPlanGenerationQuotaProperties properties;
+    private final FeatureFlagService featureFlagService;
 
     public MealPlanGenerationQuotaService(BillingEnforcementService billingEnforcementService,
                                           SubscriptionService subscriptionService,
                                           MealPlanGenerationJobRepository jobRepository,
-                                          MealPlanGenerationQuotaProperties properties) {
+                                          MealPlanGenerationQuotaProperties properties,
+                                          FeatureFlagService featureFlagService) {
         this.billingEnforcementService = billingEnforcementService;
         this.subscriptionService = subscriptionService;
         this.jobRepository = jobRepository;
         this.properties = properties;
+        this.featureFlagService = featureFlagService;
     }
 
     public void assertCanGenerate(User user) {
+        if (featureFlagService.isEnabled("UNLIMITED_PLAN_REGEN")) {
+            return;
+        }
         subscriptionService.expirarSeNecessario(user);
 
         int dailyLimit = resolveDailyLimit(user);
@@ -113,31 +120,21 @@ public class MealPlanGenerationQuotaService {
 
     private BusinessException dailyQuotaExceeded(User user, int dailyLimit) {
         if (!billingEnforcementService.isBillingEnabled()) {
-            return new BusinessException(
-                    "Você atingiu o limite de " + dailyLimit + " gerações de plano por dia. "
-                            + "Tente novamente amanhã.");
+            return new BusinessException(UserMessages.dailyQuotaExceeded(dailyLimit));
         }
         if (hasUnlimitedMonthlyGenerations(user)) {
-            return new BusinessException(
-                    "Você já gerou " + dailyLimit + " planos hoje. "
-                            + "Amanhã você pode gerar de novo — ou ajuste preferências sem regerar o plano inteiro.");
+            return new BusinessException(UserMessages.dailyQuotaExceeded(dailyLimit));
         }
-        return new BusinessException(
-                "Você já gerou seu plano de hoje. "
-                        + "Tente novamente amanhã ou faça upgrade para o plano Atleta para mais regenerações diárias.");
+        return new BusinessException(UserMessages.dailyQuotaExceededUpgrade());
     }
 
     private SubscriptionRequiredException monthlyQuotaExceeded(User user) {
         SubscriptionPlan plan = subscriptionService.resolverPlanoEfetivo(user);
         if (plan == SubscriptionPlan.FREE) {
-            return new SubscriptionRequiredException(
-                    "Você atingiu o limite de 1 plano por mês no plano gratuito. "
-                            + "Assine o Nutri+ Essencial ou inicie o trial de 7 dias.");
+            return new SubscriptionRequiredException(UserMessages.monthlyQuotaFree());
         }
         if (SubscriptionPlans.isEssentialPlan(plan)) {
-            return new SubscriptionRequiredException(
-                    "Você já gerou seu plano deste mês no Essencial. "
-                            + "Faça upgrade para Atleta para regenerações diárias extras.");
+            return new SubscriptionRequiredException(UserMessages.monthlyQuotaEssential());
         }
         return new SubscriptionRequiredException(
                 "Limite de gerações de plano atingido. Assine um plano para continuar.");

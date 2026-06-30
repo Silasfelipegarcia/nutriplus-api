@@ -4,6 +4,7 @@ import br.com.nutriplus.domain.entity.NutritionProfile;
 import br.com.nutriplus.domain.enums.AiPlanIneligibleReason;
 import br.com.nutriplus.domain.enums.PregnancyStatus;
 import br.com.nutriplus.exception.BusinessException;
+import br.com.nutriplus.infrastructure.i18n.UserMessages;
 import br.com.nutriplus.infrastructure.config.LegalProperties;
 import org.springframework.stereotype.Service;
 
@@ -91,16 +92,11 @@ public class HealthEligibilityService {
 
     private String messageFor(AiPlanIneligibleReason reason) {
         return switch (reason) {
-            case PREGNANCY -> "Planos automáticos por IA não estão disponíveis durante a gravidez. "
-                    + "Consulte um nutricionista pelo NutriPlus para acompanhamento personalizado.";
-            case BREASTFEEDING -> "Planos automáticos por IA não estão disponíveis durante a amamentação. "
-                    + "Consulte um nutricionista pelo NutriPlus para acompanhamento personalizado.";
-            case EATING_DISORDER -> "Planos automáticos por IA não estão disponíveis para quem tem transtorno alimentar "
-                    + "diagnosticado ou em tratamento. Consulte um nutricionista pelo NutriPlus.";
-            case SEVERE_RENAL -> "Planos automáticos por IA não estão disponíveis para restrições renais graves "
-                    + "prescritas. Consulte um nutricionista ou médico pelo NutriPlus.";
-            case MULTIPLE -> "Seu perfil indica condições que exigem acompanhamento profissional. "
-                    + "Planos automáticos por IA não estão disponíveis — consulte um nutricionista pelo NutriPlus.";
+            case PREGNANCY -> UserMessages.aiPlanIneligible(UserMessages.AiPlanIneligibleCode.PREGNANCY);
+            case BREASTFEEDING -> UserMessages.aiPlanIneligible(UserMessages.AiPlanIneligibleCode.BREASTFEEDING);
+            case EATING_DISORDER -> UserMessages.aiPlanIneligible(UserMessages.AiPlanIneligibleCode.EATING_DISORDER);
+            case SEVERE_RENAL -> UserMessages.aiPlanIneligible(UserMessages.AiPlanIneligibleCode.SEVERE_RENAL);
+            case MULTIPLE -> UserMessages.aiPlanIneligible(UserMessages.AiPlanIneligibleCode.MULTIPLE);
         };
     }
 }
