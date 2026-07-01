@@ -54,6 +54,7 @@ public class MealPlanGenerationProcessor {
     private final AuditLogService auditLogService;
     private final NutriCacheEvictionService cacheEvictionService;
     private final PlanRegenerationPolicyService regenerationPolicyService;
+    private final TrainingService trainingService;
 
     public MealPlanGenerationProcessor(MealPlanGenerationJobRepository jobRepository,
                                        UserRepository userRepository,
@@ -68,7 +69,8 @@ public class MealPlanGenerationProcessor {
                                        ObjectMapper objectMapper,
                                        AuditLogService auditLogService,
                                        NutriCacheEvictionService cacheEvictionService,
-                                       PlanRegenerationPolicyService regenerationPolicyService) {
+                                       PlanRegenerationPolicyService regenerationPolicyService,
+                                       TrainingService trainingService) {
         this.jobRepository = jobRepository;
         this.userRepository = userRepository;
         this.nutritionProfileRepository = nutritionProfileRepository;
@@ -83,6 +85,7 @@ public class MealPlanGenerationProcessor {
         this.auditLogService = auditLogService;
         this.cacheEvictionService = cacheEvictionService;
         this.regenerationPolicyService = regenerationPolicyService;
+        this.trainingService = trainingService;
     }
 
     public void run(Long jobId, Long userId, long startMs) throws Exception {
@@ -295,6 +298,7 @@ public class MealPlanGenerationProcessor {
     }
 
     private NutritionProfile refreshMacroTargets(NutritionProfile profile) {
+        trainingService.syncTrainingDailyExtra(profile);
         AiNutritionCalculateResponse macros = aiAgentClient.calculateMacros(profile);
         profile.setBmrKcal(macros.bmrKcal());
         profile.setTdeeKcal(macros.tdeeKcal());
