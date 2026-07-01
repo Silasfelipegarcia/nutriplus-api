@@ -98,6 +98,30 @@ Optional: `K6_EMAIL` / `K6_PASSWORD` for an existing user; otherwise the script 
 
 Thresholds: `http_req_duration` p(95) &lt; 200 ms for Tier S checks.
 
+## Prod / homolog audit e stress
+
+Credenciais de conta **aprovada** com perfil nutricional completo:
+
+```bash
+export PERF_TEST_EMAIL='usuario@exemplo.com'
+export PERF_TEST_PASSWORD='...'
+
+# Audit completo (cold/warm, 5 amostras)
+python3 perf/audit-endpoints.py https://nutriplus-api-production.up.railway.app \
+  --env prod --samples 5 --skip-mutations \
+  --out perf/results/audit-prod-$(date +%Y%m%d-%H%M%S).json
+
+# Stress (k6 ramp 0→10 VUs)
+./perf/run-stress-prod.sh
+
+# Suite k6
+BASE_URL=https://nutriplus-api-production.up.railway.app ./perf/k6/run-all.sh
+```
+
+**GitHub Actions:** configure secrets `PERF_TEST_EMAIL` e `PERF_TEST_PASSWORD` no repositório `nutriplus-api` para o nightly (`k6-nightly.yml`) e stress manual (`perf-stress.yml`).
+
+Ver também [`RAILWAY_PERFORMANCE.md`](RAILWAY_PERFORMANCE.md) para cold start e min-instances.
+
 ## k6 generate flow (Tier C — manual)
 
 Requires **API + agente** running. Not run in CI by default (LLM latency).

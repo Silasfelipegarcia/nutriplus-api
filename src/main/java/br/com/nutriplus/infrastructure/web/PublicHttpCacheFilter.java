@@ -25,7 +25,9 @@ public class PublicHttpCacheFilter extends OncePerRequestFilter {
             Map.entry("/legal/ai-disclosure", "public, max-age=3600"),
             Map.entry("/legal/data-sharing-consent", "public, max-age=3600"),
             Map.entry("/legal/health-eligibility", "public, max-age=3600"),
-            Map.entry("/legal/nutritionist-terms", "public, max-age=3600")
+            Map.entry("/legal/nutritionist-terms", "public, max-age=3600"),
+            Map.entry("/feature-flags", "public, max-age=300"),
+            Map.entry("/plans", "public, max-age=300")
     );
 
     @Override

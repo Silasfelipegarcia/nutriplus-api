@@ -41,8 +41,14 @@ def render_env_section(env: str, audit: dict | None, k6_dir: Path) -> list[str]:
     summary = audit.get("summary", {})
     lines.append(f"- **Base URL:** `{audit.get('base', '—')}`")
     lines.append(f"- **Audit em:** {audit.get('generated_at', '—')}")
+    lines.append(f"- **Autenticado:** {'sim' if audit.get('authenticated') else 'não'}")
+    warmup = audit.get("warmup_health_ms") or []
+    if warmup:
+        lines.append(f"- **Warm-up /health (ms):** {warmup}")
     lines.append(f"- **Tier S p95 agregado:** {summary.get('tier_s_p95_ms', '—')} ms")
+    lines.append(f"- **Tier S warm p95:** {summary.get('tier_s_warm_p95_ms', '—')} ms")
     lines.append(f"- **Fluxo dashboard (soma p95):** {summary.get('dashboard_flow_sum_p95_ms', '—')} ms")
+    lines.append(f"- **Fluxo dashboard warm:** {summary.get('dashboard_flow_sum_warm_ms', '—')} ms")
     lines.append(f"- **Falhas críticas:** {summary.get('critical_failures', 0)}")
     lines.append("")
 
@@ -56,8 +62,8 @@ def render_env_section(env: str, audit: dict | None, k6_dir: Path) -> list[str]:
 
     lines.extend(
         [
-            "| Endpoint | Tier | p50 (ms) | p95 (ms) | SLA | Status |",
-            "|----------|------|----------|----------|-----|--------|",
+            "| Endpoint | Tier | cold (ms) | warm (ms) | p95 (ms) | SLA | Status |",
+            "|----------|------|-----------|-----------|----------|-----|--------|",
         ]
     )
     for row in sorted(audit.get("results", []), key=lambda r: (r.get("tier", ""), r.get("path", ""))):
@@ -74,8 +80,8 @@ def render_env_section(env: str, audit: dict | None, k6_dir: Path) -> list[str]:
         else:
             sla_status = "OK"
         lines.append(
-            f"| `{row.get('method')} {row.get('path')}` | {tier} | {row.get('p50_ms', '—')} | "
-            f"{p95} | {sla} | {sla_status} |"
+            f"| `{row.get('method')} {row.get('path')}` | {tier} | {row.get('cold_ms', '—')} | "
+            f"{row.get('warm_avg_ms', '—')} | {p95} | {sla} | {sla_status} |"
         )
     lines.append("")
     return lines

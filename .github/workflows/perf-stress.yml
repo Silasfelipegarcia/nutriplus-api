@@ -1,0 +1,46 @@
+name: Performance Stress (manual)
+
+on:
+  workflow_dispatch:
+    inputs:
+      base_url:
+        description: 'API base URL'
+        required: false
+        default: 'https://nutriplus-api-production.up.railway.app'
+      max_vus:
+        description: 'Max virtual users'
+        required: false
+        default: '10'
+
+jobs:
+  stress:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install k6
+        run: |
+          sudo gpg -k
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg \
+            --keyserver hkp://keyserver.ubuntu.com:80 \
+            --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" \
+            | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install -y k6
+
+      - name: Run stress test
+        env:
+          BASE_URL: ${{ github.event.inputs.base_url }}
+          STRESS_MAX_VUS: ${{ github.event.inputs.max_vus }}
+          PERF_TEST_EMAIL: ${{ secrets.PERF_TEST_EMAIL }}
+          PERF_TEST_PASSWORD: ${{ secrets.PERF_TEST_PASSWORD }}
+        run: ./perf/run-stress-prod.sh
+
+      - name: Upload stress results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stress-results
+          path: perf/k6/results/stress-prod-*.json
+          retention-days: 14

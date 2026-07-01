@@ -1,5 +1,6 @@
 package br.com.nutriplus.service;
 
+import br.com.nutriplus.infrastructure.config.NutriCacheNames;
 import br.com.nutriplus.domain.entity.AppFeatureFlag;
 import br.com.nutriplus.domain.enums.UserRole;
 import br.com.nutriplus.dto.request.UpdateFeatureFlagRequest;
@@ -8,6 +9,8 @@ import br.com.nutriplus.exception.BusinessException;
 import br.com.nutriplus.exception.ResourceNotFoundException;
 import br.com.nutriplus.repository.AppFeatureFlagRepository;
 import br.com.nutriplus.security.AuthorizationService;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +28,7 @@ public class FeatureFlagService {
         this.authorizationService = authorizationService;
     }
 
+    @Cacheable(value = NutriCacheNames.FEATURE_FLAGS, key = "'public'")
     public List<FeatureFlagResponse> listPublic() {
         return featureFlagRepository.findAllByOrderByCategoryAscCodeAsc().stream()
                 .map(this::toResponse)
@@ -43,6 +47,7 @@ public class FeatureFlagService {
     }
 
     @Transactional
+    @CacheEvict(value = NutriCacheNames.FEATURE_FLAGS, allEntries = true)
     public FeatureFlagResponse update(String code, UpdateFeatureFlagRequest request) {
         requireAdmin();
         AppFeatureFlag flag = featureFlagRepository.findByCode(code)

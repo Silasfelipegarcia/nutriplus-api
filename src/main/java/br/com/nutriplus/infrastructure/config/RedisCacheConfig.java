@@ -126,6 +126,7 @@ public class RedisCacheConfig {
         caches.add(caffeineCache(NutriCacheNames.PROGRESS_MEASUREMENT_LATEST, progressTtlSeconds));
         caches.add(caffeineCache(NutriCacheNames.SPORT_CATALOG, staticContentTtlSeconds));
         caches.add(caffeineCache(NutriCacheNames.LEGAL_DOCUMENTS, staticContentTtlSeconds));
+        caches.add(caffeineCache(NutriCacheNames.FEATURE_FLAGS, staticContentTtlSeconds));
 
         SimpleCacheManager manager = new SimpleCacheManager();
         manager.setCaches(caches);
@@ -164,6 +165,8 @@ public class RedisCacheConfig {
                 Map.entry(NutriCacheNames.SPORT_CATALOG,
                         defaults.entryTtl(Duration.ofSeconds(staticContentTtlSeconds))),
                 Map.entry(NutriCacheNames.LEGAL_DOCUMENTS,
+                        defaults.entryTtl(Duration.ofSeconds(staticContentTtlSeconds))),
+                Map.entry(NutriCacheNames.FEATURE_FLAGS,
                         defaults.entryTtl(Duration.ofSeconds(staticContentTtlSeconds)))
         );
 

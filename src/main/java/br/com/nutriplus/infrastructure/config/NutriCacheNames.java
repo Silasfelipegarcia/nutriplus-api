@@ -13,6 +13,7 @@ public final class NutriCacheNames {
     public static final String PROGRESS_MEASUREMENT_LATEST = "progressMeasurementLatest";
     public static final String SPORT_CATALOG = "sportCatalog";
     public static final String LEGAL_DOCUMENTS = "legalDocuments";
+    public static final String FEATURE_FLAGS = "featureFlags";
 
     private NutriCacheNames() {
     }
