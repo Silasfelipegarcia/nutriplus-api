@@ -148,6 +148,8 @@ class MealPlanFlowIntegrationTest extends AbstractIntegrationTest {
                         List.of(new AiMealItemDto(
                                 "Ovos mexidos",
                                 new BigDecimal("120"),
+                                "2 ovos",
+                                "unit",
                                 new BigDecimal("186"),
                                 new BigDecimal("16"),
                                 new BigDecimal("2"),
