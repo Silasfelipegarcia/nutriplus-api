@@ -124,6 +124,8 @@ class MealPlanFlowIntegrationTest extends AbstractIntegrationTest {
                 new BigDecimal("190"),
                 new BigDecimal("63"),
                 "ESTIMATE",
+                null,
+                null,
                 null
         );
     }

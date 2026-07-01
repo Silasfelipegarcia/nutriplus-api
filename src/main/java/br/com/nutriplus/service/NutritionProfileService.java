@@ -83,6 +83,8 @@ public class NutritionProfileService {
             if (macros.leanMassKg() != null) {
                 profile.setLeanMassKg(macros.leanMassKg());
             }
+            profile.setPaceWarning(macros.paceWarning());
+            profile.setEstimatedWeeklyRateKg(macros.estimatedWeeklyRateKg());
 
             profile = nutritionProfileRepository.save(profile);
 

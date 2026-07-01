@@ -142,6 +142,12 @@ public class NutritionProfile {
     @Column(name = "target_fat_g", precision = 8, scale = 2)
     private BigDecimal targetFatG;
 
+    @Column(name = "pace_warning", length = 500)
+    private String paceWarning;
+
+    @Column(name = "estimated_weekly_rate_kg", precision = 4, scale = 2)
+    private BigDecimal estimatedWeeklyRateKg;
+
     @Column(name = "wake_time")
     private LocalTime wakeTime;
 
@@ -252,6 +258,8 @@ public class NutritionProfile {
         this.targetProteinG = builder.targetProteinG;
         this.targetCarbsG = builder.targetCarbsG;
         this.targetFatG = builder.targetFatG;
+        this.paceWarning = builder.paceWarning;
+        this.estimatedWeeklyRateKg = builder.estimatedWeeklyRateKg;
         this.wakeTime = builder.wakeTime;
         this.sleepTime = builder.sleepTime;
         this.healthConditions = builder.healthConditions;
@@ -591,6 +599,22 @@ public class NutritionProfile {
         this.targetFatG = targetFatG;
     }
 
+    public String getPaceWarning() {
+        return paceWarning;
+    }
+
+    public void setPaceWarning(String paceWarning) {
+        this.paceWarning = paceWarning;
+    }
+
+    public BigDecimal getEstimatedWeeklyRateKg() {
+        return estimatedWeeklyRateKg;
+    }
+
+    public void setEstimatedWeeklyRateKg(BigDecimal estimatedWeeklyRateKg) {
+        this.estimatedWeeklyRateKg = estimatedWeeklyRateKg;
+    }
+
     public LocalTime getWakeTime() {
         return wakeTime;
     }
@@ -799,6 +823,8 @@ public class NutritionProfile {
         private BigDecimal targetProteinG;
         private BigDecimal targetCarbsG;
         private BigDecimal targetFatG;
+        private String paceWarning;
+        private BigDecimal estimatedWeeklyRateKg;
         private LocalTime wakeTime;
         private LocalTime sleepTime;
         private String healthConditions;
@@ -1013,6 +1039,16 @@ public class NutritionProfile {
 
         public Builder targetFatG(BigDecimal targetFatG) {
             this.targetFatG = targetFatG;
+            return this;
+        }
+
+        public Builder paceWarning(String paceWarning) {
+            this.paceWarning = paceWarning;
+            return this;
+        }
+
+        public Builder estimatedWeeklyRateKg(BigDecimal estimatedWeeklyRateKg) {
+            this.estimatedWeeklyRateKg = estimatedWeeklyRateKg;
             return this;
         }
 

@@ -122,6 +122,8 @@ class TrainingProfileIntegrationTest extends AbstractIntegrationTest {
                     new BigDecimal("170"),
                     new BigDecimal("55"),
                     "ESTIMATE",
+                    null,
+                    null,
                     null
             );
         };

@@ -106,6 +106,8 @@ class TrainingServiceMacrosTest {
                         new BigDecimal("200"),
                         new BigDecimal("60"),
                         "ESTIMATE",
+                        null,
+                        null,
                         null
                 ));
 
@@ -141,6 +143,8 @@ class TrainingServiceMacrosTest {
                         new BigDecimal("170"),
                         new BigDecimal("55"),
                         "ESTIMATE",
+                        null,
+                        null,
                         null
                 ));
 

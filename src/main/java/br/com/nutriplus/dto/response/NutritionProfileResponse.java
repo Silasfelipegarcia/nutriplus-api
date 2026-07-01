@@ -55,6 +55,8 @@ public record NutritionProfileResponse(
         BigDecimal targetCarbsG,
         BigDecimal targetFatG,
         BigDecimal trainingDailyExtraKcal,
+        String paceWarning,
+        BigDecimal estimatedWeeklyRateKg,
         LocalDateTime updatedAt,
         boolean athleteModeEnabled,
         String wakeTime,
