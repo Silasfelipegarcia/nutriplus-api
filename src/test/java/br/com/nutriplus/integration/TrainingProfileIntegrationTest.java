@@ -132,4 +132,5 @@ class TrainingProfileIntegrationTest extends AbstractIntegrationTest {
         headers.set("Authorization", "Bearer " + token);
         return headers;
     }
+}
 
