@@ -2,9 +2,11 @@ package br.com.nutriplus.mapper;
 
 import br.com.nutriplus.domain.entity.*;
 import br.com.nutriplus.domain.enums.ServiceMode;
+import br.com.nutriplus.domain.util.LanguageCodec;
 import br.com.nutriplus.domain.util.ServiceModeCodec;
 import br.com.nutriplus.dto.response.*;
 import br.com.nutriplus.repository.CareRatingRepository;
+import br.com.nutriplus.service.NutritionistPortfolioService;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -18,26 +20,34 @@ import java.util.Set;
 public class ProMapper {
 
     private final CareRatingRepository careRatingRepository;
+    private final NutritionistPortfolioService portfolioService;
 
-    public ProMapper(CareRatingRepository careRatingRepository) {
+    public ProMapper(CareRatingRepository careRatingRepository,
+                     NutritionistPortfolioService portfolioService) {
         this.careRatingRepository = careRatingRepository;
+        this.portfolioService = portfolioService;
     }
 
     public NutritionistPublicResponse toPublic(Nutritionist n) {
-        return toNutritionistResponse(n, false, loadRatings(List.of(n.getId())).getOrDefault(n.getId(), NutritionistRatingSummary.empty()));
+        return toNutritionistResponse(n, false, loadRatings(List.of(n.getId())).getOrDefault(n.getId(), NutritionistRatingSummary.empty()),
+                portfolioService.listForNutritionist(n.getId()));
     }
 
     public NutritionistPublicResponse toPublic(Nutritionist n, NutritionistRatingSummary rating) {
-        return toNutritionistResponse(n, false, rating);
+        return toNutritionistResponse(n, false, rating, portfolioService.listForNutritionist(n.getId()));
     }
 
     public List<NutritionistPublicResponse> toPublicList(List<Nutritionist> nutritionists) {
         if (nutritionists.isEmpty()) {
             return List.of();
         }
-        Map<Long, NutritionistRatingSummary> ratings = loadRatings(nutritionists.stream().map(Nutritionist::getId).toList());
+        List<Long> ids = nutritionists.stream().map(Nutritionist::getId).toList();
+        Map<Long, NutritionistRatingSummary> ratings = loadRatings(ids);
+        Map<Long, List<NutritionistPortfolioItemResponse>> portfolios = portfolioService.listByNutritionistIds(ids);
         return nutritionists.stream()
-                .map(n -> toNutritionistResponse(n, false, ratings.getOrDefault(n.getId(), NutritionistRatingSummary.empty())))
+                .map(n -> toNutritionistResponse(n, false,
+                        ratings.getOrDefault(n.getId(), NutritionistRatingSummary.empty()),
+                        portfolios.getOrDefault(n.getId(), List.of())))
                 .toList();
     }
 
@@ -54,11 +64,18 @@ public class ProMapper {
     }
 
     public NutritionistPublicResponse toProfile(Nutritionist n) {
-        return toNutritionistResponse(n, true, loadRatings(List.of(n.getId())).getOrDefault(n.getId(), NutritionistRatingSummary.empty()));
+        return toNutritionistResponse(n, true, loadRatings(List.of(n.getId())).getOrDefault(n.getId(), NutritionistRatingSummary.empty()),
+                portfolioService.listForNutritionist(n.getId()));
+    }
+
+    public NutritionistPublicResponse toProfile(Nutritionist n, List<NutritionistPortfolioItemResponse> portfolio) {
+        return toNutritionistResponse(n, true, loadRatings(List.of(n.getId())).getOrDefault(n.getId(), NutritionistRatingSummary.empty()),
+                portfolio);
     }
 
     private NutritionistPublicResponse toNutritionistResponse(Nutritionist n, boolean includePrivateContact,
-                                                              NutritionistRatingSummary rating) {
+                                                              NutritionistRatingSummary rating,
+                                                              List<NutritionistPortfolioItemResponse> portfolioItems) {
         User u = n.getUser();
         Set<ServiceMode> modes = ServiceModeCodec.decode(n.getServiceModes());
         List<String> modeNames = modes.stream().map(Enum::name).sorted().toList();
@@ -78,7 +95,12 @@ public class ProMapper {
                 buildLocationLabel(n, modes),
                 includePrivateContact ? n.getWhatsappPhone() : null,
                 rating.averageStars(),
-                rating.count()
+                rating.count(),
+                n.getFormation(),
+                n.getExperienceYears(),
+                n.getApproach(),
+                LanguageCodec.decode(n.getLanguages()),
+                portfolioItems
         );
     }
 
@@ -124,7 +146,7 @@ public class ProMapper {
     }
 
     public InviteResponse toInvite(NutritionistInvite invite, String baseUrl) {
-        String url = baseUrl + "/invite/" + invite.getCode();
+        String url = baseUrl + "/convite/" + invite.getCode();
         return new InviteResponse(
                 invite.getCode(),
                 url,

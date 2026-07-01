@@ -65,6 +65,43 @@ public class ResendEmailService implements EmailSender {
         dispatch(email, subject, html, text, "test");
     }
 
+    @Override
+    public void sendCareExpiredRatingPrompt(String email, String patientName, String nutritionistName) {
+        String subject = "Avalie seu nutricionista — Nutri+";
+        String html = buildCareExpiredHtml(patientName, nutritionistName);
+        String text = buildCareExpiredText(patientName, nutritionistName);
+        dispatch(email, subject, html, text, "care-expired-rating");
+    }
+
+    private String buildCareExpiredHtml(String patientName, String nutritionistName) {
+        String greeting = greetingHtml(patientName);
+        return """
+                <!DOCTYPE html>
+                <html lang="pt-BR">
+                <body style="font-family: Arial, sans-serif; line-height: 1.5; color: #1f2937;">
+                  <p>%s</p>
+                  <p>Seu período de acompanhamento com <strong>%s</strong> foi encerrado.</p>
+                  <p>Que tal avaliar a experiência? Sua opinião ajuda outros pacientes e o profissional.</p>
+                  <p>Abra o app Nutri+ e acesse a área do nutricionista para deixar sua avaliação.</p>
+                  <p>— Equipe Nutri+</p>
+                </body>
+                </html>
+                """.formatted(greeting, escapeHtml(nutritionistName));
+    }
+
+    private String buildCareExpiredText(String patientName, String nutritionistName) {
+        String greeting = greetingText(patientName);
+        return """
+                %s
+
+                Seu período de acompanhamento com %s foi encerrado.
+
+                Que tal avaliar a experiência? Abra o app Nutri+ e acesse a área do nutricionista para deixar sua avaliação.
+
+                — Equipe Nutri+
+                """.formatted(greeting, nutritionistName);
+    }
+
     private void dispatch(String email, String subject, String html, String text, String kind) {
         if (!emailProperties.isEnabled() || resend == null) {
             log.info("E-mail {} (dev/log): destinatario={} assunto={}", kind, email, subject);

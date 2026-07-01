@@ -97,11 +97,13 @@ public class MealPlanGenerationProcessor {
                 .orElseThrow(() -> new IllegalStateException("Usuário não encontrado"));
         NutritionProfile profile = nutritionProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalStateException("Perfil nutricional não encontrado"));
+        MealPlanGenerationJob job = jobRepository.findById(jobId)
+                .orElseThrow(() -> new IllegalStateException("Job não encontrado"));
 
         profile = refreshMacroTargets(profile);
 
         String requestJson = objectMapper.writeValueAsString(profile.getId());
-        AiMealPlanGenerateResponse aiResponse = aiAgentClient.generateMealPlan(profile);
+        AiMealPlanGenerateResponse aiResponse = aiAgentClient.generateMealPlan(profile, job.getNutritionistNotes());
 
         persistSuccess(jobId, user, profile, aiResponse, requestJson, startMs);
     }

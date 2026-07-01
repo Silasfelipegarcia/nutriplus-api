@@ -13,4 +13,6 @@ public interface EmailSender {
     void sendNutritionistVerificationRejected(String email, String name, String reason);
 
     void sendTestEmail(String email, String name);
+
+    void sendCareExpiredRatingPrompt(String email, String patientName, String nutritionistName);
 }

@@ -4,7 +4,9 @@ import br.com.nutriplus.dto.request.ProBodyMeasurementRequest;
 import br.com.nutriplus.dto.request.CreateInviteRequest;
 import br.com.nutriplus.dto.request.ProPricingUpdateRequest;
 import br.com.nutriplus.dto.request.ProProfileUpdateRequest;
+import br.com.nutriplus.dto.request.ProGenerateMealPlanRequest;
 import br.com.nutriplus.dto.request.ProPatientNutritionUpdateRequest;
+import br.com.nutriplus.dto.request.ProPortfolioUpdateRequest;
 import br.com.nutriplus.dto.request.PublishMealPlanRequest;
 import br.com.nutriplus.dto.response.*;
 import br.com.nutriplus.service.*;
@@ -26,6 +28,7 @@ public class ProController {
     private final ProPatientNutritionService proPatientNutritionService;
     private final MealPlanService mealPlanService;
     private final CareRatingService careRatingService;
+    private final NutritionistPortfolioService portfolioService;
 
     public ProController(NutritionistProService nutritionistProService,
                            CareService careService,
@@ -35,7 +38,8 @@ public class ProController {
                            StripePaymentService stripePaymentService,
                            ProPatientNutritionService proPatientNutritionService,
                            MealPlanService mealPlanService,
-                           CareRatingService careRatingService) {
+                           CareRatingService careRatingService,
+                           NutritionistPortfolioService portfolioService) {
         this.nutritionistProService = nutritionistProService;
         this.careService = careService;
         this.dashboardService = dashboardService;
@@ -45,6 +49,7 @@ public class ProController {
         this.proPatientNutritionService = proPatientNutritionService;
         this.mealPlanService = mealPlanService;
         this.careRatingService = careRatingService;
+        this.portfolioService = portfolioService;
     }
 
     @GetMapping("/profile")
@@ -60,6 +65,17 @@ public class ProController {
     @PutMapping("/pricing")
     public NutritionistPublicResponse updatePricing(@Valid @RequestBody ProPricingUpdateRequest request) {
         return nutritionistProService.updatePricing(request);
+    }
+
+    @GetMapping("/portfolio")
+    public List<NutritionistPortfolioItemResponse> portfolio() {
+        var nutritionist = nutritionistProService.getMyProfile();
+        return portfolioService.listForNutritionist(nutritionist.id());
+    }
+
+    @PutMapping("/portfolio")
+    public List<NutritionistPortfolioItemResponse> updatePortfolio(@Valid @RequestBody ProPortfolioUpdateRequest request) {
+        return portfolioService.replacePortfolio(request);
     }
 
     @GetMapping("/dashboard")
@@ -100,8 +116,10 @@ public class ProController {
     }
 
     @PostMapping("/patients/{patientId}/meal-plans/generate")
-    public MealPlanGenerationStatusResponse generatePlanForPatient(@PathVariable Long patientId) {
-        return mealPlanService.enqueueGenerationForUser(patientId);
+    public MealPlanGenerationStatusResponse generatePlanForPatient(
+            @PathVariable Long patientId,
+            @RequestBody(required = false) @Valid ProGenerateMealPlanRequest request) {
+        return mealPlanService.enqueueGenerationForUser(patientId, request);
     }
 
     @GetMapping("/ratings")

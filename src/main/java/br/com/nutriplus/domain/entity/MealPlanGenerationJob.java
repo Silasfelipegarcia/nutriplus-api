@@ -47,6 +47,9 @@ public class MealPlanGenerationJob {
     @Column(name = "progress_review_id")
     private Long progressReviewId;
 
+    @Column(name = "nutritionist_notes", columnDefinition = "TEXT")
+    private String nutritionistNotes;
+
     protected MealPlanGenerationJob() {
     }
 
@@ -61,6 +64,7 @@ public class MealPlanGenerationJob {
         this.completedAt = builder.completedAt;
         this.regenerationReason = builder.regenerationReason;
         this.progressReviewId = builder.progressReviewId;
+        this.nutritionistNotes = builder.nutritionistNotes;
     }
 
     public static Builder builder() {
@@ -135,6 +139,14 @@ public class MealPlanGenerationJob {
         this.progressReviewId = progressReviewId;
     }
 
+    public String getNutritionistNotes() {
+        return nutritionistNotes;
+    }
+
+    public void setNutritionistNotes(String nutritionistNotes) {
+        this.nutritionistNotes = nutritionistNotes;
+    }
+
     public static final class Builder {
         private Long id;
         private User user;
@@ -146,6 +158,7 @@ public class MealPlanGenerationJob {
         private LocalDateTime completedAt;
         private PlanRegenerationReason regenerationReason;
         private Long progressReviewId;
+        private String nutritionistNotes;
 
         public Builder id(Long id) {
             this.id = id;
@@ -194,6 +207,11 @@ public class MealPlanGenerationJob {
 
         public Builder progressReviewId(Long progressReviewId) {
             this.progressReviewId = progressReviewId;
+            return this;
+        }
+
+        public Builder nutritionistNotes(String nutritionistNotes) {
+            this.nutritionistNotes = nutritionistNotes;
             return this;
         }
 

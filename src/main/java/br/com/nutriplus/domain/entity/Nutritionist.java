@@ -60,6 +60,18 @@ public class Nutritionist {
     @Column(name = "crn_verified", nullable = false)
     private boolean crnVerified = false;
 
+    @Column(columnDefinition = "TEXT")
+    private String formation;
+
+    @Column(name = "experience_years")
+    private Integer experienceYears;
+
+    @Column(length = 500)
+    private String approach;
+
+    @Column(length = 128)
+    private String languages;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -206,6 +218,38 @@ public class Nutritionist {
 
     public void setCrnVerified(boolean crnVerified) {
         this.crnVerified = crnVerified;
+    }
+
+    public String getFormation() {
+        return formation;
+    }
+
+    public void setFormation(String formation) {
+        this.formation = formation;
+    }
+
+    public Integer getExperienceYears() {
+        return experienceYears;
+    }
+
+    public void setExperienceYears(Integer experienceYears) {
+        this.experienceYears = experienceYears;
+    }
+
+    public String getApproach() {
+        return approach;
+    }
+
+    public void setApproach(String approach) {
+        this.approach = approach;
+    }
+
+    public String getLanguages() {
+        return languages;
+    }
+
+    public void setLanguages(String languages) {
+        this.languages = languages;
     }
 
     public LocalDateTime getCreatedAt() {

@@ -12,6 +12,8 @@ import br.com.nutriplus.mapper.ResponseMapper;
 import br.com.nutriplus.repository.MealPlanRepository;
 import br.com.nutriplus.repository.PlanRevisionRepository;
 import br.com.nutriplus.security.AuthorizationService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,17 +28,20 @@ public class PlanReviewService {
     private final PlanRevisionRepository planRevisionRepository;
     private final MealLoader mealLoader;
     private final ResponseMapper responseMapper;
+    private final ObjectMapper objectMapper;
 
     public PlanReviewService(AuthorizationService authorizationService,
                              MealPlanRepository mealPlanRepository,
                              PlanRevisionRepository planRevisionRepository,
                              MealLoader mealLoader,
-                             ResponseMapper responseMapper) {
+                             ResponseMapper responseMapper,
+                             ObjectMapper objectMapper) {
         this.authorizationService = authorizationService;
         this.mealPlanRepository = mealPlanRepository;
         this.planRevisionRepository = planRevisionRepository;
         this.mealLoader = mealLoader;
         this.responseMapper = responseMapper;
+        this.objectMapper = objectMapper;
     }
 
     public List<MealPlanResponse> listPatientMealPlans(Long patientId) {
@@ -75,11 +80,25 @@ public class PlanReviewService {
         plan.setMedicalReviewStatus("APPROVED");
         mealPlanRepository.save(plan);
 
-        planRevisionRepository.save(PlanRevision.publish(plan, nutritionist,
-                request.reviewNotes() != null ? "{\"notes\":\"" + request.reviewNotes().replace("\"", "\\\"") + "\"}" : "{}"));
+        planRevisionRepository.save(PlanRevision.publish(plan, nutritionist, buildChangesJson(request)));
 
         var meals = mealLoader.mealsForPlan(plan.getId());
         var items = mealLoader.itemsByMealId(meals);
         return responseMapper.toMealPlanResponse(plan, meals, items);
+    }
+
+    private String buildChangesJson(PublishMealPlanRequest request) {
+        try {
+            Map<String, String> payload = new java.util.LinkedHashMap<>();
+            if (request.reviewNotes() != null && !request.reviewNotes().isBlank()) {
+                payload.put("notes", request.reviewNotes().trim());
+            }
+            if (request.changesSummary() != null && !request.changesSummary().isBlank()) {
+                payload.put("changesSummary", request.changesSummary().trim());
+            }
+            return payload.isEmpty() ? "{}" : objectMapper.writeValueAsString(payload);
+        } catch (JsonProcessingException e) {
+            return "{}";
+        }
     }
 }

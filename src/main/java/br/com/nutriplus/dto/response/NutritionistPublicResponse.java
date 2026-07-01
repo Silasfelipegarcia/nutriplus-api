@@ -18,6 +18,11 @@ public record NutritionistPublicResponse(
         String locationLabel,
         String whatsappPhone,
         double averageRating,
-        long ratingCount
+        long ratingCount,
+        String formation,
+        Integer experienceYears,
+        String approach,
+        List<String> languages,
+        List<NutritionistPortfolioItemResponse> portfolioItems
 ) {
 }

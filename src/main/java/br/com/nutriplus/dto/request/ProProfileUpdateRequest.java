@@ -13,6 +13,10 @@ public record ProProfileUpdateRequest(
         @Size(max = 120) String city,
         @Size(min = 2, max = 2) String stateCode,
         @Size(max = 120) String neighborhood,
-        @Size(max = 20) String whatsappPhone
+        @Size(max = 20) String whatsappPhone,
+        @Size(max = 2000) String formation,
+        Integer experienceYears,
+        @Size(max = 500) String approach,
+        List<@Size(min = 2, max = 5) String> languages
 ) {
 }

@@ -40,7 +40,11 @@ public class CareService {
     private final NutritionistInviteRepository inviteRepository;
     private final PatientDataConsentRepository consentRepository;
     private final ConversationThreadRepository threadRepository;
+    private final MessageRepository messageRepository;
     private final ProMapper proMapper;
+
+    private static final String CHAT_WELCOME_MESSAGE =
+            "Consulta iniciada. Use o chat para combinar retorno e dúvidas.";
 
     @Value("${nutriplus.pro.invite-base-url:http://localhost:3000}")
     private String inviteBaseUrl;
@@ -52,6 +56,7 @@ public class CareService {
                        NutritionistInviteRepository inviteRepository,
                        PatientDataConsentRepository consentRepository,
                        ConversationThreadRepository threadRepository,
+                       MessageRepository messageRepository,
                        ProMapper proMapper) {
         this.currentUser = currentUser;
         this.authorizationService = authorizationService;
@@ -60,6 +65,7 @@ public class CareService {
         this.inviteRepository = inviteRepository;
         this.consentRepository = consentRepository;
         this.threadRepository = threadRepository;
+        this.messageRepository = messageRepository;
         this.proMapper = proMapper;
     }
 
@@ -209,7 +215,8 @@ public class CareService {
         consultation.setPaidAt(LocalDateTime.now());
 
         if (threadRepository.findByCareRelationshipId(care.getId()).isEmpty()) {
-            threadRepository.save(ConversationThread.forCare(care));
+            ConversationThread thread = threadRepository.save(ConversationThread.forCare(care));
+            messageRepository.save(Message.send(thread, care.getNutritionist().getUser(), CHAT_WELCOME_MESSAGE));
         }
 
         if (consentRepository.findByCareRelationshipId(care.getId()).isEmpty()) {

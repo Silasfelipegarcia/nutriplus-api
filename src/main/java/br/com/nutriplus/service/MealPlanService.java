@@ -8,6 +8,7 @@ import br.com.nutriplus.domain.entity.User;
 import br.com.nutriplus.domain.enums.MealPlanGenerationStatus;
 import br.com.nutriplus.domain.enums.PlanRegenerationReason;
 import br.com.nutriplus.dto.request.MealPlanGenerateRequest;
+import br.com.nutriplus.dto.request.ProGenerateMealPlanRequest;
 import br.com.nutriplus.dto.response.MealPlanGenerationStatusResponse;
 import br.com.nutriplus.dto.response.MealPlanResponse;
 import br.com.nutriplus.dto.response.PlanRegenerationEligibilityResponse;
@@ -95,11 +96,13 @@ public class MealPlanService {
     }
 
     @Transactional
-    public MealPlanGenerationStatusResponse enqueueGenerationForUser(Long userId) {
+    public MealPlanGenerationStatusResponse enqueueGenerationForUser(Long userId, ProGenerateMealPlanRequest request) {
         authorizationService.requireCareAccessForNutritionistByPatientId(userId);
-        MealPlanGenerateRequest request = new MealPlanGenerateRequest(PlanRegenerationReason.NUTRITIONIST_BYPASS, null);
+        String notes = request != null ? request.nutritionistNotes() : null;
+        MealPlanGenerateRequest genRequest = new MealPlanGenerateRequest(
+                PlanRegenerationReason.NUTRITIONIST_BYPASS, null, notes);
         return enqueueGenerationInternal(userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado.")), request);
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado.")), genRequest);
     }
 
     @Transactional
@@ -125,6 +128,7 @@ public class MealPlanService {
                 .status(MealPlanGenerationStatus.PENDING)
                 .regenerationReason(request.reason())
                 .progressReviewId(request.reviewId())
+                .nutritionistNotes(request.nutritionistNotes())
                 .build();
         job = jobRepository.save(job);
 

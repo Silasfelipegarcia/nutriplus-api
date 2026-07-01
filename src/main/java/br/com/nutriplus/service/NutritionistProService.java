@@ -10,6 +10,7 @@ import br.com.nutriplus.domain.enums.RegistrationSource;
 import br.com.nutriplus.domain.enums.UserRole;
 import br.com.nutriplus.domain.util.ServiceModeCodec;
 import br.com.nutriplus.domain.util.ContactPhoneNormalizer;
+import br.com.nutriplus.domain.util.LanguageCodec;
 import br.com.nutriplus.dto.request.NutritionistRegisterRequest;
 import br.com.nutriplus.dto.request.ProPricingUpdateRequest;
 import br.com.nutriplus.dto.request.ProProfileUpdateRequest;
@@ -164,6 +165,18 @@ public class NutritionistProService {
         }
         if (request.whatsappPhone() != null) {
             n.setWhatsappPhone(request.whatsappPhone().isBlank() ? null : request.whatsappPhone().trim());
+        }
+        if (request.formation() != null) {
+            n.setFormation(request.formation().isBlank() ? null : request.formation().trim());
+        }
+        if (request.experienceYears() != null) {
+            n.setExperienceYears(request.experienceYears() < 0 ? null : request.experienceYears());
+        }
+        if (request.approach() != null) {
+            n.setApproach(request.approach().isBlank() ? null : request.approach().trim());
+        }
+        if (request.languages() != null) {
+            n.setLanguages(LanguageCodec.encode(request.languages()));
         }
         validateServiceModes(n, ServiceModeCodec.decode(n.getServiceModes()));
         return proMapper.toProfile(nutritionistRepository.save(n));

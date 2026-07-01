@@ -62,11 +62,18 @@ public class AiAgentClient {
     }
 
     public AiMealPlanGenerateResponse generateMealPlan(NutritionProfile profile) {
+        return generateMealPlan(profile, null);
+    }
+
+    public AiMealPlanGenerateResponse generateMealPlan(NutritionProfile profile, String nutritionistNotes) {
         Map<String, Object> body = profileToMap(profile);
         body.put("targetCalories", profile.getTargetCalories());
         body.put("targetProteinG", profile.getTargetProteinG());
         body.put("targetCarbsG", profile.getTargetCarbsG());
         body.put("targetFatG", profile.getTargetFatG());
+        if (nutritionistNotes != null && !nutritionistNotes.isBlank()) {
+            body.put("nutritionistNotes", nutritionistNotes.trim());
+        }
         return post("/api/v1/meal-plan/generate", body, AiMealPlanGenerateResponse.class);
     }
 

@@ -21,4 +21,6 @@ public interface CareRelationshipRepository extends JpaRepository<CareRelationsh
 
     @Query("SELECT cr FROM CareRelationship cr WHERE cr.patient.id = :patientId AND cr.status = 'ACTIVE'")
     List<CareRelationship> findActiveByPatientId(Long patientId);
+
+    List<CareRelationship> findByStatusAndExpiresAtBefore(CareRelationshipStatus status, java.time.LocalDateTime expiresAt);
 }
