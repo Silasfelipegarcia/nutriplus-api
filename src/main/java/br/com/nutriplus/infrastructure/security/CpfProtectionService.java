@@ -2,6 +2,8 @@ package br.com.nutriplus.infrastructure.security;
 
 import br.com.nutriplus.domain.util.CpfUtil;
 import br.com.nutriplus.exception.BusinessException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -17,6 +19,8 @@ import java.util.HexFormat;
 
 @Service
 public class CpfProtectionService {
+
+    private static final Logger log = LoggerFactory.getLogger(CpfProtectionService.class);
 
     private static final int GCM_IV_LENGTH = 12;
     private static final int GCM_TAG_LENGTH = 128;
@@ -92,6 +96,11 @@ public class CpfProtectionService {
         if (encryptedCpf == null || encryptedCpf.isBlank()) {
             return null;
         }
-        return CpfUtil.mask(decrypt(encryptedCpf));
+        try {
+            return CpfUtil.mask(decrypt(encryptedCpf));
+        } catch (RuntimeException e) {
+            log.warn("Não foi possível descriptografar CPF para exibição: {}", e.getMessage());
+            return null;
+        }
     }
 }
