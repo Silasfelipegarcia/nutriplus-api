@@ -1,6 +1,7 @@
 package br.com.nutriplus.integration;
 
 import br.com.nutriplus.AbstractIntegrationTest;
+import br.com.nutriplus.support.IntegrationAuthSupport;
 import br.com.nutriplus.support.TestCpfFactory;
 import br.com.nutriplus.support.TestRegisterFactory;
 import org.junit.jupiter.api.Test;
@@ -35,19 +36,13 @@ class NutriplusApiIntegrationTest extends AbstractIntegrationTest {
         String email = "user-" + UUID.randomUUID() + "@nutriplus.test";
         String password = "secret123";
 
-        String registerBody = TestRegisterFactory.body("Integration User", email, password, TestCpfFactory.nextValidCpf());
-
-        String authJson = mockMvc.perform(post("/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(registerBody))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.token").value(notNullValue()))
-                .andExpect(jsonPath("$.user.email").value(email))
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        String token = extractJsonField(authJson, "token");
+        String token = IntegrationAuthSupport.registerAndLogin(
+                mockMvc,
+                userRepository,
+                "Integration User",
+                email,
+                password,
+                TestCpfFactory.nextValidCpf());
 
         mockMvc.perform(get("/users/me")
                         .header("Authorization", "Bearer " + token))
@@ -68,17 +63,13 @@ class NutriplusApiIntegrationTest extends AbstractIntegrationTest {
     @Test
     void updateProfileWithAuth() throws Exception {
         String email = "profile-" + UUID.randomUUID() + "@nutriplus.test";
-        String registerBody = TestRegisterFactory.body("Before", email, "secret123", TestCpfFactory.nextValidCpf());
-
-        String authJson = mockMvc.perform(post("/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(registerBody))
-                .andExpect(status().isCreated())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        String token = extractJsonField(authJson, "token");
+        String token = IntegrationAuthSupport.registerAndLogin(
+                mockMvc,
+                userRepository,
+                "Before",
+                email,
+                "secret123",
+                TestCpfFactory.nextValidCpf());
 
         mockMvc.perform(put("/users/me")
                         .header("Authorization", "Bearer " + token)
@@ -93,18 +84,13 @@ class NutriplusApiIntegrationTest extends AbstractIntegrationTest {
     void registerRejectsDuplicateEmail() throws Exception {
         String email = "dup-email-" + UUID.randomUUID() + "@nutriplus.test";
         String cpf = TestCpfFactory.nextValidCpf();
-        String registerBody = TestRegisterFactory.body("First User", email, "secret123", cpf);
+
+        IntegrationAuthSupport.registerOnly(mockMvc, "First User", email, "secret123", cpf);
 
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(registerBody))
-                .andExpect(status().isCreated());
-
-        String duplicateBody = TestRegisterFactory.body("Second User", email, "secret123", TestCpfFactory.nextValidCpf());
-
-        mockMvc.perform(post("/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(duplicateBody))
+                        .content(TestRegisterFactory.body(
+                                "Second User", email, "secret123", TestCpfFactory.nextValidCpf())))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("E-mail já cadastrado"));
     }
@@ -112,32 +98,21 @@ class NutriplusApiIntegrationTest extends AbstractIntegrationTest {
     @Test
     void registerRejectsDuplicateCpf() throws Exception {
         String cpf = TestCpfFactory.nextValidCpf();
-        String firstBody = TestRegisterFactory.body(
-                "First User", "first-%s@nutriplus.test".formatted(UUID.randomUUID()), "secret123", cpf);
+        IntegrationAuthSupport.registerOnly(
+                mockMvc,
+                "First User",
+                "first-%s@nutriplus.test".formatted(UUID.randomUUID()),
+                "secret123",
+                cpf);
 
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(firstBody))
-                .andExpect(status().isCreated());
-
-        String secondBody = TestRegisterFactory.body(
-                "Second User", "second-%s@nutriplus.test".formatted(UUID.randomUUID()), "secret123", cpf);
-
-        mockMvc.perform(post("/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(secondBody))
+                        .content(TestRegisterFactory.body(
+                                "Second User",
+                                "second-%s@nutriplus.test".formatted(UUID.randomUUID()),
+                                "secret123",
+                                cpf)))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("CPF já cadastrado"));
-    }
-
-    private static String extractJsonField(String json, String field) {
-        String marker = "\"" + field + "\":\"";
-        int start = json.indexOf(marker);
-        if (start < 0) {
-            throw new IllegalStateException("Field not found: " + field);
-        }
-        start += marker.length();
-        int end = json.indexOf('"', start);
-        return json.substring(start, end);
     }
 }

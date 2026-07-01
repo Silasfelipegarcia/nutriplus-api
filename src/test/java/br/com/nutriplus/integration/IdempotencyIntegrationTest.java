@@ -12,7 +12,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.UUID;
 
-import static org.hamcrest.Matchers.notNullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -51,8 +50,8 @@ class IdempotencyIntegrationTest extends AbstractIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(registerBody))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.token").value(notNullValue()))
-                .andExpect(jsonPath("$.user.email").value(email));
+                .andExpect(jsonPath("$.email").value(email))
+                .andExpect(jsonPath("$.loginEnabled").value(false));
 
         mockMvc.perform(post("/auth/register")
                         .header(IdempotencySupport.HEADER, key)
@@ -60,6 +59,6 @@ class IdempotencyIntegrationTest extends AbstractIntegrationTest {
                         .content(registerBody))
                 .andExpect(status().isCreated())
                 .andExpect(header().string(IdempotencySupport.REPLAYED_HEADER, "true"))
-                .andExpect(jsonPath("$.user.email").value(email));
+                .andExpect(jsonPath("$.email").value(email));
     }
 }

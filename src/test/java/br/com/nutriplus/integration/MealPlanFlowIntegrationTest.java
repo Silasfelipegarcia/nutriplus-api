@@ -1,8 +1,8 @@
 package br.com.nutriplus.integration;
 
 import br.com.nutriplus.AbstractIntegrationTest;
+import br.com.nutriplus.support.IntegrationAuthSupport;
 import br.com.nutriplus.support.TestCpfFactory;
-import br.com.nutriplus.support.TestRegisterFactory;
 import br.com.nutriplus.client.AiAgentClient;
 import br.com.nutriplus.client.dto.AiMealDto;
 import br.com.nutriplus.client.dto.AiMealItemDto;
@@ -47,18 +47,14 @@ class MealPlanFlowIntegrationTest extends AbstractIntegrationTest {
 
         String email = "mealplan-" + UUID.randomUUID() + "@nutriplus.test";
         String password = "secret123";
-        String registerBody = TestRegisterFactory.body("Meal Plan User", email, password, TestCpfFactory.nextValidCpf());
-
-        String authJson = mockMvc.perform(post("/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(registerBody))
-                .andExpect(status().isCreated())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        String token = extractJsonField(authJson, "token");
-        long userId = Long.parseLong(extractJsonNumberField(authJson, "user", "id"));
+        String token = IntegrationAuthSupport.registerAndLogin(
+                mockMvc,
+                userRepository,
+                "Meal Plan User",
+                email,
+                password,
+                TestCpfFactory.nextValidCpf());
+        long userId = userRepository.findByEmail(email).orElseThrow().getId();
         var auth = authHeaders(token);
 
         String profileBody = """

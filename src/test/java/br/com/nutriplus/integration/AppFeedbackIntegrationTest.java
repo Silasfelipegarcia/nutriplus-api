@@ -1,8 +1,8 @@
 package br.com.nutriplus.integration;
 
 import br.com.nutriplus.AbstractIntegrationTest;
+import br.com.nutriplus.support.IntegrationAuthSupport;
 import br.com.nutriplus.support.TestCpfFactory;
-import br.com.nutriplus.support.TestRegisterFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -97,27 +97,12 @@ class AppFeedbackIntegrationTest extends AbstractIntegrationTest {
 
     private String registerAndGetToken() throws Exception {
         String email = "feedback-" + UUID.randomUUID() + "@nutriplus.test";
-        String registerBody = TestRegisterFactory.body("Feedback User", email, "secret123", TestCpfFactory.nextValidCpf());
-
-        String authJson = mockMvc.perform(post("/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(registerBody))
-                .andExpect(status().isCreated())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        return extractJsonField(authJson, "token");
-    }
-
-    private static String extractJsonField(String json, String field) {
-        String marker = "\"" + field + "\":\"";
-        int start = json.indexOf(marker);
-        if (start < 0) {
-            throw new IllegalStateException("Field not found: " + field);
-        }
-        start += marker.length();
-        int end = json.indexOf('"', start);
-        return json.substring(start, end);
+        return IntegrationAuthSupport.registerAndLogin(
+                mockMvc,
+                userRepository,
+                "Feedback User",
+                email,
+                "secret123",
+                TestCpfFactory.nextValidCpf());
     }
 }
