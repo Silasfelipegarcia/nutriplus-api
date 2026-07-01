@@ -10,14 +10,15 @@ import br.com.nutriplus.domain.entity.User;
 import br.com.nutriplus.dto.request.ApplyShoppingSwapsRequest;
 import br.com.nutriplus.dto.request.ShoppingSwapSelectionRequest;
 import br.com.nutriplus.dto.response.ApplyShoppingSwapsResponse;
+import br.com.nutriplus.dto.response.MealPlanResponse;
 import br.com.nutriplus.dto.response.ShoppingListResponse;
 import br.com.nutriplus.exception.ResourceNotFoundException;
+import br.com.nutriplus.infrastructure.config.NutriCacheEvictionService;
 import br.com.nutriplus.mapper.ResponseMapper;
 import br.com.nutriplus.repository.MealItemRepository;
 import br.com.nutriplus.repository.MealPlanRepository;
 import br.com.nutriplus.repository.MealRepository;
 import br.com.nutriplus.repository.ShoppingListRepository;
-import br.com.nutriplus.infrastructure.config.NutriCacheEvictionService;
 import br.com.nutriplus.security.CurrentUser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,6 +29,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.Normalizer;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -44,6 +46,7 @@ public class ShoppingSwapService {
     private final MealRepository mealRepository;
     private final MealItemRepository mealItemRepository;
     private final MealPlanRepository mealPlanRepository;
+    private final MealLoader mealLoader;
     private final ResponseMapper responseMapper;
     private final ObjectMapper objectMapper;
     private final NutriCacheEvictionService cacheEvictionService;
@@ -53,6 +56,7 @@ public class ShoppingSwapService {
                                MealRepository mealRepository,
                                MealItemRepository mealItemRepository,
                                MealPlanRepository mealPlanRepository,
+                               MealLoader mealLoader,
                                ResponseMapper responseMapper,
                                ObjectMapper objectMapper,
                                NutriCacheEvictionService cacheEvictionService) {
@@ -61,6 +65,7 @@ public class ShoppingSwapService {
         this.mealRepository = mealRepository;
         this.mealItemRepository = mealItemRepository;
         this.mealPlanRepository = mealPlanRepository;
+        this.mealLoader = mealLoader;
         this.responseMapper = responseMapper;
         this.objectMapper = objectMapper;
         this.cacheEvictionService = cacheEvictionService;
@@ -90,6 +95,7 @@ public class ShoppingSwapService {
                 throw new ResponseStatusException(BAD_REQUEST, "Opção de troca inválida");
             }
 
+            String shoppingItemNameBeforeSwap = item.getItemName();
             Integer oldKcalRef = item.getKcalEstimate();
             item.setItemName(option.label());
             item.setSelectedSwapId(option.id());
@@ -100,7 +106,13 @@ public class ShoppingSwapService {
                 item.setKcalEstimate(option.kcalEstimate());
             }
 
-            applyMealItemSwaps(mealItems, option, oldKcalRef, option.kcalEstimate());
+            applyMealItemSwaps(
+                    mealItems,
+                    option,
+                    shoppingItemNameBeforeSwap,
+                    oldKcalRef,
+                    option.kcalEstimate()
+            );
         }
 
         mealItemRepository.saveAll(mealItems);
@@ -110,8 +122,11 @@ public class ShoppingSwapService {
 
         cacheEvictionService.evictMealPlanCaches(user.getId());
 
+        List<Meal> updatedMeals = mealRepository.findByMealPlanIdOrderBySortOrderAsc(mealPlan.getId());
+        Map<Long, List<MealItem>> itemsByMealId = mealLoader.itemsByMealId(updatedMeals);
+        MealPlanResponse mealPlanResponse = responseMapper.toMealPlanResponse(mealPlan, updatedMeals, itemsByMealId);
         ShoppingListResponse response = responseMapper.toShoppingListResponse(list);
-        return new ApplyShoppingSwapsResponse(response, mealPlan.getId());
+        return new ApplyShoppingSwapsResponse(response, mealPlan.getId(), mealPlanResponse);
     }
 
     private ShoppingList latestListForUser(Long userId) {
@@ -143,9 +158,17 @@ public class ShoppingSwapService {
 
     private void applyMealItemSwaps(List<MealItem> mealItems,
                                     AiShoppingSwapOptionDto option,
+                                    String shoppingItemNameBeforeSwap,
                                     Integer oldKcalRef,
                                     Integer newKcalRef) {
-        List<String> targets = option.matchesMealFoods() != null ? option.matchesMealFoods() : List.of();
+        List<String> targets = new ArrayList<>();
+        if (option.matchesMealFoods() != null) {
+            targets.addAll(option.matchesMealFoods());
+        }
+        if (shoppingItemNameBeforeSwap != null && !shoppingItemNameBeforeSwap.isBlank()) {
+            targets.add(shoppingItemNameBeforeSwap);
+        }
+
         for (MealItem mealItem : mealItems) {
             if (!matchesAnyFood(mealItem.getFoodName(), targets)) {
                 continue;
@@ -161,6 +184,9 @@ public class ShoppingSwapService {
         }
         String normalizedFood = normalize(foodName);
         for (String target : targets) {
+            if (target == null || target.isBlank()) {
+                continue;
+            }
             String normalizedTarget = normalize(target);
             if (normalizedFood.equals(normalizedTarget)
                     || normalizedFood.contains(normalizedTarget)
@@ -172,7 +198,7 @@ public class ShoppingSwapService {
     }
 
     private void scaleMacros(MealItem mealItem, Integer oldKcalRef, Integer newKcalRef) {
-        if (oldKcalRef == null || newKcalRef == null || oldKcalRef <= 0) {
+        if (oldKcalRef == null || newKcalRef == null || oldKcalRef <= 0 || newKcalRef <= 0) {
             return;
         }
         BigDecimal ratio = BigDecimal.valueOf(newKcalRef)

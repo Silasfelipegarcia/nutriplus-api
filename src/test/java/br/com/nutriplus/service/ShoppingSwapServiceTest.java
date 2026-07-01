@@ -9,6 +9,8 @@ import br.com.nutriplus.domain.entity.ShoppingListItem;
 import br.com.nutriplus.domain.entity.User;
 import br.com.nutriplus.dto.request.ApplyShoppingSwapsRequest;
 import br.com.nutriplus.dto.request.ShoppingSwapSelectionRequest;
+import br.com.nutriplus.dto.response.MealPlanResponse;
+import br.com.nutriplus.dto.response.ShoppingListResponse;
 import br.com.nutriplus.infrastructure.config.NutriCacheEvictionService;
 import br.com.nutriplus.mapper.ResponseMapper;
 import br.com.nutriplus.repository.MealItemRepository;
@@ -27,9 +29,11 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -45,6 +49,8 @@ class ShoppingSwapServiceTest {
     private MealItemRepository mealItemRepository;
     @Mock
     private MealPlanRepository mealPlanRepository;
+    @Mock
+    private MealLoader mealLoader;
     @Mock
     private ResponseMapper responseMapper;
     @Mock
@@ -93,6 +99,13 @@ class ShoppingSwapServiceTest {
         when(shoppingListRepository.findByUserIdWithItemsOrderByCreatedAtDesc(1L)).thenReturn(List.of(list));
         when(mealRepository.findByMealPlanIdOrderBySortOrderAsc(10L)).thenReturn(List.of(meal));
         when(mealItemRepository.findByMealIds(List.of(20L))).thenReturn(List.of(mealItem));
+        when(mealLoader.itemsByMealId(List.of(meal))).thenReturn(Map.of(20L, List.of(mealItem)));
+        when(responseMapper.toShoppingListResponse(list))
+                .thenReturn(new ShoppingListResponse(5L, 10L, LocalDate.now(), LocalDate.now().plusDays(6),
+                        List.of(), null, false, null));
+        when(responseMapper.toMealPlanResponse(eq(mealPlan), eq(List.of(meal)), any()))
+                .thenReturn(new MealPlanResponse(10L, LocalDate.now(), new BigDecimal("188"), null, null, null,
+                        "d", List.of(), null, null, null, null, null, null, null, null));
         when(objectMapper.readValue(any(String.class), any(com.fasterxml.jackson.core.type.TypeReference.class)))
                 .thenReturn(List.of(new AiShoppingSwapOptionDto(
                         "tilapia_file", "Tilápia filé", "ECONOMIC", null, "magro", 128, List.of("Salmão grelhado")
@@ -106,6 +119,66 @@ class ShoppingSwapServiceTest {
         assertEquals("tilapia_file", shoppingItem.getSelectedSwapId());
         assertEquals("Tilápia filé", mealItem.getFoodName());
         assertEquals(10L, response.mealPlanId());
+        assertEquals(new BigDecimal("184.62"), mealItem.getCalories());
+    }
+
+    @Test
+    void applySwapsMatchesShoppingItemNameWhenMealTargetsMissing() throws Exception {
+        User user = User.builder().id(1L).email("u@test.com").name("U").passwordHash("x").build();
+        MealPlan mealPlan = MealPlan.builder().id(10L).user(user).planDate(LocalDate.now()).disclaimer("d").build();
+        ShoppingList list = ShoppingList.builder().id(5L).user(user).mealPlan(mealPlan)
+                .weekStart(LocalDate.now()).weekEnd(LocalDate.now().plusDays(6)).items(new ArrayList<>()).build();
+
+        String swapJson = """
+                [{"id":"ovo","label":"Ovos","costTier":"ECONOMIC","kcalEstimate":155}]
+                """;
+        ShoppingListItem shoppingItem = ShoppingListItem.builder()
+                .id(101L)
+                .shoppingList(list)
+                .itemName("Peito de frango")
+                .quantity("800g")
+                .category("Proteínas")
+                .kcalEstimate(165)
+                .swapOptionsJson(swapJson)
+                .build();
+        list.getItems().add(shoppingItem);
+
+        Meal meal = Meal.builder().id(22L).mealPlan(mealPlan)
+                .mealType(br.com.nutriplus.domain.enums.MealType.LUNCH).name("Almoço").sortOrder(1).build();
+        MealItem mealItem = MealItem.builder()
+                .id(32L)
+                .meal(meal)
+                .foodName("Peito de frango grelhado")
+                .quantityG(new BigDecimal("150"))
+                .calories(new BigDecimal("248"))
+                .proteinG(new BigDecimal("46"))
+                .carbsG(BigDecimal.ZERO)
+                .fatG(new BigDecimal("5"))
+                .build();
+
+        when(currentUser.get()).thenReturn(user);
+        when(shoppingListRepository.findByUserIdWithItemsOrderByCreatedAtDesc(1L)).thenReturn(List.of(list));
+        when(mealRepository.findByMealPlanIdOrderBySortOrderAsc(10L)).thenReturn(List.of(meal));
+        when(mealItemRepository.findByMealIds(List.of(22L))).thenReturn(List.of(mealItem));
+        when(mealLoader.itemsByMealId(List.of(meal))).thenReturn(Map.of(22L, List.of(mealItem)));
+        when(responseMapper.toShoppingListResponse(list))
+                .thenReturn(new ShoppingListResponse(5L, 10L, LocalDate.now(), LocalDate.now().plusDays(6),
+                        List.of(), null, false, null));
+        when(responseMapper.toMealPlanResponse(eq(mealPlan), eq(List.of(meal)), any()))
+                .thenReturn(new MealPlanResponse(10L, LocalDate.now(), new BigDecimal("233"), null, null, null,
+                        "d", List.of(), null, null, null, null, null, null, null, null));
+        when(objectMapper.readValue(any(String.class), any(com.fasterxml.jackson.core.type.TypeReference.class)))
+                .thenReturn(List.of(new AiShoppingSwapOptionDto(
+                        "ovo", "Ovos", "ECONOMIC", null, "moderado", 155, List.of()
+                )));
+
+        shoppingSwapService.applySwaps(
+                new ApplyShoppingSwapsRequest(List.of(new ShoppingSwapSelectionRequest(101L, "ovo")))
+        );
+
+        assertEquals("Ovos", shoppingItem.getItemName());
+        assertEquals("Ovos", mealItem.getFoodName());
+        assertEquals(0, mealItem.getCalories().compareTo(new BigDecimal("232.97")));
     }
 
     @Test
@@ -147,6 +220,13 @@ class ShoppingSwapServiceTest {
         when(shoppingListRepository.findByUserIdWithItemsOrderByCreatedAtDesc(1L)).thenReturn(List.of(list));
         when(mealRepository.findByMealPlanIdOrderBySortOrderAsc(10L)).thenReturn(List.of(meal));
         when(mealItemRepository.findByMealIds(List.of(21L))).thenReturn(List.of(mealItem));
+        when(mealLoader.itemsByMealId(List.of(meal))).thenReturn(Map.of(21L, List.of(mealItem)));
+        when(responseMapper.toShoppingListResponse(list))
+                .thenReturn(new ShoppingListResponse(5L, 10L, LocalDate.now(), LocalDate.now().plusDays(6),
+                        List.of(), null, false, null));
+        when(responseMapper.toMealPlanResponse(eq(mealPlan), eq(List.of(meal)), any()))
+                .thenReturn(new MealPlanResponse(10L, LocalDate.now(), new BigDecimal("50"), null, null, null,
+                        "d", List.of(), null, null, null, null, null, null, null, null));
         when(objectMapper.readValue(any(String.class), any(com.fasterxml.jackson.core.type.TypeReference.class)))
                 .thenReturn(List.of(new AiShoppingSwapOptionDto(
                         "iogurte_zero", "Iogurte zero açúcar", "MODERATE", null, null, 35,
@@ -159,5 +239,6 @@ class ShoppingSwapServiceTest {
 
         assertEquals("Iogurte zero açúcar", shoppingItem.getItemName());
         assertEquals("Iogurte zero açúcar", mealItem.getFoodName());
+        assertEquals(new BigDecimal("50.00"), mealItem.getCalories());
     }
 }
