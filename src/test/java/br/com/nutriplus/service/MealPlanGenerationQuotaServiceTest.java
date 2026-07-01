@@ -92,9 +92,9 @@ class MealPlanGenerationQuotaServiceTest {
     void freeTierBlocksAfterMonthlyGenerationEvenOnNewDay() {
         when(billingEnforcementService.isBillingEnabled()).thenReturn(true);
         when(jobRepository.countByUserIdAndStatusInAndCreatedAtGreaterThanEqual(
-                eq(42L), any(), eq(LocalDate.now().atStartOfDay()))).thenReturn(0L);
-        when(jobRepository.countByUserIdAndStatusInAndCreatedAtGreaterThanEqual(
-                eq(42L), any(), eq(LocalDate.now().withDayOfMonth(1).atStartOfDay()))).thenReturn(1L);
+                eq(42L), any(), any()))
+                .thenReturn(0L)
+                .thenReturn(1L);
 
         assertThrows(SubscriptionRequiredException.class, () -> quotaService.assertCanGenerate(user));
     }

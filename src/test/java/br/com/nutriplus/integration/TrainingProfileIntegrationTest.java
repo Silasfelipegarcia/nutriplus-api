@@ -5,6 +5,7 @@ import br.com.nutriplus.client.AiAgentClient;
 import br.com.nutriplus.client.dto.AiNutritionCalculateResponse;
 import br.com.nutriplus.domain.entity.NutritionProfile;
 import br.com.nutriplus.support.TestCpfFactory;
+import br.com.nutriplus.support.TestRegisterFactory;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,9 +39,7 @@ class TrainingProfileIntegrationTest extends AbstractIntegrationTest {
 
         String email = "athlete-" + UUID.randomUUID() + "@nutriplus.test";
         String password = "secret123";
-        String registerBody = """
-                {"name":"Athlete User","email":"%s","password":"%s","cpf":"%s","birthDate":"1990-06-15"}
-                """.formatted(email, password, TestCpfFactory.nextValidCpf());
+        String registerBody = TestRegisterFactory.body("Athlete User", email, password, TestCpfFactory.nextValidCpf());
 
         String authJson = mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)

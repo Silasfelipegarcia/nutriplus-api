@@ -2,6 +2,7 @@ package br.com.nutriplus.integration;
 
 import br.com.nutriplus.AbstractIntegrationTest;
 import br.com.nutriplus.support.TestCpfFactory;
+import br.com.nutriplus.support.TestRegisterFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -96,9 +97,7 @@ class AppFeedbackIntegrationTest extends AbstractIntegrationTest {
 
     private String registerAndGetToken() throws Exception {
         String email = "feedback-" + UUID.randomUUID() + "@nutriplus.test";
-        String registerBody = """
-                {"name":"Feedback User","email":"%s","password":"secret123","cpf":"%s","birthDate":"1990-06-15"}
-                """.formatted(email, TestCpfFactory.nextValidCpf());
+        String registerBody = TestRegisterFactory.body("Feedback User", email, "secret123", TestCpfFactory.nextValidCpf());
 
         String authJson = mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)

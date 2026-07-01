@@ -2,6 +2,7 @@ package br.com.nutriplus.integration;
 
 import br.com.nutriplus.AbstractIntegrationTest;
 import br.com.nutriplus.support.TestCpfFactory;
+import br.com.nutriplus.support.TestRegisterFactory;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -34,9 +35,7 @@ class NutriplusApiIntegrationTest extends AbstractIntegrationTest {
         String email = "user-" + UUID.randomUUID() + "@nutriplus.test";
         String password = "secret123";
 
-        String registerBody = """
-                {"name":"Integration User","email":"%s","password":"%s","cpf":"%s","birthDate":"1990-06-15"}
-                """.formatted(email, password, TestCpfFactory.nextValidCpf());
+        String registerBody = TestRegisterFactory.body("Integration User", email, password, TestCpfFactory.nextValidCpf());
 
         String authJson = mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -69,9 +68,7 @@ class NutriplusApiIntegrationTest extends AbstractIntegrationTest {
     @Test
     void updateProfileWithAuth() throws Exception {
         String email = "profile-" + UUID.randomUUID() + "@nutriplus.test";
-        String registerBody = """
-                {"name":"Before","email":"%s","password":"secret123","cpf":"%s","birthDate":"1990-06-15"}
-                """.formatted(email, TestCpfFactory.nextValidCpf());
+        String registerBody = TestRegisterFactory.body("Before", email, "secret123", TestCpfFactory.nextValidCpf());
 
         String authJson = mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -96,18 +93,14 @@ class NutriplusApiIntegrationTest extends AbstractIntegrationTest {
     void registerRejectsDuplicateEmail() throws Exception {
         String email = "dup-email-" + UUID.randomUUID() + "@nutriplus.test";
         String cpf = TestCpfFactory.nextValidCpf();
-        String registerBody = """
-                {"name":"First User","email":"%s","password":"secret123","cpf":"%s","birthDate":"1990-06-15"}
-                """.formatted(email, cpf);
+        String registerBody = TestRegisterFactory.body("First User", email, "secret123", cpf);
 
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(registerBody))
                 .andExpect(status().isCreated());
 
-        String duplicateBody = """
-                {"name":"Second User","email":"%s","password":"secret123","cpf":"%s","birthDate":"1990-06-15"}
-                """.formatted(email, TestCpfFactory.nextValidCpf());
+        String duplicateBody = TestRegisterFactory.body("Second User", email, "secret123", TestCpfFactory.nextValidCpf());
 
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -119,18 +112,16 @@ class NutriplusApiIntegrationTest extends AbstractIntegrationTest {
     @Test
     void registerRejectsDuplicateCpf() throws Exception {
         String cpf = TestCpfFactory.nextValidCpf();
-        String firstBody = """
-                {"name":"First User","email":"first-%s@nutriplus.test","password":"secret123","cpf":"%s","birthDate":"1990-06-15"}
-                """.formatted(UUID.randomUUID(), cpf);
+        String firstBody = TestRegisterFactory.body(
+                "First User", "first-%s@nutriplus.test".formatted(UUID.randomUUID()), "secret123", cpf);
 
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(firstBody))
                 .andExpect(status().isCreated());
 
-        String secondBody = """
-                {"name":"Second User","email":"second-%s@nutriplus.test","password":"secret123","cpf":"%s","birthDate":"1990-06-15"}
-                """.formatted(UUID.randomUUID(), cpf);
+        String secondBody = TestRegisterFactory.body(
+                "Second User", "second-%s@nutriplus.test".formatted(UUID.randomUUID()), "secret123", cpf);
 
         mockMvc.perform(post("/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
