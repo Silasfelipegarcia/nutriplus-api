@@ -37,6 +37,7 @@ public record NutritionProfileRequest(
         FoodBudgetLevel foodBudgetLevel,
         CalculationMethod calculationMethod,
         @DecimalMin("5.0") @DecimalMax("60.0") BigDecimal bodyFatPercent,
+        @DecimalMin("800.0") @DecimalMax("5000.0") BigDecimal manualBmrKcal,
         @DecimalMin("20.0") @DecimalMax("200.0") BigDecimal muscleMassKg,
         @Pattern(regexp = "^([01]\\d|2[0-3]):[0-5]\\d$") String wakeTime,
         @Pattern(regexp = "^([01]\\d|2[0-3]):[0-5]\\d$") String sleepTime,

@@ -234,6 +234,9 @@ public class AiAgentClient {
         if (profile.getBodyFatPercent() != null) {
             body.put("bodyFatPercent", profile.getBodyFatPercent());
         }
+        if (profile.getManualBmrKcal() != null) {
+            body.put("manualBmrKcal", profile.getManualBmrKcal());
+        }
         if (profile.getMuscleMassKg() != null) {
             body.put("muscleMassKg", profile.getMuscleMassKg());
         }

@@ -97,6 +97,9 @@ public class NutritionProfile {
     @Column(name = "body_fat_percent", precision = 5, scale = 2)
     private BigDecimal bodyFatPercent;
 
+    @Column(name = "manual_bmr_kcal", precision = 8, scale = 2)
+    private BigDecimal manualBmrKcal;
+
     @Column(name = "lean_mass_kg", precision = 5, scale = 2)
     private BigDecimal leanMassKg;
 
@@ -250,6 +253,7 @@ public class NutritionProfile {
         this.foodBudgetLevel = builder.foodBudgetLevel != null ? builder.foodBudgetLevel : FoodBudgetLevel.MODERATE;
         this.calculationMethod = builder.calculationMethod != null ? builder.calculationMethod : CalculationMethod.ESTIMATE;
         this.bodyFatPercent = builder.bodyFatPercent;
+        this.manualBmrKcal = builder.manualBmrKcal;
         this.leanMassKg = builder.leanMassKg;
         this.muscleMassKg = builder.muscleMassKg;
         this.progressReviewIntervalDays = builder.progressReviewIntervalDays != null
@@ -487,6 +491,14 @@ public class NutritionProfile {
 
     public void setBodyFatPercent(BigDecimal bodyFatPercent) {
         this.bodyFatPercent = bodyFatPercent;
+    }
+
+    public BigDecimal getManualBmrKcal() {
+        return manualBmrKcal;
+    }
+
+    public void setManualBmrKcal(BigDecimal manualBmrKcal) {
+        this.manualBmrKcal = manualBmrKcal;
     }
 
     public BigDecimal getLeanMassKg() {
@@ -834,6 +846,7 @@ public class NutritionProfile {
         private FoodBudgetLevel foodBudgetLevel = FoodBudgetLevel.MODERATE;
         private CalculationMethod calculationMethod;
         private BigDecimal bodyFatPercent;
+        private BigDecimal manualBmrKcal;
         private BigDecimal leanMassKg;
         private BigDecimal muscleMassKg;
         private Integer progressReviewIntervalDays;
@@ -992,6 +1005,11 @@ public class NutritionProfile {
 
         public Builder bodyFatPercent(BigDecimal bodyFatPercent) {
             this.bodyFatPercent = bodyFatPercent;
+            return this;
+        }
+
+        public Builder manualBmrKcal(BigDecimal manualBmrKcal) {
+            this.manualBmrKcal = manualBmrKcal;
             return this;
         }
 

@@ -1,5 +1,5 @@
 package br.com.nutriplus.domain.enums;
 
 public enum CalculationMethod {
-    ESTIMATE, BIOIMPEDANCE
+    ESTIMATE, BIOIMPEDANCE, MANUAL_BMR
 }

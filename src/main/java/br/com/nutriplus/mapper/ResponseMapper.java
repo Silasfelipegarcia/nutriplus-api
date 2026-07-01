@@ -117,6 +117,7 @@ public class ResponseMapper {
                 profile.getFoodBudgetLevel(),
                 profile.getCalculationMethod(),
                 profile.getBodyFatPercent(),
+                profile.getManualBmrKcal(),
                 profile.getLeanMassKg(),
                 profile.getMuscleMassKg(),
                 profile.getBmrKcal(),

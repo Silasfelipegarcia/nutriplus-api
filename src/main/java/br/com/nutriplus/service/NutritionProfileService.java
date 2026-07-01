@@ -6,6 +6,7 @@ import br.com.nutriplus.domain.entity.NutritionProfile;
 import br.com.nutriplus.domain.entity.User;
 import br.com.nutriplus.domain.enums.AiRequestStatus;
 import br.com.nutriplus.domain.enums.AiRequestType;
+import br.com.nutriplus.domain.enums.CalculationMethod;
 import br.com.nutriplus.dto.request.NutritionProfileRequest;
 import br.com.nutriplus.dto.response.NutritionProfileResponse;
 import br.com.nutriplus.domain.util.AgePolicy;
@@ -180,8 +181,7 @@ public class NutritionProfileService {
             profile.setNutritionMode(request.nutritionMode());
         }
         profile.setFoodBudgetLevel(request.resolvedFoodBudgetLevel());
-        profile.setCalculationMethod(request.resolvedCalculationMethod());
-        profile.setBodyFatPercent(request.bodyFatPercent());
+        applyCalculationInputs(profile, request);
         profile.setMuscleMassKg(request.muscleMassKg());
         profile.setLeanMassKg(null);
         profile.setWakeTime(parseTime(request.wakeTime()));
@@ -203,6 +203,33 @@ public class NutritionProfileService {
             return Period.between(request.birthDate(), LocalDate.now()).getYears();
         }
         return request.age();
+    }
+
+    private void applyCalculationInputs(NutritionProfile profile, NutritionProfileRequest request) {
+        CalculationMethod method = request.resolvedCalculationMethod();
+        profile.setCalculationMethod(method);
+        profile.setLeanMassKg(null);
+
+        switch (method) {
+            case MANUAL_BMR -> {
+                if (request.manualBmrKcal() == null) {
+                    throw new BusinessException("Informe a taxa metabólica basal (kcal) da bioimpedância.");
+                }
+                profile.setManualBmrKcal(request.manualBmrKcal());
+                profile.setBodyFatPercent(null);
+            }
+            case BIOIMPEDANCE -> {
+                profile.setManualBmrKcal(null);
+                if (request.bodyFatPercent() == null) {
+                    throw new BusinessException("Informe o % de gordura da bioimpedância.");
+                }
+                profile.setBodyFatPercent(request.bodyFatPercent());
+            }
+            default -> {
+                profile.setManualBmrKcal(null);
+                profile.setBodyFatPercent(null);
+            }
+        }
     }
 
     private LocalTime parseTime(String value) {

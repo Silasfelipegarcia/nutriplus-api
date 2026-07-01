@@ -50,6 +50,7 @@ public record NutritionProfileResponse(
         FoodBudgetLevel foodBudgetLevel,
         CalculationMethod calculationMethod,
         BigDecimal bodyFatPercent,
+        BigDecimal manualBmrKcal,
         BigDecimal leanMassKg,
         BigDecimal muscleMassKg,
         BigDecimal bmrKcal,

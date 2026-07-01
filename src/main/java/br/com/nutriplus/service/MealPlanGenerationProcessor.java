@@ -4,6 +4,7 @@ import br.com.nutriplus.client.AiAgentClient;
 import br.com.nutriplus.client.dto.AiMealDto;
 import br.com.nutriplus.client.dto.AiMealItemDto;
 import br.com.nutriplus.client.dto.AiMealPlanGenerateResponse;
+import br.com.nutriplus.client.dto.AiNutritionCalculateResponse;
 import br.com.nutriplus.client.dto.AiShoppingGuidanceDto;
 import br.com.nutriplus.client.dto.AiShoppingItemDto;
 import br.com.nutriplus.domain.entity.*;
@@ -93,6 +94,8 @@ public class MealPlanGenerationProcessor {
                 .orElseThrow(() -> new IllegalStateException("Usuário não encontrado"));
         NutritionProfile profile = nutritionProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalStateException("Perfil nutricional não encontrado"));
+
+        profile = refreshMacroTargets(profile);
 
         String requestJson = objectMapper.writeValueAsString(profile.getId());
         AiMealPlanGenerateResponse aiResponse = aiAgentClient.generateMealPlan(profile);
@@ -289,5 +292,21 @@ public class MealPlanGenerationProcessor {
         } catch (Exception ignored) {
             return null;
         }
+    }
+
+    private NutritionProfile refreshMacroTargets(NutritionProfile profile) {
+        AiNutritionCalculateResponse macros = aiAgentClient.calculateMacros(profile);
+        profile.setBmrKcal(macros.bmrKcal());
+        profile.setTdeeKcal(macros.tdeeKcal());
+        profile.setTargetCalories(macros.targetCalories());
+        profile.setTargetProteinG(macros.targetProteinG());
+        profile.setTargetCarbsG(macros.targetCarbsG());
+        profile.setTargetFatG(macros.targetFatG());
+        if (macros.leanMassKg() != null) {
+            profile.setLeanMassKg(macros.leanMassKg());
+        }
+        profile.setPaceWarning(macros.paceWarning());
+        profile.setEstimatedWeeklyRateKg(macros.estimatedWeeklyRateKg());
+        return nutritionProfileRepository.save(profile);
     }
 }
