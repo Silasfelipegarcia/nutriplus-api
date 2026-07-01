@@ -25,7 +25,7 @@ import br.com.nutriplus.infrastructure.config.NutriCacheNames;
 import java.time.LocalTime;
 import java.time.LocalDate;
 import java.time.Period;
-import java.time.format.DateTimeFormatter;
+import br.com.nutriplus.util.TimeInputNormalizer;
 
 @Service
 public class NutritionProfileService {
@@ -233,10 +233,7 @@ public class NutritionProfileService {
     }
 
     private LocalTime parseTime(String value) {
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-        return LocalTime.parse(value, DateTimeFormatter.ofPattern("HH:mm"));
+        return TimeInputNormalizer.parseFlexible(value);
     }
 
     private String toJson(Object obj) {
