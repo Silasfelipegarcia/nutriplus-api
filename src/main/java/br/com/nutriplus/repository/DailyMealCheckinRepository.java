@@ -19,4 +19,6 @@ public interface DailyMealCheckinRepository extends JpaRepository<DailyMealCheck
     List<DailyMealCheckin> findByUserIdAndDateRange(Long userId, LocalDate start, LocalDate end);
 
     Optional<DailyMealCheckin> findByUserIdAndCheckinDateAndMealId(Long userId, LocalDate checkinDate, Long mealId);
+
+    void deleteByUserIdAndCheckinDateAndMealId(Long userId, LocalDate checkinDate, Long mealId);
 }

@@ -5,7 +5,9 @@ import br.com.nutriplus.dto.request.ProgressReviewRequest;
 import br.com.nutriplus.dto.response.BodyMeasurementResponse;
 import br.com.nutriplus.dto.response.EvolutionReportResponse;
 import br.com.nutriplus.dto.response.ProgressReviewResponse;
+import br.com.nutriplus.dto.response.GoalTimelineResponse;
 import br.com.nutriplus.dto.response.ProgressScheduleResponse;
+import br.com.nutriplus.service.GoalTimelineService;
 import br.com.nutriplus.service.ProgressService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
@@ -15,9 +17,11 @@ import org.springframework.web.bind.annotation.*;
 public class ProgressController {
 
     private final ProgressService progressService;
+    private final GoalTimelineService goalTimelineService;
 
-    public ProgressController(ProgressService progressService) {
+    public ProgressController(ProgressService progressService, GoalTimelineService goalTimelineService) {
         this.progressService = progressService;
+        this.goalTimelineService = goalTimelineService;
     }
 
     @GetMapping("/schedule")
@@ -48,5 +52,10 @@ public class ProgressController {
     @GetMapping("/evolution")
     public EvolutionReportResponse evolution() {
         return progressService.getEvolutionReport();
+    }
+
+    @GetMapping("/goal-timeline")
+    public GoalTimelineResponse goalTimeline() {
+        return goalTimelineService.getGoalTimeline();
     }
 }

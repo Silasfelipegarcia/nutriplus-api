@@ -32,6 +32,11 @@ public class CheckinController {
         return checkinService.saveCheckin(request);
     }
 
+    @DeleteMapping("/{mealId}")
+    public void delete(@PathVariable Long mealId) {
+        checkinService.deleteCheckin(mealId);
+    }
+
     @PostMapping("/extras")
     public DailyFoodExtraResponse addExtra(@Valid @RequestBody FoodExtraRequest request) {
         return checkinService.addFoodExtra(request);
