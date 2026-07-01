@@ -28,7 +28,9 @@ Compare colunas **cold** vs **warm** no relatório. Se `cold_ms >> warm_avg_ms` 
 | **Health ping externo** | Mantém instância quente entre acessos | Cron (GitHub Actions / UptimeRobot) `GET /health` a cada 5 min |
 | **Região** | Latência Brasil | Preferir `us-east` ou região mais próxima dos usuários |
 | **Cache HTTP público** | Reduz hits repetidos | Já em `PublicHttpCacheFilter` (`/feature-flags`, `/plans`, `/legal/*`) |
-| **Cache app** | Reduz DB em instância quente | `nutriplus.cache.enabled=true` + Redis no Railway |
+| **Cache app** | Reduz DB em instância quente | `nutriplus.cache.enabled=true` + Redis no Railway (TTLs em `application-prod.properties`) |
+| **Índices DB** | Queries de checkins / security_events | Migration `V57__performance_indexes.sql` |
+| **JVM** | Menos pausa de GC sob carga | `docker-entrypoint.sh`: `-Xmx2g`, G1GC, `MaxGCPauseMillis=200` |
 
 ## Meta pós-ajuste
 
