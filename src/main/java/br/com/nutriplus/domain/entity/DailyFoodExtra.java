@@ -3,6 +3,7 @@ package br.com.nutriplus.domain.entity;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -30,6 +31,9 @@ public class DailyFoodExtra {
     @Column(name = "impact_message", columnDefinition = "TEXT")
     private String impactMessage;
 
+    @Column(name = "estimated_carbs_g", precision = 8, scale = 1)
+    private BigDecimal estimatedCarbsG;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -37,12 +41,18 @@ public class DailyFoodExtra {
     protected DailyFoodExtra() {
     }
 
-    public DailyFoodExtra(User user, LocalDate entryDate, String description, int estimatedCalories, String impactMessage) {
+    public DailyFoodExtra(User user, LocalDate entryDate, String description, int estimatedCalories,
+                          BigDecimal estimatedCarbsG, String impactMessage) {
         this.user = user;
         this.entryDate = entryDate;
         this.description = description;
         this.estimatedCalories = estimatedCalories;
+        this.estimatedCarbsG = estimatedCarbsG;
         this.impactMessage = impactMessage;
+    }
+
+    public DailyFoodExtra(User user, LocalDate entryDate, String description, int estimatedCalories, String impactMessage) {
+        this(user, entryDate, description, estimatedCalories, null, impactMessage);
     }
 
     public Long getId() {
@@ -63,5 +73,9 @@ public class DailyFoodExtra {
 
     public String getImpactMessage() {
         return impactMessage;
+    }
+
+    public BigDecimal getEstimatedCarbsG() {
+        return estimatedCarbsG;
     }
 }

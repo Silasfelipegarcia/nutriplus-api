@@ -13,6 +13,8 @@ import br.com.nutriplus.infrastructure.config.AiAgentProperties;
 import br.com.nutriplus.infrastructure.web.TraceContext;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
+
+import java.math.BigDecimal;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -107,7 +109,10 @@ public class AiAgentClient {
                                                          String description,
                                                          int consumedCalories,
                                                          int extraCalories,
-                                                         Integer targetCalories) {
+                                                         Integer targetCalories,
+                                                         BigDecimal consumedCarbsG,
+                                                         BigDecimal extraCarbsG,
+                                                         BigDecimal targetCarbsG) {
         Map<String, Object> body = new HashMap<>();
         body.put("agentId", profile.getAgentPersona().toAgentId());
         body.put("goal", profile.getGoal().name());
@@ -116,6 +121,18 @@ public class AiAgentClient {
         body.put("extraCalories", extraCalories);
         if (targetCalories != null) {
             body.put("targetCalories", targetCalories);
+        }
+        if (consumedCarbsG != null) {
+            body.put("consumedCarbsG", consumedCarbsG);
+        }
+        if (extraCarbsG != null) {
+            body.put("extraCarbsG", extraCarbsG);
+        }
+        if (targetCarbsG != null) {
+            body.put("targetCarbsG", targetCarbsG);
+        }
+        if (profile.getNutritionMode() != null) {
+            body.put("nutritionMode", profile.getNutritionMode().name());
         }
         return post("/api/v1/food-extra/estimate", body, AiFoodExtraEstimateResponse.class);
     }
@@ -195,6 +212,12 @@ public class AiAgentClient {
         body.put("eatsAfternoonSnack", profile.isEatsAfternoonSnack());
         body.put("eatsDinner", profile.isEatsDinner());
         body.put("openToRoutineAdjustment", profile.isOpenToRoutineAdjustment());
+        if (profile.getHungerPattern() != null) {
+            body.put("hungerPattern", profile.getHungerPattern().name());
+        }
+        if (profile.getNutritionMode() != null) {
+            body.put("nutritionMode", profile.getNutritionMode().name());
+        }
         if (profile.getFreeExtrasJson() != null && !profile.getFreeExtrasJson().isBlank()) {
             try {
                 body.put("freeExtras", objectMapper.readValue(profile.getFreeExtrasJson(), java.util.List.class));

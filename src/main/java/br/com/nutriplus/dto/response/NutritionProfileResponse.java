@@ -7,6 +7,8 @@ import br.com.nutriplus.domain.enums.ChewingDifficulty;
 import br.com.nutriplus.domain.enums.DietaryPreference;
 import br.com.nutriplus.domain.enums.FoodBudgetLevel;
 import br.com.nutriplus.domain.enums.Goal;
+import br.com.nutriplus.domain.enums.HungerPattern;
+import br.com.nutriplus.domain.enums.NutritionMode;
 import br.com.nutriplus.domain.enums.Restriction;
 import br.com.nutriplus.domain.enums.Sex;
 
@@ -42,6 +44,8 @@ public record NutritionProfileResponse(
         boolean eatsAfternoonSnack,
         boolean eatsDinner,
         boolean openToRoutineAdjustment,
+        HungerPattern hungerPattern,
+        NutritionMode nutritionMode,
         List<String> freeExtras,
         FoodBudgetLevel foodBudgetLevel,
         CalculationMethod calculationMethod,

@@ -11,6 +11,7 @@ import br.com.nutriplus.domain.entity.NutritionProfile;
 import br.com.nutriplus.domain.entity.User;
 import br.com.nutriplus.domain.enums.CheckinStatus;
 import br.com.nutriplus.domain.enums.Goal;
+import br.com.nutriplus.domain.enums.NutritionMode;
 import br.com.nutriplus.dto.request.FoodExtraRequest;
 import br.com.nutriplus.dto.request.MealCheckinRequest;
 import br.com.nutriplus.dto.response.CheckinAdherenceHistoryResponse;
@@ -91,16 +92,22 @@ public class CheckinService {
         NutritionProfile profile = nutritionProfileRepository.findByUserId(user.getId()).orElse(null);
         Integer target = targetCalories(profile);
         String goal = profile != null ? profile.getGoal().name() : Goal.MAINTAIN_WEIGHT.name();
+        BigDecimal targetCarbs = targetCarbsG(profile);
+        String nutritionMode = profile != null && profile.getNutritionMode() != null
+                ? profile.getNutritionMode().name() : NutritionMode.STANDARD.name();
 
         List<DailyFoodExtra> extras = foodExtraRepository.findByUserIdAndEntryDateOrderByCreatedAtAsc(user.getId(), today);
         int extraCalories = extras.stream().mapToInt(DailyFoodExtra::getEstimatedCalories).sum();
+        BigDecimal extraCarbs = sumExtraCarbs(extras);
         List<DailyFoodExtraResponse> extraResponses = extras.stream().map(this::toExtraResponse).toList();
 
         List<MealPlan> plans = mealPlanRepository.findByUserIdOrderByCreatedAtDesc(user.getId());
         if (plans.isEmpty()) {
             int remaining = target != null ? target - extraCalories : 0;
+            BigDecimal remainingCarbs = remainingCarbs(targetCarbs, BigDecimal.ZERO, extraCarbs);
             return new TodayCheckinsResponse(
-                    List.of(), 0, 0, target, 0, extraCalories, extraCalories, remaining, goal, extraResponses);
+                    List.of(), 0, 0, target, 0, extraCalories, extraCalories, remaining, goal, extraResponses,
+                    targetCarbs, BigDecimal.ZERO, extraCarbs, remainingCarbs, nutritionMode);
         }
 
         MealPlan plan = plans.getFirst();
@@ -132,13 +139,19 @@ public class CheckinService {
                 .filter(i -> i.status() == CheckinStatus.DONE)
                 .mapToInt(i -> i.mealCalories() != null ? i.mealCalories() : 0)
                 .sum();
+        BigDecimal consumedCarbs = items.stream()
+                .filter(i -> i.status() == CheckinStatus.DONE)
+                .map(this::mealCarbsFromCheckin)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
         int totalIntake = consumed + extraCalories;
         int remaining = target != null ? target - totalIntake : 0;
         int completed = (int) items.stream().filter(i -> i.status() == CheckinStatus.DONE).count();
+        BigDecimal remainingCarbs = remainingCarbs(targetCarbs, consumedCarbs, extraCarbs);
 
         return new TodayCheckinsResponse(
                 items, completed, items.size(), target, consumed, extraCalories,
-                totalIntake, remaining, goal, extraResponses);
+                totalIntake, remaining, goal, extraResponses,
+                targetCarbs, consumedCarbs, extraCarbs, remainingCarbs, nutritionMode);
     }
 
     @Transactional
@@ -210,13 +223,17 @@ public class CheckinService {
                 request.description(),
                 snapshot.consumedCalories(),
                 snapshot.extraCalories(),
-                snapshot.targetCalories());
+                snapshot.targetCalories(),
+                snapshot.consumedCarbsG(),
+                snapshot.extraCarbsG(),
+                snapshot.targetCarbsG());
 
         DailyFoodExtra saved = foodExtraRepository.save(new DailyFoodExtra(
                 user,
                 today,
                 request.description().trim(),
                 estimate.estimatedCalories(),
+                estimate.estimatedCarbsG(),
                 estimate.impactMessage()));
 
         return toExtraResponse(saved);
@@ -511,6 +528,7 @@ public class CheckinService {
                 extra.getId(),
                 extra.getDescription(),
                 extra.getEstimatedCalories(),
+                extra.getEstimatedCarbsG(),
                 extra.getImpactMessage());
     }
 
@@ -519,6 +537,39 @@ public class CheckinService {
             return null;
         }
         return profile.getTargetCalories().intValue();
+    }
+
+    private BigDecimal targetCarbsG(NutritionProfile profile) {
+        if (profile == null || profile.getTargetCarbsG() == null) {
+            return null;
+        }
+        return profile.getTargetCarbsG();
+    }
+
+    private BigDecimal sumExtraCarbs(List<DailyFoodExtra> extras) {
+        return extras.stream()
+                .map(DailyFoodExtra::getEstimatedCarbsG)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    private BigDecimal remainingCarbs(BigDecimal target, BigDecimal consumed, BigDecimal extra) {
+        if (target == null) {
+            return null;
+        }
+        BigDecimal c = consumed != null ? consumed : BigDecimal.ZERO;
+        BigDecimal e = extra != null ? extra : BigDecimal.ZERO;
+        return target.subtract(c).subtract(e).setScale(1, RoundingMode.HALF_UP);
+    }
+
+    private BigDecimal mealCarbsFromCheckin(TodayMealCheckinResponse item) {
+        if (item.items() == null || item.items().isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        return item.items().stream()
+                .map(MealItemResponse::carbsG)
+                .filter(Objects::nonNull)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
     private int mealCalories(List<MealItem> items) {

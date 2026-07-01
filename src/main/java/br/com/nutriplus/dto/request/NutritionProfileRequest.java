@@ -31,6 +31,8 @@ public record NutritionProfileRequest(
         Boolean eatsAfternoonSnack,
         Boolean eatsDinner,
         Boolean openToRoutineAdjustment,
+        HungerPattern hungerPattern,
+        NutritionMode nutritionMode,
         java.util.List<@Size(max = 80) String> freeExtras,
         FoodBudgetLevel foodBudgetLevel,
         CalculationMethod calculationMethod,

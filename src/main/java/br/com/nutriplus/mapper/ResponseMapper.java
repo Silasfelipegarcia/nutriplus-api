@@ -111,6 +111,8 @@ public class ResponseMapper {
                 profile.isEatsAfternoonSnack(),
                 profile.isEatsDinner(),
                 profile.isOpenToRoutineAdjustment(),
+                profile.getHungerPattern(),
+                profile.getNutritionMode(),
                 parseFreeExtras(profile.getFreeExtrasJson()),
                 profile.getFoodBudgetLevel(),
                 profile.getCalculationMethod(),

@@ -173,6 +173,12 @@ public class NutritionProfileService {
         if (request.freeExtras() != null) {
             profile.setFreeExtrasJson(toJson(request.freeExtras()));
         }
+        if (request.hungerPattern() != null) {
+            profile.setHungerPattern(request.hungerPattern());
+        }
+        if (request.nutritionMode() != null) {
+            profile.setNutritionMode(request.nutritionMode());
+        }
         profile.setFoodBudgetLevel(request.resolvedFoodBudgetLevel());
         profile.setCalculationMethod(request.resolvedCalculationMethod());
         profile.setBodyFatPercent(request.bodyFatPercent());

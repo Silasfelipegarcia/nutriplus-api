@@ -206,6 +206,14 @@ public class NutritionProfile {
     @Column(name = "free_extras_json", columnDefinition = "json")
     private String freeExtrasJson;
 
+    @Enumerated(EnumType.STRING)
+    @Column(name = "hunger_pattern", nullable = false, length = 20)
+    private HungerPattern hungerPattern = HungerPattern.BALANCED;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "nutrition_mode", nullable = false, length = 30)
+    private NutritionMode nutritionMode = NutritionMode.STANDARD;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -279,6 +287,8 @@ public class NutritionProfile {
         this.eatsDinner = builder.eatsDinner;
         this.openToRoutineAdjustment = builder.openToRoutineAdjustment;
         this.freeExtrasJson = builder.freeExtrasJson;
+        this.hungerPattern = builder.hungerPattern != null ? builder.hungerPattern : HungerPattern.BALANCED;
+        this.nutritionMode = builder.nutritionMode != null ? builder.nutritionMode : NutritionMode.STANDARD;
         this.createdAt = builder.createdAt;
         this.updatedAt = builder.updatedAt;
     }
@@ -767,6 +777,22 @@ public class NutritionProfile {
         this.freeExtrasJson = freeExtrasJson;
     }
 
+    public HungerPattern getHungerPattern() {
+        return hungerPattern;
+    }
+
+    public void setHungerPattern(HungerPattern hungerPattern) {
+        this.hungerPattern = hungerPattern != null ? hungerPattern : HungerPattern.BALANCED;
+    }
+
+    public NutritionMode getNutritionMode() {
+        return nutritionMode;
+    }
+
+    public void setNutritionMode(NutritionMode nutritionMode) {
+        this.nutritionMode = nutritionMode != null ? nutritionMode : NutritionMode.STANDARD;
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
@@ -844,6 +870,8 @@ public class NutritionProfile {
         private boolean eatsDinner = true;
         private boolean openToRoutineAdjustment = false;
         private String freeExtrasJson;
+        private HungerPattern hungerPattern = HungerPattern.BALANCED;
+        private NutritionMode nutritionMode = NutritionMode.STANDARD;
         private LocalDateTime createdAt;
         private LocalDateTime updatedAt;
 
@@ -1079,6 +1107,16 @@ public class NutritionProfile {
 
         public Builder aiPlanEligible(boolean aiPlanEligible) {
             this.aiPlanEligible = aiPlanEligible;
+            return this;
+        }
+
+        public Builder hungerPattern(HungerPattern hungerPattern) {
+            this.hungerPattern = hungerPattern;
+            return this;
+        }
+
+        public Builder nutritionMode(NutritionMode nutritionMode) {
+            this.nutritionMode = nutritionMode;
             return this;
         }
 
