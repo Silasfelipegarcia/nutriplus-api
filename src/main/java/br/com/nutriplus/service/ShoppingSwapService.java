@@ -17,13 +17,12 @@ import br.com.nutriplus.repository.MealItemRepository;
 import br.com.nutriplus.repository.MealPlanRepository;
 import br.com.nutriplus.repository.MealRepository;
 import br.com.nutriplus.repository.ShoppingListRepository;
+import br.com.nutriplus.infrastructure.config.NutriCacheEvictionService;
 import br.com.nutriplus.security.CurrentUser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.cache.annotation.CacheEvict;
-import br.com.nutriplus.infrastructure.config.NutriCacheNames;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
@@ -47,6 +46,7 @@ public class ShoppingSwapService {
     private final MealPlanRepository mealPlanRepository;
     private final ResponseMapper responseMapper;
     private final ObjectMapper objectMapper;
+    private final NutriCacheEvictionService cacheEvictionService;
 
     public ShoppingSwapService(CurrentUser currentUser,
                                ShoppingListRepository shoppingListRepository,
@@ -54,7 +54,8 @@ public class ShoppingSwapService {
                                MealItemRepository mealItemRepository,
                                MealPlanRepository mealPlanRepository,
                                ResponseMapper responseMapper,
-                               ObjectMapper objectMapper) {
+                               ObjectMapper objectMapper,
+                               NutriCacheEvictionService cacheEvictionService) {
         this.currentUser = currentUser;
         this.shoppingListRepository = shoppingListRepository;
         this.mealRepository = mealRepository;
@@ -62,10 +63,10 @@ public class ShoppingSwapService {
         this.mealPlanRepository = mealPlanRepository;
         this.responseMapper = responseMapper;
         this.objectMapper = objectMapper;
+        this.cacheEvictionService = cacheEvictionService;
     }
 
     @Transactional
-    @CacheEvict(value = NutriCacheNames.SHOPPING_LIST_LATEST, keyGenerator = "userIdCacheKeyGenerator")
     public ApplyShoppingSwapsResponse applySwaps(ApplyShoppingSwapsRequest request) {
         User user = currentUser.get();
         ShoppingList list = latestListForUser(user.getId());
@@ -106,6 +107,8 @@ public class ShoppingSwapService {
         shoppingListRepository.save(list);
         recalculateMealPlanTotals(mealPlan, mealItems);
         mealPlanRepository.save(mealPlan);
+
+        cacheEvictionService.evictMealPlanCaches(user.getId());
 
         ShoppingListResponse response = responseMapper.toShoppingListResponse(list);
         return new ApplyShoppingSwapsResponse(response, mealPlan.getId());

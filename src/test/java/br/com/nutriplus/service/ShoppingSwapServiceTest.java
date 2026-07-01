@@ -9,6 +9,7 @@ import br.com.nutriplus.domain.entity.ShoppingListItem;
 import br.com.nutriplus.domain.entity.User;
 import br.com.nutriplus.dto.request.ApplyShoppingSwapsRequest;
 import br.com.nutriplus.dto.request.ShoppingSwapSelectionRequest;
+import br.com.nutriplus.infrastructure.config.NutriCacheEvictionService;
 import br.com.nutriplus.mapper.ResponseMapper;
 import br.com.nutriplus.repository.MealItemRepository;
 import br.com.nutriplus.repository.MealPlanRepository;
@@ -48,6 +49,8 @@ class ShoppingSwapServiceTest {
     private ResponseMapper responseMapper;
     @Mock
     private ObjectMapper objectMapper;
+    @Mock
+    private NutriCacheEvictionService cacheEvictionService;
 
     @InjectMocks
     private ShoppingSwapService shoppingSwapService;
@@ -103,5 +106,58 @@ class ShoppingSwapServiceTest {
         assertEquals("tilapia_file", shoppingItem.getSelectedSwapId());
         assertEquals("Tilápia filé", mealItem.getFoodName());
         assertEquals(10L, response.mealPlanId());
+    }
+
+    @Test
+    void applySwapsUpdatesYogurtMealItem() throws Exception {
+        User user = User.builder().id(1L).email("u@test.com").name("U").passwordHash("x").build();
+        MealPlan mealPlan = MealPlan.builder().id(10L).user(user).planDate(LocalDate.now()).disclaimer("d").build();
+        ShoppingList list = ShoppingList.builder().id(5L).user(user).mealPlan(mealPlan)
+                .weekStart(LocalDate.now()).weekEnd(LocalDate.now().plusDays(6)).items(new ArrayList<>()).build();
+
+        String swapJson = """
+                [{"id":"iogurte_zero","label":"Iogurte zero açúcar","costTier":"MODERATE","kcalEstimate":35,"matchesMealFoods":["Iogurte natural"]}]
+                """;
+        ShoppingListItem shoppingItem = ShoppingListItem.builder()
+                .id(100L)
+                .shoppingList(list)
+                .itemName("Iogurte natural")
+                .quantity("7 potes")
+                .category("Bebidas")
+                .kcalEstimate(63)
+                .swapOptionsJson(swapJson)
+                .build();
+        list.getItems().add(shoppingItem);
+
+        Meal meal = Meal.builder().id(21L).mealPlan(mealPlan)
+                .mealType(br.com.nutriplus.domain.enums.MealType.AFTERNOON_SNACK)
+                .name("Lanche").sortOrder(2).build();
+        MealItem mealItem = MealItem.builder()
+                .id(31L)
+                .meal(meal)
+                .foodName("Iogurte natural")
+                .quantityG(new BigDecimal("170"))
+                .calories(new BigDecimal("90"))
+                .proteinG(new BigDecimal("8"))
+                .carbsG(new BigDecimal("12"))
+                .fatG(new BigDecimal("2"))
+                .build();
+
+        when(currentUser.get()).thenReturn(user);
+        when(shoppingListRepository.findByUserIdWithItemsOrderByCreatedAtDesc(1L)).thenReturn(List.of(list));
+        when(mealRepository.findByMealPlanIdOrderBySortOrderAsc(10L)).thenReturn(List.of(meal));
+        when(mealItemRepository.findByMealIds(List.of(21L))).thenReturn(List.of(mealItem));
+        when(objectMapper.readValue(any(String.class), any(com.fasterxml.jackson.core.type.TypeReference.class)))
+                .thenReturn(List.of(new AiShoppingSwapOptionDto(
+                        "iogurte_zero", "Iogurte zero açúcar", "MODERATE", null, null, 35,
+                        List.of("Iogurte natural")
+                )));
+
+        shoppingSwapService.applySwaps(
+                new ApplyShoppingSwapsRequest(List.of(new ShoppingSwapSelectionRequest(100L, "iogurte_zero")))
+        );
+
+        assertEquals("Iogurte zero açúcar", shoppingItem.getItemName());
+        assertEquals("Iogurte zero açúcar", mealItem.getFoodName());
     }
 }
