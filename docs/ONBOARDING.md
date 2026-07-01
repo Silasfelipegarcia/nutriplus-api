@@ -40,4 +40,18 @@ Para atletas, use `POST /onboarding/complete` para evitar estados intermediário
 - Treino: `GET/PUT /training/profile` + `POST /training/apply`
 - Perfil: `POST /nutrition-profile` (recalcula sem treino; atleta deve aplicar treino depois se necessário)
 
+## Modos de metabolismo (etapa medidas)
+
+Escolha **como calcular o BMR** para a meta do plano — **não** substitui o histórico de evolução.
+
+| `calculationMethod` | Entrada do usuário |
+|---------------------|-------------------|
+| `ESTIMATE` (padrão) | Idade, sexo, peso, altura |
+| `BIOIMPEDANCE` | % gordura (obrigatório) |
+| `MANUAL_BMR` | TMB/metabolismo basal em kcal/dia (800–5000) |
+
+**% gordura opcional** pode ser enviado em qualquer modo (`bodyFatPercent`) para snapshot no perfil e baseline de evolução. Histórico completo: `POST /progress/measurements`.
+
+Detalhes: [METABOLISM_AND_BODY_COMPOSITION.md](./METABOLISM_AND_BODY_COMPOSITION.md).
+
 Ver também [TRAINING_MODE.md](./TRAINING_MODE.md) e [HEALTH_ELIGIBILITY.md](./HEALTH_ELIGIBILITY.md).

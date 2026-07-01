@@ -103,15 +103,17 @@ Ver [PRICING.md](./PRICING.md). Resumo:
 
 ---
 
-## 7. Bioimpedância — opcional
+## 7. Bioimpedância e metabolismo
 
 | Modo | `calculationMethod` | Uso |
 |------|---------------------|-----|
-| Básico (padrão) | `ESTIMATE` | Peso + circunferências; suficiente para começar |
-| Com bio | `BIOIMPEDANCE` | + % gordura / massa muscular; maior precisão |
+| Básico (padrão) | `ESTIMATE` | Peso + altura + idade (Mifflin-St Jeor) |
+| Com bio (% gordura) | `BIOIMPEDANCE` | % gordura → massa magra → Katch-McArdle |
+| TMB da balança | `MANUAL_BMR` | Usuário informa kcal/dia do laudo de bio |
 
-- Onboarding e progresso **não exigem** bio.
-- Nutricionista registra medição na consulta via `POST /pro/patients/{id}/measurements` com `calculationMethod` (`ESTIMATE` ou `BIOIMPEDANCE`). Bio exige `bodyFatPercent`; o perfil do paciente é atualizado com o modo escolhido.
+- Onboarding e progresso **não exigem** bio para começar.
+- **Evolução:** % gordura e medidas ficam em `body_measurement_sessions` (gráficos); ver [METABOLISM_AND_BODY_COMPOSITION.md](./METABOLISM_AND_BODY_COMPOSITION.md).
+- Nutricionista registra medição via `POST /pro/patients/{id}/measurements` com `calculationMethod` quando aplicável.
 
 ---
 

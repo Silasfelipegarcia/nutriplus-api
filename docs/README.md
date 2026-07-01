@@ -31,6 +31,8 @@ Hub canônico da documentação da plataforma Nutri+. Este repositório (`nutrip
 |-----------|----------|
 | [**SUBSCRIPTIONS.md**](./SUBSCRIPTIONS.md) | Assinatura atleta — **estado implementado** (Mercado Pago, trial, cancelamento) |
 | [**ONBOARDING.md**](./ONBOARDING.md) | Sequência de endpoints e payload do onboarding |
+| [**METABOLISM_AND_BODY_COMPOSITION.md**](./METABOLISM_AND_BODY_COMPOSITION.md) | Modos de metabolismo vs histórico de % gordura / evolução |
+| [**RELEASE_NOTES_2025-07.md**](./RELEASE_NOTES_2025-07.md) | Novidades jul/2025 (negócio + técnico) |
 | [**TRAINING_MODE.md**](./TRAINING_MODE.md) | Modo atleta, MET, treinos, calorias extras |
 | [**PROGRESS_ANALYSIS.md**](./PROGRESS_ANALYSIS.md) | Medidas corporais, evolução, reavaliação IA |
 | [**ENGAGEMENT.md**](./ENGAGEMENT.md) | Gamificação, lembretes, motivação |

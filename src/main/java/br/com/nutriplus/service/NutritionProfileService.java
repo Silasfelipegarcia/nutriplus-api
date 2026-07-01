@@ -216,7 +216,7 @@ public class NutritionProfileService {
                     throw new BusinessException("Informe a taxa metabólica basal (kcal) da bioimpedância.");
                 }
                 profile.setManualBmrKcal(request.manualBmrKcal());
-                profile.setBodyFatPercent(null);
+                profile.setBodyFatPercent(request.bodyFatPercent());
             }
             case BIOIMPEDANCE -> {
                 profile.setManualBmrKcal(null);
@@ -227,7 +227,7 @@ public class NutritionProfileService {
             }
             default -> {
                 profile.setManualBmrKcal(null);
-                profile.setBodyFatPercent(null);
+                profile.setBodyFatPercent(request.bodyFatPercent());
             }
         }
     }

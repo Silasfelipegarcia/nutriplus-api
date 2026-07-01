@@ -47,7 +47,14 @@ Doc: [SECURITY.md](./SECURITY.md)
 | Termos | `TermsAcceptanceScreen` | `/onboarding/termos` | `POST /users/me/accept-terms` | MVP |
 | Welcome coach | `WelcomeCoachSheet` | — | — | Flutter only |
 
-Doc: [ONBOARDING.md](./ONBOARDING.md)
+Doc: [ONBOARDING.md](./ONBOARDING.md), [METABOLISM_AND_BODY_COMPOSITION.md](./METABOLISM_AND_BODY_COMPOSITION.md)
+
+| Item | Flutter | Web | API | Status |
+|------|---------|-----|-----|--------|
+| Modos metabolismo (estimativa / % gordura / TMB manual) | `MetricsBodyScreen` | parcial portal | `calculationMethod` + V55 | MVP jul/25 |
+| % gordura opcional no onboarding | `MetricsBodyScreen` | — | `bodyFatPercent` | MVP jul/25 |
+| Fome no final do dia | `meal_routine_picker` | — | `hungerPattern` V54 | MVP jul/25 |
+| Modo low carb | `dietary_screen` | — | `nutritionMode` V54 | MVP jul/25 |
 
 ---
 
@@ -59,6 +66,7 @@ Doc: [ONBOARDING.md](./ONBOARDING.md)
 | Check-in refeição | inline | portal dashboard | `POST /checkins` | MVP |
 | Extras fora do plano | `OffPlanFoodSheet` | — | `POST /checkins/extras` | Flutter |
 | Balance insight | `TodayBalanceSheet` | — | `POST /checkins/balance-insight` | Flutter |
+| Saldo carboidratos (low carb) | `TodayBalanceSheet` | — | `consumedCarbsG` / `remainingCarbsG` | MVP jul/25 |
 | Streak / stats | header | — | `GET /checkins/stats` | MVP |
 | Gerar plano (CTA) | `PlanGenerationCard` | dashboard | `POST /meal-plans/generate` | MVP |
 
