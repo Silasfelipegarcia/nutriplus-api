@@ -2,6 +2,7 @@ package br.com.nutriplus.dto.response;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 public record GoalTimelineResponse(
         LocalDate journeyStartDate,
@@ -14,6 +15,13 @@ public record GoalTimelineResponse(
         LocalDate projectedFinishDate,
         String paceStatus,
         int daysAheadOrBehind,
-        String summary
+        String summary,
+        Long currentPlanId,
+        LocalDate currentPlanStartDate,
+        int previousPlanCount,
+        List<GoalTimelineWeightPoint> weightHistory,
+        List<GoalTimelinePlanEra> planEras,
+        List<GoalTimelineChartPoint> requiredPaceLine,
+        List<GoalTimelineChartPoint> projectionLine
 ) {
 }

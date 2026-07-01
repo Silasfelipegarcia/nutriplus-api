@@ -13,6 +13,8 @@ public interface BodyMeasurementSessionRepository extends JpaRepository<BodyMeas
 
     List<BodyMeasurementSession> findTop12ByUserIdOrderByMeasuredOnAscIdAsc(Long userId);
 
+    List<BodyMeasurementSession> findByUserIdOrderByMeasuredOnAscIdAsc(Long userId);
+
     Optional<BodyMeasurementSession> findFirstByUserIdOrderByMeasuredOnDescIdDesc(Long userId);
 
     Optional<BodyMeasurementSession> findFirstByUserIdAndMeasuredOnOrderByIdDesc(Long userId, LocalDate measuredOn);
