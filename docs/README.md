@@ -52,6 +52,7 @@ Hub canônico da documentação da plataforma Nutri+. Este repositório (`nutrip
 | [**ARCHITECTURE.md**](./ARCHITECTURE.md) | Clean Architecture, packages, bounded contexts |
 | [**SECURITY.md**](./SECURITY.md) | JWT, rate limit, lockout, threat model |
 | [**PERFORMANCE.md**](./PERFORMANCE.md) | SLA, cache, matriz de endpoints |
+| [**postmortems/README.md**](./postmortems/README.md) | Incidentes, aprendizados e base para posts |
 | [**TESTING.md**](./TESTING.md) | Testes unitários, integração, k6 |
 
 ---
@@ -67,6 +68,7 @@ Hub canônico da documentação da plataforma Nutri+. Este repositório (`nutrip
 | [**GITFLOW.md**](./GITFLOW.md) | Branches e releases |
 | [**MERCADOPAGO_SETUP.md**](./MERCADOPAGO_SETUP.md) | Runbook Mercado Pago (assinatura atleta) |
 | [**FLYWAY_V38_RECOVERY.md**](./FLYWAY_V38_RECOVERY.md) | Runbook: reparo migration V38 |
+| [**postmortems/**](./postmortems/README.md) | Postmortems e lições de incidentes |
 
 ---
 

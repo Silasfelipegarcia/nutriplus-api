@@ -1,0 +1,43 @@
+---
+description: Guardrails de latência da API — não degradar performance do cliente
+alwaysApply: true
+---
+
+# Latência da API (Nutri+)
+
+Referência: `docs/PERFORMANCE.md`, `docs/PERFORMANCE_BASELINE.md`, `docs/RAILWAY_PERFORMANCE.md`.
+
+## SLAs (p95)
+
+| Tier | Alvo | Exemplos |
+|------|------|----------|
+| **S** | < 200 ms | GET portal, checkins, `/users/me`, Pro readonly |
+| **A** | < 500 ms | auth, writes leves |
+| **B** | < 2 s | macros síncronos, swaps |
+| **C** | < 30 s | geração de plano (async) |
+
+Local ~50 ms; prod warm deve ficar < 800 ms no fluxo dashboard. **Nunca confiar só em teste local.**
+
+## Antes de merge / deploy
+
+1. Endpoint Tier **S** novo → `@Cacheable`, HTTP cache público, ou justificar `none` no `PERFORMANCE.md`.
+2. Migration com query por `user_id` + data → **índice composto** na mesma PR.
+3. Listas com filhos → batch load (`MealLoader` pattern); **proibido N+1** em loop.
+4. Não desligar cache em prod nem encurtar TTL sem motivo documentado.
+5. Writes que alteram leitura cacheada → `@CacheEvict` no serviço correto.
+6. Regressão máxima vs baseline: **×1.2** no p95 warm.
+
+## Proibido sem revisão explícita
+
+- `findAll()` / full scan em tabelas que crescem (`security_events`, checkins, messages).
+- Polling agressivo no backend; jobs síncronos pesados no request path.
+- Remover índices ou reduzir heap/GC tuning do `docker-entrypoint.sh`.
+
+- Proibir `BIGSERIAL`, `SERIAL`, `RETURNING` em `db/migration/*.sql` — projeto é **MySQL** (`BIGINT AUTO_INCREMENT`). Ver `docs/postmortems/2026-07-01-flyway-v57-mysql-syntax.md`.
+
+```bash
+./perf/run-baseline.sh local   # antes do PR
+# prod (read-only): ./perf/run-baseline.sh prod
+```
+
+Se piorar Tier S ou soma do dashboard → corrigir antes de subir.
