@@ -4,6 +4,7 @@ import br.com.nutriplus.AbstractIntegrationTest;
 import br.com.nutriplus.client.AiAgentClient;
 import br.com.nutriplus.client.dto.AiNutritionCalculateResponse;
 import br.com.nutriplus.domain.entity.NutritionProfile;
+import br.com.nutriplus.support.IntegrationAuthSupport;
 import br.com.nutriplus.support.TestCpfFactory;
 import org.junit.jupiter.api.Test;
 import org.mockito.stubbing.Answer;
@@ -38,19 +39,13 @@ class TrainingProfileIntegrationTest extends AbstractIntegrationTest {
 
         String email = "athlete-" + UUID.randomUUID() + "@nutriplus.test";
         String password = "secret123";
-        String registerBody = """
-                {"name":"Athlete User","email":"%s","password":"%s","cpf":"%s","birthDate":"1990-06-15"}
-                """.formatted(email, password, TestCpfFactory.nextValidCpf());
-
-        String authJson = mockMvc.perform(post("/auth/register")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(registerBody))
-                .andExpect(status().isCreated())
-                .andReturn()
-                .getResponse()
-                .getContentAsString();
-
-        String token = extractJsonField(authJson, "token");
+        String token = IntegrationAuthSupport.registerAndLogin(
+                mockMvc,
+                userRepository,
+                "Athlete User",
+                email,
+                password,
+                TestCpfFactory.nextValidCpf());
         var auth = authHeaders(token);
 
         String profileBody = """
@@ -137,15 +132,5 @@ class TrainingProfileIntegrationTest extends AbstractIntegrationTest {
         headers.set("Authorization", "Bearer " + token);
         return headers;
     }
-
-    private static String extractJsonField(String json, String field) {
-        String needle = "\"" + field + "\":\"";
-        int start = json.indexOf(needle);
-        if (start < 0) {
-            throw new IllegalArgumentException("Field not found: " + field);
-        }
-        start += needle.length();
-        int end = json.indexOf('"', start);
-        return json.substring(start, end);
-    }
 }
+

@@ -9,12 +9,12 @@ import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 
 public record RegisterRequest(
-        @NotBlank @Size(max = 150) String name,
-        @NotBlank @Email String email,
-        @NotBlank @Size(min = 6, max = 100) String password,
+        @NotBlank(message = "Informe seu nome") @Size(max = 150) String name,
+        @NotBlank(message = "Informe seu e-mail") @Email(message = "E-mail inválido") String email,
+        @NotBlank(message = "Informe sua senha") @Size(min = 6, max = 100, message = "Senha deve ter entre 6 e 100 caracteres") String password,
         @NotBlank @ValidCpf String cpf,
-        @NotNull LocalDate birthDate,
-        @NotBlank @Size(max = 20) String contactPhone,
+        @NotNull(message = "Informe sua data de nascimento") LocalDate birthDate,
+        @NotBlank(message = "Informe seu telefone") @Size(max = 20) String contactPhone,
         @Size(max = 64) String acquisitionSource,
         @Size(max = 64) String acquisitionMedium,
         @Size(max = 128) String acquisitionCampaign,

@@ -180,6 +180,8 @@ public class ResponseMapper {
                         item.getId(),
                         item.getFoodName(),
                         item.getQuantityG(),
+                        item.getQuantityDisplay(),
+                        item.getUnitKind(),
                         item.getCalories(),
                         item.getProteinG(),
                         item.getCarbsG(),

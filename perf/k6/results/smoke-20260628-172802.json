@@ -1,0 +1,227 @@
+{
+    "metrics": {
+        "http_req_duration": {
+            "min": 0.286,
+            "med": 5.764,
+            "max": 213.077,
+            "p(90)": 13.06,
+            "p(95)": 17.861499999999996,
+            "avg": 7.044193532461082
+        },
+        "http_req_tls_handshaking": {
+            "avg": 0,
+            "min": 0,
+            "med": 0,
+            "max": 0,
+            "p(90)": 0,
+            "p(95)": 0
+        },
+        "data_sent": {
+            "count": 1119609,
+            "rate": 36948.548338978755
+        },
+        "vus": {
+            "value": 5,
+            "min": 5,
+            "max": 5
+        },
+        "http_req_duration{expected_response:true}": {
+            "avg": 6.6827793890774405,
+            "min": 0.286,
+            "med": 5.72,
+            "max": 213.077,
+            "p(90)": 12.755,
+            "p(95)": 17.691
+        },
+        "data_received": {
+            "count": 4715763,
+            "rate": 155626.2920007498
+        },
+        "iteration_duration": {
+            "avg": 371.83382301234553,
+            "min": 338.471875,
+            "med": 353.267542,
+            "max": 764.153333,
+            "p(90)": 414.43607460000004,
+            "p(95)": 474.2336422
+        },
+        "http_req_duration{tier:S}": {
+            "min": 0.286,
+            "med": 5.7620000000000005,
+            "max": 213.077,
+            "p(90)": 13.0555,
+            "p(95)": 17.8492,
+            "avg": 7.00295283950614,
+            "thresholds": {
+                "p(95)<200": false
+            }
+        },
+        "http_req_connecting": {
+            "avg": 0.0033646013330041963,
+            "min": 0,
+            "med": 0,
+            "max": 0.934,
+            "p(90)": 0,
+            "p(95)": 0
+        },
+        "iterations": {
+            "count": 405,
+            "rate": 13.365524997821915
+        },
+        "http_req_sending": {
+            "avg": 0.013756850160454382,
+            "min": 0.002,
+            "med": 0.009,
+            "max": 2.222,
+            "p(90)": 0.019,
+            "p(95)": 0.024
+        },
+        "checks": {
+            "passes": 4051,
+            "fails": 0,
+            "value": 1
+        },
+        "http_req_blocked": {
+            "med": 0.003,
+            "max": 1.468,
+            "p(90)": 0.005,
+            "p(95)": 0.007,
+            "avg": 0.008228091829178002,
+            "min": 0
+        },
+        "http_req_failed": {
+            "passes": 810,
+            "fails": 3241,
+            "thresholds": {
+                "rate<0.05": true
+            },
+            "value": 0.1999506294742039
+        },
+        "vus_max": {
+            "max": 5,
+            "value": 5,
+            "min": 5
+        },
+        "http_req_waiting": {
+            "avg": 6.9061495926931515,
+            "min": 0.238,
+            "med": 5.638,
+            "max": 212.882,
+            "p(90)": 12.801,
+            "p(95)": 17.721999999999987
+        },
+        "http_reqs": {
+            "rate": 133.68825127451007,
+            "count": 4051
+        },
+        "http_req_receiving": {
+            "avg": 0.1242870896075039,
+            "min": 0.008,
+            "med": 0.09,
+            "max": 6.238,
+            "p(90)": 0.228,
+            "p(95)": 0.307
+        }
+    },
+    "setup_data": {
+        "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIzIiwidHlwIjoiYWNjZXNzIiwiZW1haWwiOiJ0ZXN0ZUBudXRyaXBsdXMubG9jYWwiLCJyb2xlcyI6WyJQQVRJRU5UIl0sInBhc3N3b3JkTXVzdENoYW5nZSI6ZmFsc2UsImlhdCI6MTc4MjY3ODQ4MywiZXhwIjoxNzgyNjgyMDgzfQ.7y6UF0p0H3xd6Wn1S7Wf9VD_EO_WyzUVb2B_3VW7brQ",
+        "authHeaders": {
+            "Authorization": "Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIzIiwidHlwIjoiYWNjZXNzIiwiZW1haWwiOiJ0ZXN0ZUBudXRyaXBsdXMubG9jYWwiLCJyb2xlcyI6WyJQQVRJRU5UIl0sInBhc3N3b3JkTXVzdENoYW5nZSI6ZmFsc2UsImlhdCI6MTc4MjY3ODQ4MywiZXhwIjoxNzgyNjgyMDgzfQ.7y6UF0p0H3xd6Wn1S7Wf9VD_EO_WyzUVb2B_3VW7brQ"
+        },
+        "email": "teste@nutriplus.local"
+    },
+    "root_group": {
+        "name": "",
+        "path": "",
+        "id": "d41d8cd98f00b204e9800998ecf8427e",
+        "groups": {
+            "setup": {
+                "id": "5c0f8025f7e0b6654089e5b00e950f1a",
+                "groups": {},
+                "checks": {
+                        "login status 200": {
+                            "passes": 1,
+                            "fails": 0,
+                            "name": "login status 200",
+                            "path": "::setup::login status 200",
+                            "id": "17a4a3f3d5dbad586fefc48e40f4a9ab"
+                        }
+                    },
+                "name": "setup",
+                "path": "::setup"
+            }
+        },
+        "checks": {
+            "health status 200": {
+                "name": "health status 200",
+                "path": "::health status 200",
+                "id": "54cc6b20b1977b24d2246b3d411f7567",
+                "passes": 405,
+                "fails": 0
+            },
+            "users/me status 2xx": {
+                "path": "::users/me status 2xx",
+                "id": "8593e884c8bdc1e58f06b8af3f8375ab",
+                "passes": 405,
+                "fails": 0,
+                "name": "users/me status 2xx"
+            },
+            "nutrition-profile status 2xx/404": {
+                "path": "::nutrition-profile status 2xx/404",
+                "id": "928d31c9291fa4a1bc596721a133a6ff",
+                "passes": 405,
+                "fails": 0,
+                "name": "nutrition-profile status 2xx/404"
+            },
+            "meal-plans/latest status 2xx/404": {
+                "name": "meal-plans/latest status 2xx/404",
+                "path": "::meal-plans/latest status 2xx/404",
+                "id": "1deadcdefa1c888d82c7348c00dbcb1b",
+                "passes": 405,
+                "fails": 0
+            },
+            "shopping-list/latest status 2xx/404": {
+                "name": "shopping-list/latest status 2xx/404",
+                "path": "::shopping-list/latest status 2xx/404",
+                "id": "5e873a89448f75aa95c5de456491ee26",
+                "passes": 405,
+                "fails": 0
+            },
+            "checkins/today status 2xx/404": {
+                "name": "checkins/today status 2xx/404",
+                "path": "::checkins/today status 2xx/404",
+                "id": "ad4b398041a20246ece26913dc77eda1",
+                "passes": 405,
+                "fails": 0
+            },
+            "checkins/stats status 2xx": {
+                "fails": 0,
+                "name": "checkins/stats status 2xx",
+                "path": "::checkins/stats status 2xx",
+                "id": "ac07eba239137888f1b9720381381a33",
+                "passes": 405
+            },
+            "progress/schedule status 2xx/404": {
+                "fails": 0,
+                "name": "progress/schedule status 2xx/404",
+                "path": "::progress/schedule status 2xx/404",
+                "id": "8332d107ddd9676747c6ac1966359813",
+                "passes": 405
+            },
+            "training/sports status 200": {
+                "fails": 0,
+                "name": "training/sports status 200",
+                "path": "::training/sports status 200",
+                "id": "1a0bd258c88bd6f9e7e1d6d6b7482ff1",
+                "passes": 405
+            },
+            "legal/terms status 200": {
+                "path": "::legal/terms status 200",
+                "id": "8315d04b17f12613aee2cb4efb2a3019",
+                "passes": 405,
+                "fails": 0,
+                "name": "legal/terms status 200"
+            }
+        }
+    }
+}

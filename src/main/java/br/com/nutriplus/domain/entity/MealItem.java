@@ -22,6 +22,12 @@ public class MealItem {
     @Column(name = "quantity_g", nullable = false, precision = 8, scale = 2)
     private BigDecimal quantityG;
 
+    @Column(name = "quantity_display", length = 80)
+    private String quantityDisplay;
+
+    @Column(name = "unit_kind", length = 20)
+    private String unitKind;
+
     @Column(precision = 8, scale = 2)
     private BigDecimal calories;
 
@@ -42,6 +48,8 @@ public class MealItem {
         this.meal = builder.meal;
         this.foodName = builder.foodName;
         this.quantityG = builder.quantityG;
+        this.quantityDisplay = builder.quantityDisplay;
+        this.unitKind = builder.unitKind;
         this.calories = builder.calories;
         this.proteinG = builder.proteinG;
         this.carbsG = builder.carbsG;
@@ -84,6 +92,22 @@ public class MealItem {
         this.quantityG = quantityG;
     }
 
+    public String getQuantityDisplay() {
+        return quantityDisplay;
+    }
+
+    public void setQuantityDisplay(String quantityDisplay) {
+        this.quantityDisplay = quantityDisplay;
+    }
+
+    public String getUnitKind() {
+        return unitKind;
+    }
+
+    public void setUnitKind(String unitKind) {
+        this.unitKind = unitKind;
+    }
+
     public BigDecimal getCalories() {
         return calories;
     }
@@ -121,6 +145,8 @@ public class MealItem {
         private Meal meal;
         private String foodName;
         private BigDecimal quantityG;
+        private String quantityDisplay;
+        private String unitKind;
         private BigDecimal calories;
         private BigDecimal proteinG;
         private BigDecimal carbsG;
@@ -143,6 +169,16 @@ public class MealItem {
 
         public Builder quantityG(BigDecimal quantityG) {
             this.quantityG = quantityG;
+            return this;
+        }
+
+        public Builder quantityDisplay(String quantityDisplay) {
+            this.quantityDisplay = quantityDisplay;
+            return this;
+        }
+
+        public Builder unitKind(String unitKind) {
+            this.unitKind = unitKind;
             return this;
         }
 

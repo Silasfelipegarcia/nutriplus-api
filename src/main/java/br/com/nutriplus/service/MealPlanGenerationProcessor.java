@@ -170,6 +170,8 @@ public class MealPlanGenerationProcessor {
                                 .meal(meal)
                                 .foodName(aiItem.foodName())
                                 .quantityG(aiItem.quantityG())
+                                .quantityDisplay(aiItem.quantityDisplay())
+                                .unitKind(aiItem.unitKind())
                                 .calories(aiItem.calories())
                                 .proteinG(aiItem.proteinG())
                                 .carbsG(aiItem.carbsG())

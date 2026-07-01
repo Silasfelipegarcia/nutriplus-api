@@ -36,6 +36,8 @@ Hub canônico da documentação da plataforma Nutri+. Este repositório (`nutrip
 | [**ENGAGEMENT.md**](./ENGAGEMENT.md) | Gamificação, lembretes, motivação |
 | [**HELP_CONTENT.md**](./HELP_CONTENT.md) | FAQ in-app (copy canônico) |
 | [**APP_FEEDBACK.md**](./APP_FEEDBACK.md) | Feedback Likert in-app |
+| [**PLAN_REGENERATION.md**](./PLAN_REGENERATION.md) | Travas de regeração, flag `UNLIMITED_PLAN_REGEN` |
+| [**RELEASE_UX_MINIMALISTA.md**](./RELEASE_UX_MINIMALISTA.md) | **Release jun/2026:** UX minimalista, plano, quantidades, checklist |
 
 ---
 

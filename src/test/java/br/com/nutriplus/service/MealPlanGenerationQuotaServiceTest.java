@@ -32,6 +32,8 @@ class MealPlanGenerationQuotaServiceTest {
     private SubscriptionService subscriptionService;
     @Mock
     private MealPlanGenerationJobRepository jobRepository;
+    @Mock
+    private FeatureFlagService featureFlagService;
 
     private MealPlanGenerationQuotaService quotaService;
     private User user;
@@ -42,11 +44,13 @@ class MealPlanGenerationQuotaServiceTest {
                 billingEnforcementService,
                 subscriptionService,
                 jobRepository,
-                new MealPlanGenerationQuotaProperties(1, 1, 3, 2));
+                new MealPlanGenerationQuotaProperties(1, 1, 3, 2),
+                featureFlagService);
         user = User.builder().id(42L).email("user@test.com").build();
         lenient().when(subscriptionService.emTrial(user)).thenReturn(false);
         lenient().when(subscriptionService.temAssinaturaPaga(user)).thenReturn(false);
         lenient().when(subscriptionService.resolverPlanoEfetivo(user)).thenReturn(SubscriptionPlan.FREE);
+        lenient().when(featureFlagService.isEnabled("UNLIMITED_PLAN_REGEN")).thenReturn(false);
     }
 
     @Test
@@ -59,7 +63,15 @@ class MealPlanGenerationQuotaServiceTest {
     }
 
     @Test
+    void unlimitedFlagBypassesDailyAndMonthlyQuota() {
+        when(featureFlagService.isEnabled("UNLIMITED_PLAN_REGEN")).thenReturn(true);
+
+        assertDoesNotThrow(() -> quotaService.assertCanGenerate(user));
+    }
+
+    @Test
     void betaModeBlocksAfterDailyLimit() {
+        when(featureFlagService.isEnabled("UNLIMITED_PLAN_REGEN")).thenReturn(false);
         when(billingEnforcementService.isBillingEnabled()).thenReturn(false);
         when(jobRepository.countByUserIdAndStatusInAndCreatedAtGreaterThanEqual(
                 eq(42L), any(), eq(LocalDate.now().atStartOfDay()))).thenReturn(2L);
@@ -80,9 +92,9 @@ class MealPlanGenerationQuotaServiceTest {
     void freeTierBlocksAfterMonthlyGenerationEvenOnNewDay() {
         when(billingEnforcementService.isBillingEnabled()).thenReturn(true);
         when(jobRepository.countByUserIdAndStatusInAndCreatedAtGreaterThanEqual(
-                eq(42L), any(), eq(LocalDate.now().atStartOfDay()))).thenReturn(0L);
-        when(jobRepository.countByUserIdAndStatusInAndCreatedAtGreaterThanEqual(
-                eq(42L), any(), eq(LocalDate.now().withDayOfMonth(1).atStartOfDay()))).thenReturn(1L);
+                eq(42L), any(), any()))
+                .thenReturn(0L)
+                .thenReturn(1L);
 
         assertThrows(SubscriptionRequiredException.class, () -> quotaService.assertCanGenerate(user));
     }

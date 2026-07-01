@@ -34,17 +34,24 @@ public class PlanRegenerationPolicyService {
     private final MealPlanGenerationJobRepository jobRepository;
     private final ProgressReviewRepository reviewRepository;
     private final ProgressScheduleService progressScheduleService;
+    private final FeatureFlagService featureFlagService;
 
     public PlanRegenerationPolicyService(NutritionProfileRepository nutritionProfileRepository,
                                          MealPlanRepository mealPlanRepository,
                                          MealPlanGenerationJobRepository jobRepository,
                                          ProgressReviewRepository reviewRepository,
-                                         ProgressScheduleService progressScheduleService) {
+                                         ProgressScheduleService progressScheduleService,
+                                         FeatureFlagService featureFlagService) {
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.mealPlanRepository = mealPlanRepository;
         this.jobRepository = jobRepository;
         this.reviewRepository = reviewRepository;
         this.progressScheduleService = progressScheduleService;
+        this.featureFlagService = featureFlagService;
+    }
+
+    private boolean isUnlimitedRegenEnabled() {
+        return featureFlagService.isEnabled("UNLIMITED_PLAN_REGEN");
     }
 
     public PlanRegenerationEligibilityResponse getEligibility(User user,
@@ -62,6 +69,12 @@ public class PlanRegenerationPolicyService {
         boolean athleteAvailable = profile.isAthleteRegenEligible();
         Long pendingReviewId = findPendingCycleReviewId(user.getId());
 
+        if (isUnlimitedRegenEnabled() && hasMealPlan) {
+            oneTimeAvailable = true;
+            daysUntilUnlock = 0;
+            lockedUntil = null;
+        }
+
         List<String> allowed = new ArrayList<>();
         if (!hasMealPlan) {
             allowed.add(PlanRegenerationReason.FIRST_PLAN.name());
@@ -77,6 +90,9 @@ public class PlanRegenerationPolicyService {
         }
         if (pendingReviewId != null) {
             allowed.add(PlanRegenerationReason.CYCLE_REVIEW.name());
+        }
+        if (hasMealPlan && isUnlimitedRegenEnabled()) {
+            allowed.add(PlanRegenerationReason.UNLOCKED_REGEN.name());
         }
 
         return new PlanRegenerationEligibilityResponse(
@@ -132,6 +148,12 @@ public class PlanRegenerationPolicyService {
                 requireMealPlan(user.getId());
                 assertCycleReviewAllowed(user.getId(), reviewId, profile);
             }
+            case UNLOCKED_REGEN -> {
+                requireMealPlan(user.getId());
+                if (!isUnlimitedRegenEnabled()) {
+                    throw new BusinessException("Regeneração livre não está habilitada.");
+                }
+            }
             default -> throw new BusinessException("Motivo de geração inválido.");
         }
 
@@ -140,7 +162,8 @@ public class PlanRegenerationPolicyService {
                 && reason != PlanRegenerationReason.NUTRITIONIST_BYPASS
                 && reason != PlanRegenerationReason.ATHLETE_SWITCH
                 && reason != PlanRegenerationReason.ONE_TIME_CORRECTION
-                && reason != PlanRegenerationReason.CYCLE_REVIEW) {
+                && reason != PlanRegenerationReason.CYCLE_REVIEW
+                && reason != PlanRegenerationReason.UNLOCKED_REGEN) {
             throw new BusinessException("Motivo de geração inválido.");
         }
 
@@ -149,7 +172,8 @@ public class PlanRegenerationPolicyService {
                 && reason != PlanRegenerationReason.ONE_TIME_CORRECTION
                 && reason != PlanRegenerationReason.CYCLE_REVIEW
                 && reason != PlanRegenerationReason.GENERATION_RETRY
-                && reason != PlanRegenerationReason.NUTRITIONIST_BYPASS) {
+                && reason != PlanRegenerationReason.NUTRITIONIST_BYPASS
+                && reason != PlanRegenerationReason.UNLOCKED_REGEN) {
             int days = (int) ChronoUnit.DAYS.between(LocalDate.now(), profile.getPlanRegenLockedUntil());
             throw new BusinessException(
                     days > 0
@@ -167,9 +191,6 @@ public class PlanRegenerationPolicyService {
             return;
         }
 
-        LocalDate lockUntil = LocalDate.now().plusDays(profile.getProgressReviewIntervalDays());
-        profile.setPlanRegenLockedUntil(lockUntil);
-
         switch (reason) {
             case ATHLETE_SWITCH -> {
                 profile.setAthleteRegenEligible(false);
@@ -184,7 +205,13 @@ public class PlanRegenerationPolicyService {
                     });
                 }
             }
+            case UNLOCKED_REGEN -> profile.setPlanRegenLockedUntil(null);
             case FIRST_PLAN, GENERATION_RETRY, NUTRITIONIST_BYPASS -> { }
+        }
+
+        if (reason != PlanRegenerationReason.UNLOCKED_REGEN) {
+            LocalDate lockUntil = LocalDate.now().plusDays(profile.getProgressReviewIntervalDays());
+            profile.setPlanRegenLockedUntil(lockUntil);
         }
 
         nutritionProfileRepository.save(profile);
