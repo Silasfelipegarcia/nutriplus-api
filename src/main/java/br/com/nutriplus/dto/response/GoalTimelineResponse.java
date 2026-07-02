@@ -7,6 +7,7 @@ import java.util.List;
 public record GoalTimelineResponse(
         LocalDate journeyStartDate,
         LocalDate targetDate,
+        LocalDate chartEndDate,
         BigDecimal startWeightKg,
         BigDecimal targetWeightKg,
         BigDecimal latestWeightKg,

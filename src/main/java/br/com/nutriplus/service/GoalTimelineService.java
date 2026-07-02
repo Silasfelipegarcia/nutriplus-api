@@ -31,6 +31,8 @@ import java.util.List;
 public class GoalTimelineService {
 
     private static final double MAX_SAFE_LOSS_KG_PER_WEEK = 1.0;
+    private static final int MIN_DAYS_FOR_RATE = 7;
+    private static final int PROJECTION_STEP_DAYS = 7;
 
     private final CurrentUser currentUser;
     private final NutritionProfileRepository nutritionProfileRepository;
@@ -65,15 +67,18 @@ public class GoalTimelineService {
 
         List<BodyMeasurementSession> allMeasurements =
                 measurementRepository.findByUserIdOrderByMeasuredOnAscIdAsc(user.getId());
-        List<GoalTimelineWeightPoint> weightHistory = buildWeightHistory(allMeasurements, planStart);
         List<GoalTimelinePlanEra> planEras = buildPlanEras(plansDesc);
 
         if (profile.getGoal() == Goal.MAINTAIN_WEIGHT) {
+            BigDecimal weight = resolveLatestWeight(user.getId(), profile, allMeasurements);
+            List<GoalTimelineWeightPoint> weightHistory = buildWeightHistory(allMeasurements, planStart, weight, planStart);
             return maintainResponse(profile, currentPlanId, planStart, previousPlanCount, weightHistory, planEras);
         }
 
         Integer weeks = profile.getGoalTargetWeeks();
         if (weeks == null || weeks <= 0) {
+            BigDecimal weight = resolveLatestWeight(user.getId(), profile, allMeasurements);
+            List<GoalTimelineWeightPoint> weightHistory = buildWeightHistory(allMeasurements, planStart, weight, planStart);
             return insufficientData(
                     profile,
                     "Defina um prazo em semanas no seu perfil para ver a previsão da meta.",
@@ -101,8 +106,13 @@ public class GoalTimelineService {
         BigDecimal requiredRateBd = scale(requiredRate);
 
         List<BodyMeasurementSession> planMeasurements = filterFromDate(allMeasurements, planStart);
-        BigDecimal actualRate = resolveActualRate(profile.getGoal(), planStart, planMeasurements, latestWeight, startWeight);
+        BigDecimal rawActualRate = resolveActualRate(
+                profile.getGoal(), planStart, planMeasurements, latestWeight, startWeight);
+        BigDecimal actualRate = normalizeActualRate(rawActualRate, requiredRateBd, profile.getGoal());
         BigDecimal remainingKg = latestWeight.subtract(targetWeight).abs();
+
+        List<GoalTimelineWeightPoint> weightHistory = buildWeightHistory(
+                allMeasurements, planStart, startWeight, journeyStart);
 
         LocalDate projectedFinish = null;
         String paceStatus = "INSUFFICIENT_DATA";
@@ -121,7 +131,10 @@ public class GoalTimelineService {
             if (projection.estimatedWeightChangeKgPerWeek() != null
                     && projection.estimatedWeightChangeKgPerWeek() != 0
                     && remainingKg.compareTo(BigDecimal.ZERO) > 0.05) {
-                actualRate = scale(Math.abs(projection.estimatedWeightChangeKgPerWeek()));
+                actualRate = normalizeActualRate(
+                        scale(Math.abs(projection.estimatedWeightChangeKgPerWeek())),
+                        requiredRateBd,
+                        profile.getGoal());
                 projectedFinish = projectFinishDate(today, remainingKg, actualRate);
                 daysAheadOrBehind = (int) ChronoUnit.DAYS.between(targetDate, projectedFinish);
                 paceStatus = resolvePaceStatus(daysAheadOrBehind);
@@ -132,14 +145,24 @@ public class GoalTimelineService {
             }
         }
 
+        LocalDate chartEndDate = resolveChartEndDate(journeyStart, targetDate, projectedFinish, daysAheadOrBehind);
+        LocalDate trendStart = resolveTrendStart(today, planMeasurements);
+        BigDecimal trendWeight = resolveTrendWeight(trendStart, today, latestWeight, planMeasurements);
+
         List<GoalTimelineChartPoint> requiredPaceLine = buildPaceLine(
                 journeyStart, startWeight, targetDate, targetWeight, profile.getGoal());
         List<GoalTimelineChartPoint> projectionLine = buildProjectionLine(
-                today, latestWeight, projectedFinish, targetWeight);
+                trendStart,
+                trendWeight,
+                actualRate,
+                targetWeight,
+                profile.getGoal(),
+                chartEndDate);
 
         return new GoalTimelineResponse(
                 journeyStart,
                 targetDate,
+                chartEndDate,
                 startWeight,
                 targetWeight,
                 latestWeight,
@@ -167,6 +190,7 @@ public class GoalTimelineService {
                                                   List<GoalTimelinePlanEra> planEras) {
         return new GoalTimelineResponse(
                 planStart,
+                null,
                 null,
                 profile.getCurrentWeightKg(),
                 profile.getTargetWeightKg(),
@@ -198,6 +222,7 @@ public class GoalTimelineService {
         return new GoalTimelineResponse(
                 planStart,
                 null,
+                null,
                 profile.getCurrentWeightKg(),
                 profile.getTargetWeightKg(),
                 profile.getCurrentWeightKg(),
@@ -218,14 +243,24 @@ public class GoalTimelineService {
     }
 
     private static List<GoalTimelineWeightPoint> buildWeightHistory(List<BodyMeasurementSession> all,
-                                                                    LocalDate planStart) {
-        return all.stream()
+                                                                    LocalDate planStart,
+                                                                    BigDecimal planStartWeight,
+                                                                    LocalDate journeyStart) {
+        List<GoalTimelineWeightPoint> points = all.stream()
                 .map(session -> new GoalTimelineWeightPoint(
                         session.getMeasuredOn(),
                         session.getWeightKg(),
                         !session.getMeasuredOn().isBefore(planStart)
                 ))
-                .toList();
+                .collect(java.util.stream.Collectors.toCollection(ArrayList::new));
+
+        boolean hasPlanStartAnchor = points.stream()
+                .anyMatch(p -> p.currentPlanPeriod() && p.date().equals(journeyStart));
+        if (!hasPlanStartAnchor && planStartWeight != null) {
+            points.add(new GoalTimelineWeightPoint(journeyStart, planStartWeight, true));
+            points.sort(java.util.Comparator.comparing(GoalTimelineWeightPoint::date));
+        }
+        return List.copyOf(points);
     }
 
     private static List<GoalTimelinePlanEra> buildPlanEras(List<MealPlan> plansDesc) {
@@ -285,18 +320,23 @@ public class GoalTimelineService {
         if (planMeasurements.size() >= 2) {
             BodyMeasurementSession first = planMeasurements.getFirst();
             BodyMeasurementSession last = planMeasurements.getLast();
-            long days = Math.max(ChronoUnit.DAYS.between(first.getMeasuredOn(), last.getMeasuredOn()), 1);
-            BigDecimal weightDelta = last.getWeightKg().subtract(first.getWeightKg());
-            double weeks = days / 7.0;
-            if (goal == Goal.LOSE_WEIGHT && weightDelta.compareTo(BigDecimal.ZERO) < 0) {
-                return scale(weightDelta.abs().doubleValue() / weeks);
-            }
-            if (goal == Goal.GAIN_MASS && weightDelta.compareTo(BigDecimal.ZERO) > 0) {
-                return scale(weightDelta.doubleValue() / weeks);
+            long days = ChronoUnit.DAYS.between(first.getMeasuredOn(), last.getMeasuredOn());
+            if (days >= MIN_DAYS_FOR_RATE) {
+                BigDecimal weightDelta = last.getWeightKg().subtract(first.getWeightKg());
+                double weeks = days / 7.0;
+                if (goal == Goal.LOSE_WEIGHT && weightDelta.compareTo(BigDecimal.ZERO) < 0) {
+                    return scale(weightDelta.abs().doubleValue() / weeks);
+                }
+                if (goal == Goal.GAIN_MASS && weightDelta.compareTo(BigDecimal.ZERO) > 0) {
+                    return scale(weightDelta.doubleValue() / weeks);
+                }
             }
         }
 
-        long daysSinceStart = Math.max(ChronoUnit.DAYS.between(planStart, LocalDate.now()), 1);
+        long daysSinceStart = ChronoUnit.DAYS.between(planStart, LocalDate.now());
+        if (daysSinceStart < MIN_DAYS_FOR_RATE) {
+            return null;
+        }
         double weeks = daysSinceStart / 7.0;
         BigDecimal moved = latestWeight.subtract(startWeight);
         if (goal == Goal.LOSE_WEIGHT && moved.compareTo(BigDecimal.ZERO) < 0) {
@@ -308,46 +348,147 @@ public class GoalTimelineService {
         return null;
     }
 
+    static BigDecimal normalizeActualRate(BigDecimal rawRate, BigDecimal requiredRate, Goal goal) {
+        if (rawRate == null || rawRate.compareTo(BigDecimal.ZERO) <= 0) {
+            return null;
+        }
+        double required = requiredRate != null ? requiredRate.doubleValue() : 0.2;
+        double cap = Math.max(required * 2.5, 0.15);
+        if (goal == Goal.LOSE_WEIGHT) {
+            cap = Math.min(cap, MAX_SAFE_LOSS_KG_PER_WEEK * 1.15);
+        } else if (goal == Goal.GAIN_MASS) {
+            cap = Math.min(cap, 0.75);
+        }
+        return scale(Math.min(rawRate.doubleValue(), cap));
+    }
+
+    static LocalDate resolveChartEndDate(LocalDate journeyStart,
+                                         LocalDate targetDate,
+                                         LocalDate projectedFinish,
+                                         int daysAheadOrBehind) {
+        LocalDate end = targetDate != null ? targetDate : journeyStart.plusWeeks(12);
+        if (daysAheadOrBehind > 7 && projectedFinish != null && projectedFinish.isAfter(end)) {
+            return projectedFinish.plusDays(PROJECTION_STEP_DAYS);
+        }
+        return end;
+    }
+
+    private static LocalDate resolveTrendStart(LocalDate today, List<BodyMeasurementSession> planMeasurements) {
+        if (planMeasurements.isEmpty()) {
+            return today;
+        }
+        BodyMeasurementSession last = planMeasurements.getLast();
+        long daysSinceLast = ChronoUnit.DAYS.between(last.getMeasuredOn(), today);
+        if (daysSinceLast <= 21) {
+            return last.getMeasuredOn();
+        }
+        return today;
+    }
+
+    private static BigDecimal resolveTrendWeight(LocalDate trendStart,
+                                                 LocalDate today,
+                                                 BigDecimal latestWeight,
+                                                 List<BodyMeasurementSession> planMeasurements) {
+        if (!planMeasurements.isEmpty()) {
+            BodyMeasurementSession last = planMeasurements.getLast();
+            if (last.getMeasuredOn().equals(trendStart)) {
+                return last.getWeightKg();
+            }
+        }
+        return latestWeight;
+    }
+
     private static LocalDate projectFinishDate(LocalDate today, BigDecimal remainingKg, BigDecimal actualRate) {
         double weeksToGo = remainingKg.doubleValue() / actualRate.doubleValue();
         return today.plusDays(Math.round(weeksToGo * 7));
     }
 
-    private static List<GoalTimelineChartPoint> buildPaceLine(LocalDate startDate,
-                                                            BigDecimal startWeight,
-                                                            LocalDate endDate,
-                                                            BigDecimal endWeight,
-                                                            Goal goal) {
+    static List<GoalTimelineChartPoint> buildPaceLine(LocalDate startDate,
+                                                      BigDecimal startWeight,
+                                                      LocalDate endDate,
+                                                      BigDecimal endWeight,
+                                                      Goal goal) {
         if (startDate == null || endDate == null || startWeight == null || endWeight == null) {
             return List.of();
         }
         long totalDays = Math.max(ChronoUnit.DAYS.between(startDate, endDate), 1);
         List<GoalTimelineChartPoint> points = new ArrayList<>();
-        for (int step = 0; step <= 4; step++) {
-            long offset = (totalDays * step) / 4;
+        points.add(new GoalTimelineChartPoint(startDate, startWeight));
+
+        for (long offset = PROJECTION_STEP_DAYS; offset < totalDays; offset += PROJECTION_STEP_DAYS) {
             LocalDate date = startDate.plusDays(offset);
-            double ratio = totalDays == 0 ? 1 : (double) offset / totalDays;
+            double ratio = (double) offset / totalDays;
             double start = startWeight.doubleValue();
             double end = endWeight.doubleValue();
-            double value = goal == Goal.GAIN_MASS
-                    ? start + (end - start) * ratio
-                    : start + (end - start) * ratio;
+            double value = start + (end - start) * ratio;
             points.add(new GoalTimelineChartPoint(date, scale(value)));
+        }
+        points.add(new GoalTimelineChartPoint(endDate, endWeight));
+        return points;
+    }
+
+    static List<GoalTimelineChartPoint> buildProjectionLine(LocalDate trendStart,
+                                                            BigDecimal trendWeight,
+                                                            BigDecimal actualRate,
+                                                            BigDecimal targetWeight,
+                                                            Goal goal,
+                                                            LocalDate chartEndDate) {
+        if (trendStart == null || trendWeight == null || chartEndDate == null) {
+            return List.of();
+        }
+        List<GoalTimelineChartPoint> points = new ArrayList<>();
+        points.add(new GoalTimelineChartPoint(trendStart, trendWeight));
+
+        if (actualRate == null || actualRate.compareTo(BigDecimal.ZERO) <= 0 || targetWeight == null) {
+            if (!trendStart.equals(chartEndDate)) {
+                points.add(new GoalTimelineChartPoint(chartEndDate, trendWeight));
+            }
+            return points;
+        }
+
+        double rate = actualRate.doubleValue();
+        double origin = trendWeight.doubleValue();
+        double target = targetWeight.doubleValue();
+
+        for (long offset = PROJECTION_STEP_DAYS; ; offset += PROJECTION_STEP_DAYS) {
+            LocalDate date = trendStart.plusDays(offset);
+            boolean isEnd = date.isAfter(chartEndDate);
+            if (isEnd) {
+                date = chartEndDate;
+            }
+
+            long daysFromStart = ChronoUnit.DAYS.between(trendStart, date);
+            double weeks = daysFromStart / 7.0;
+            double projected = projectWeightAtWeeks(origin, target, rate, weeks, goal);
+            BigDecimal projectedBd = scale(projected);
+
+            GoalTimelineChartPoint last = points.get(points.size() - 1);
+            if (!last.date().equals(date)) {
+                points.add(new GoalTimelineChartPoint(date, projectedBd));
+            }
+
+            boolean reachedGoal = goal == Goal.GAIN_MASS
+                    ? projected >= target - 0.01
+                    : projected <= target + 0.01;
+            if (reachedGoal) {
+                points.set(points.size() - 1, new GoalTimelineChartPoint(date, targetWeight));
+                if (date.isBefore(chartEndDate)) {
+                    points.add(new GoalTimelineChartPoint(chartEndDate, targetWeight));
+                }
+                break;
+            }
+            if (isEnd) {
+                break;
+            }
         }
         return points;
     }
 
-    private static List<GoalTimelineChartPoint> buildProjectionLine(LocalDate today,
-                                                                    BigDecimal latestWeight,
-                                                                    LocalDate projectedFinish,
-                                                                    BigDecimal targetWeight) {
-        if (today == null || projectedFinish == null || latestWeight == null || targetWeight == null) {
-            return List.of();
+    private static double projectWeightAtWeeks(double origin, double target, double rate, double weeks, Goal goal) {
+        if (goal == Goal.GAIN_MASS) {
+            return Math.min(origin + rate * weeks, target);
         }
-        return List.of(
-                new GoalTimelineChartPoint(today, latestWeight),
-                new GoalTimelineChartPoint(projectedFinish, targetWeight)
-        );
+        return Math.max(origin - rate * weeks, target);
     }
 
     private static String resolvePaceStatus(int daysAheadOrBehind) {
