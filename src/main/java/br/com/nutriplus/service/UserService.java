@@ -3,12 +3,14 @@ package br.com.nutriplus.service;
 import br.com.nutriplus.application.auth.LoginUseCase;
 import br.com.nutriplus.application.shared.ActingUserResolver;
 import br.com.nutriplus.application.user.ChangePasswordUseCase;
+import br.com.nutriplus.application.user.DeleteAccountUseCase;
 import br.com.nutriplus.application.user.GetCurrentUserUseCase;
 import br.com.nutriplus.application.user.UpdateUserProfileUseCase;
 import br.com.nutriplus.domain.entity.UserLegalAcceptance;
 import br.com.nutriplus.domain.enums.LegalDocumentType;
 import br.com.nutriplus.dto.request.AcceptTermsRequest;
 import br.com.nutriplus.dto.request.ChangePasswordRequest;
+import br.com.nutriplus.dto.request.DeleteAccountRequest;
 import br.com.nutriplus.dto.request.UpdateUserProfileRequest;
 import br.com.nutriplus.dto.response.AuthResponse;
 import br.com.nutriplus.dto.response.UserResponse;
@@ -34,6 +36,7 @@ public class UserService {
     private final GetCurrentUserUseCase getCurrentUserUseCase;
     private final UpdateUserProfileUseCase updateUserProfileUseCase;
     private final ChangePasswordUseCase changePasswordUseCase;
+    private final DeleteAccountUseCase deleteAccountUseCase;
     private final NutritionProfileRepository nutritionProfileRepository;
     private final ResponseMapper responseMapper;
     private final CurrentUser currentUser;
@@ -45,6 +48,7 @@ public class UserService {
                        GetCurrentUserUseCase getCurrentUserUseCase,
                        UpdateUserProfileUseCase updateUserProfileUseCase,
                        ChangePasswordUseCase changePasswordUseCase,
+                       DeleteAccountUseCase deleteAccountUseCase,
                        NutritionProfileRepository nutritionProfileRepository,
                        ResponseMapper responseMapper,
                        CurrentUser currentUser,
@@ -55,6 +59,7 @@ public class UserService {
         this.getCurrentUserUseCase = getCurrentUserUseCase;
         this.updateUserProfileUseCase = updateUserProfileUseCase;
         this.changePasswordUseCase = changePasswordUseCase;
+        this.deleteAccountUseCase = deleteAccountUseCase;
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.responseMapper = responseMapper;
         this.currentUser = currentUser;
@@ -123,9 +128,10 @@ public class UserService {
     }
 
     @Transactional
-    public void deleteAccount() {
+    @CacheEvict(value = NutriCacheNames.USER_ME, keyGenerator = "userIdCacheKeyGenerator")
+    public void deleteAccount(DeleteAccountRequest request) {
         var entity = currentUser.get();
-        userRepository.delete(entity);
+        deleteAccountUseCase.execute(entity, request);
     }
 
     private void validateLegalVersions(AcceptTermsRequest request) {

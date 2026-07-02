@@ -2,10 +2,13 @@ package br.com.nutriplus.controller;
 
 import br.com.nutriplus.dto.request.AcceptTermsRequest;
 import br.com.nutriplus.dto.request.ChangePasswordRequest;
+import br.com.nutriplus.dto.request.DeleteAccountRequest;
 import br.com.nutriplus.dto.request.UpdateUserProfileRequest;
 import br.com.nutriplus.dto.response.AuthResponse;
 import br.com.nutriplus.dto.response.UserResponse;
+import br.com.nutriplus.infrastructure.security.WebPortalClientVerifier;
 import br.com.nutriplus.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -17,9 +20,11 @@ import org.springframework.web.bind.annotation.*;
 public class UserController {
 
     private final UserService userService;
+    private final WebPortalClientVerifier webPortalClientVerifier;
 
-    public UserController(UserService userService) {
+    public UserController(UserService userService, WebPortalClientVerifier webPortalClientVerifier) {
         this.userService = userService;
+        this.webPortalClientVerifier = webPortalClientVerifier;
     }
 
     @GetMapping("/me")
@@ -44,7 +49,8 @@ public class UserController {
 
     @DeleteMapping("/me")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void deleteAccount() {
-        userService.deleteAccount();
+    public void deleteAccount(@Valid @RequestBody DeleteAccountRequest request, HttpServletRequest httpRequest) {
+        webPortalClientVerifier.requireWebPortal(httpRequest);
+        userService.deleteAccount(request);
     }
 }

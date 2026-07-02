@@ -8,6 +8,8 @@ import br.com.nutriplus.exception.InvalidCredentialsException;
 import br.com.nutriplus.exception.LoginDisabledException;
 import br.com.nutriplus.exception.ResourceNotFoundException;
 import br.com.nutriplus.exception.SubscriptionRequiredException;
+import br.com.nutriplus.exception.WebPortalOnlyException;
+import br.com.nutriplus.infrastructure.observability.NewRelicTraceBridge;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +43,11 @@ public class ApiExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<Map<String, Object>> business(BusinessException ex, HttpServletRequest request) {
         return build(HttpStatus.BAD_REQUEST, ex.getMessage(), null, request);
+    }
+
+    @ExceptionHandler(WebPortalOnlyException.class)
+    public ResponseEntity<Map<String, Object>> webPortalOnly(WebPortalOnlyException ex, HttpServletRequest request) {
+        return build(HttpStatus.FORBIDDEN, ex.getMessage(), "WEB_PORTAL_ONLY", request);
     }
 
     @ExceptionHandler(SubscriptionRequiredException.class)
@@ -81,6 +88,7 @@ public class ApiExceptionHandler {
     @ExceptionHandler(AiAgentException.class)
     public ResponseEntity<Map<String, Object>> aiAgent(AiAgentException ex, HttpServletRequest request) {
         log.error("[AI_AGENT] {}", ex.getMessage(), ex);
+        NewRelicTraceBridge.noticeError(ex);
         return build(HttpStatus.BAD_GATEWAY, ex.getMessage(), "AI_AGENT_ERROR", request);
     }
 
@@ -123,6 +131,7 @@ public class ApiExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, Object>> fallback(Exception ex, HttpServletRequest request) {
         log.error("[UNHANDLED] {}", ex.getMessage(), ex);
+        NewRelicTraceBridge.noticeError(ex);
         return build(HttpStatus.INTERNAL_SERVER_ERROR, "Erro interno. Tente novamente.", "INTERNAL_ERROR", request);
     }
 
