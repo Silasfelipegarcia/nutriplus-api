@@ -183,6 +183,7 @@ public class SubscriptionPlanCatalogService {
             case ESSENTIAL_YEARLY -> 17900;
             case ATHLETE_MONTHLY -> 2990;
             case ATHLETE_YEARLY -> 26900;
+            case TEST_MONTHLY -> 100;
             default -> 0;
         };
     }
@@ -190,7 +191,7 @@ public class SubscriptionPlanCatalogService {
     private static int fallbackPeriodDays(SubscriptionPlan plan) {
         return switch (plan) {
             case ESSENTIAL_YEARLY, ATHLETE_YEARLY -> 365;
-            case ESSENTIAL_MONTHLY, ATHLETE_MONTHLY -> 30;
+            case ESSENTIAL_MONTHLY, ATHLETE_MONTHLY, TEST_MONTHLY -> 30;
             default -> 0;
         };
     }
@@ -202,6 +203,7 @@ public class SubscriptionPlanCatalogService {
             case ESSENTIAL_YEARLY -> "Essencial Anual";
             case ATHLETE_MONTHLY -> "Atleta Mensal";
             case ATHLETE_YEARLY -> "Atleta Anual";
+            case TEST_MONTHLY -> "Teste Produção (R$ 1)";
         };
     }
 

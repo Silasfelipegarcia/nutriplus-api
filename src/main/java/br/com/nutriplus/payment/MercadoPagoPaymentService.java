@@ -917,6 +917,7 @@ public class MercadoPagoPaymentService {
             case ESSENTIAL_YEARLY -> "Nutri+ Essencial Anual";
             case ATHLETE_MONTHLY -> "Nutri+ Atleta Mensal";
             case ATHLETE_YEARLY -> "Nutri+ Atleta Anual";
+            case TEST_MONTHLY -> "Nutri+ Teste (R$ 1)";
             default -> "Nutri+ Assinatura";
         };
     }

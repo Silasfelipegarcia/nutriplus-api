@@ -261,7 +261,7 @@ public class SubscriptionService {
             return false;
         }
         SubscriptionPlan plan = resolverPlanoEfetivo(user);
-        return SubscriptionPlans.isEssentialPlan(plan) || SubscriptionPlans.isAthletePlan(plan);
+        return SubscriptionPlans.isEssentialTier(plan) || SubscriptionPlans.isAthletePlan(plan);
     }
 
     public boolean emTrial(User user) {

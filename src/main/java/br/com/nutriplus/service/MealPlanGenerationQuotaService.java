@@ -133,7 +133,7 @@ public class MealPlanGenerationQuotaService {
         if (plan == SubscriptionPlan.FREE) {
             return new SubscriptionRequiredException(UserMessages.monthlyQuotaFree());
         }
-        if (SubscriptionPlans.isEssentialPlan(plan)) {
+        if (SubscriptionPlans.isEssentialTier(plan)) {
             return new SubscriptionRequiredException(UserMessages.monthlyQuotaEssential());
         }
         return new SubscriptionRequiredException(

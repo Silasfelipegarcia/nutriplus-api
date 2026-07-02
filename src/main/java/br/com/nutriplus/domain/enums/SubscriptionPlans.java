@@ -20,7 +20,8 @@ public final class SubscriptionPlans {
             SubscriptionPlan.ESSENTIAL_MONTHLY,
             SubscriptionPlan.ESSENTIAL_YEARLY,
             SubscriptionPlan.ATHLETE_MONTHLY,
-            SubscriptionPlan.ATHLETE_YEARLY
+            SubscriptionPlan.ATHLETE_YEARLY,
+            SubscriptionPlan.TEST_MONTHLY
     );
 
     private SubscriptionPlans() {
@@ -38,8 +39,19 @@ public final class SubscriptionPlans {
         return plan != null && PAID_B2C.contains(plan);
     }
 
+    public static boolean isTestPlan(SubscriptionPlan plan) {
+        return plan == SubscriptionPlan.TEST_MONTHLY;
+    }
+
+    /** Essencial ou plano de teste (mesmo tier de produto, sem modo atleta). */
+    public static boolean isEssentialTier(SubscriptionPlan plan) {
+        return isEssentialPlan(plan) || isTestPlan(plan);
+    }
+
     public static boolean isMonthlyPlan(SubscriptionPlan plan) {
-        return plan == SubscriptionPlan.ESSENTIAL_MONTHLY || plan == SubscriptionPlan.ATHLETE_MONTHLY;
+        return plan == SubscriptionPlan.ESSENTIAL_MONTHLY
+                || plan == SubscriptionPlan.ATHLETE_MONTHLY
+                || plan == SubscriptionPlan.TEST_MONTHLY;
     }
 
     public static boolean isYearlyPlan(SubscriptionPlan plan) {

@@ -41,7 +41,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
               AND u.subscriptionPlan IN (br.com.nutriplus.domain.enums.SubscriptionPlan.ESSENTIAL_MONTHLY,
                                          br.com.nutriplus.domain.enums.SubscriptionPlan.ESSENTIAL_YEARLY,
                                          br.com.nutriplus.domain.enums.SubscriptionPlan.ATHLETE_MONTHLY,
-                                         br.com.nutriplus.domain.enums.SubscriptionPlan.ATHLETE_YEARLY)
+                                         br.com.nutriplus.domain.enums.SubscriptionPlan.ATHLETE_YEARLY,
+                                         br.com.nutriplus.domain.enums.SubscriptionPlan.TEST_MONTHLY)
             """)
     List<User> findDueForRenewal(@Param("limite") Instant limite);
 
