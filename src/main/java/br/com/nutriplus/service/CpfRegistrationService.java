@@ -30,6 +30,17 @@ public class CpfRegistrationService {
         user.setCpfEncrypted(cpfProtectionService.encrypt(normalized));
     }
 
+    /** Persiste CPF do titular do cartão quando o usuário ainda não tem CPF no cadastro. */
+    public void applyCpfIfAbsent(User user, String cpf) {
+        if (user.getCpfEncrypted() != null && !user.getCpfEncrypted().isBlank()) {
+            return;
+        }
+        if (cpf == null || cpf.isBlank()) {
+            return;
+        }
+        applyCpf(user, cpf);
+    }
+
     private void assertHashAvailable(String hash) {
         if (userRepository.existsByCpfHash(hash)) {
             throw new BusinessException("CPF já cadastrado");

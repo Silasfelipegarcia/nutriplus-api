@@ -19,6 +19,7 @@ import br.com.nutriplus.exception.BusinessException;
 import br.com.nutriplus.repository.PaymentOrderRepository;
 import br.com.nutriplus.repository.UserRepository;
 import br.com.nutriplus.service.BillingEnforcementService;
+import br.com.nutriplus.service.CpfRegistrationService;
 import br.com.nutriplus.service.SubscriptionPlanCatalogService;
 import br.com.nutriplus.service.SubscriptionService;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -53,6 +54,7 @@ public class MercadoPagoPaymentService {
     private final SubscriptionService subscriptionService;
     private final SubscriptionPlanCatalogService planCatalogService;
     private final BillingEnforcementService billingEnforcementService;
+    private final CpfRegistrationService cpfRegistrationService;
     private final RestClient restClient;
     private final ObjectMapper objectMapper;
 
@@ -64,6 +66,7 @@ public class MercadoPagoPaymentService {
                                      SubscriptionService subscriptionService,
                                      SubscriptionPlanCatalogService planCatalogService,
                                      BillingEnforcementService billingEnforcementService,
+                                     CpfRegistrationService cpfRegistrationService,
                                      ObjectMapper objectMapper) {
         this.properties = properties;
         this.paymentOrderRepository = paymentOrderRepository;
@@ -73,6 +76,7 @@ public class MercadoPagoPaymentService {
         this.subscriptionService = subscriptionService;
         this.planCatalogService = planCatalogService;
         this.billingEnforcementService = billingEnforcementService;
+        this.cpfRegistrationService = cpfRegistrationService;
         this.objectMapper = objectMapper;
         this.restClient = RestClient.builder()
                 .baseUrl(properties.apiBaseUrl())
@@ -302,8 +306,12 @@ public class MercadoPagoPaymentService {
     }
 
     @Transactional
-    public SavedCardResponse salvarCartao(Long userId, String token) {
+    public SavedCardResponse salvarCartao(Long userId, String token, String cpf) {
         if (properties.isMockMode() || accountInspector.useCardVaultMock()) {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+            cpfRegistrationService.applyCpfIfAbsent(user, cpf);
+            userRepository.save(user);
             return salvarCartaoMock(userId, token);
         }
         if (!properties.isCheckoutReady()) {
@@ -314,6 +322,8 @@ public class MercadoPagoPaymentService {
         }
 
         User user = customerService.obterOuCriar(userId);
+        cpfRegistrationService.applyCpfIfAbsent(user, cpf);
+        userRepository.save(user);
         Map<String, Object> body = Map.of("token", token);
 
         try {
@@ -423,13 +433,14 @@ public class MercadoPagoPaymentService {
         }
 
         String paymentToken = resolverTokenPagamento(user, request);
-        Map<String, Object> payer = montarPayer(user, cartaoSalvo);
+        Map<String, Object> payer = montarPayer(user, cartaoSalvo, cartaoMp);
 
         Map<String, Object> body = new HashMap<>();
         body.put("transaction_amount", amountCents / 100.0);
         body.put("token", paymentToken);
         body.put("description", descricaoPagamento(plan, subscriptionService.ehUpgradeProporcional(user, plan)));
         body.put("installments", 1);
+        body.put("payment_type_id", "credit_card");
         body.put("external_reference", orderId);
         body.put("payer", payer);
         if (cartaoMp != null) {
@@ -456,7 +467,13 @@ public class MercadoPagoPaymentService {
         }
 
         String status = payment.path("status").asText("pending").toUpperCase(Locale.ROOT);
+        String statusDetail = payment.path("status_detail").asText(null);
         String paymentId = payment.path("id").asText(null);
+
+        if ("REJECTED".equalsIgnoreCase(status) || "CANCELLED".equalsIgnoreCase(status)) {
+            log.warn("Pagamento recusado para usuário {} plano {}: status={} detail={} paymentId={}",
+                    userId, plan, status, statusDetail, paymentId);
+        }
 
         order.setMpPaymentId(paymentId);
         order.setStatus(status);
@@ -473,7 +490,8 @@ public class MercadoPagoPaymentService {
         ChargePlanResponse response = new ChargePlanResponse();
         response.setOrderId(orderId);
         response.setStatus(status);
-        response.setStatusLabel(rotuloStatus(status));
+        response.setStatusDetail(statusDetail);
+        response.setStatusLabel(rotuloStatusPagamento(status, statusDetail));
         response.setPlanNome(subscriptionService.planoNome(plan));
         return response;
     }
@@ -536,19 +554,33 @@ public class MercadoPagoPaymentService {
         return request.getToken() != null && !request.getToken().isBlank();
     }
 
-    private Map<String, Object> montarPayer(User user, boolean cartaoSalvo) {
+    private Map<String, Object> montarPayer(User user, boolean cartaoSalvo, JsonNode cartaoMp) {
         Map<String, Object> payer = new HashMap<>();
         payer.put("email", user.getEmail());
         if (cartaoSalvo && user.getMpCustomerId() != null && !user.getMpCustomerId().isBlank()) {
             payer.put("type", "customer");
             payer.put("id", user.getMpCustomerId());
-        } else {
-            String cpf = customerService.resolverCpf(user);
-            if (cpf != null && !cpf.isBlank()) {
-                payer.put("identification", Map.of("type", "CPF", "number", cpf));
-            }
+        }
+        String cpf = resolverCpfPagamento(user, cartaoMp);
+        if (cpf != null && !cpf.isBlank()) {
+            payer.put("identification", Map.of("type", "CPF", "number", cpf));
         }
         return payer;
+    }
+
+    private String resolverCpfPagamento(User user, JsonNode cartaoMp) {
+        String cpf = customerService.resolverCpf(user);
+        if (cpf != null && !cpf.isBlank()) {
+            return cpf;
+        }
+        if (cartaoMp == null) {
+            return null;
+        }
+        String fromCard = cartaoMp.path("cardholder").path("identification").path("number").asText(null);
+        if (fromCard == null || fromCard.isBlank()) {
+            return null;
+        }
+        return fromCard.replaceAll("\\D", "");
     }
 
     private String resolverTokenPagamento(User user, ChargePlanRequest request) {
@@ -624,6 +656,14 @@ public class MercadoPagoPaymentService {
         if (paymentMethodId != null && !paymentMethodId.isBlank()) {
             body.put("payment_method_id", paymentMethodId);
         }
+        String issuerId = cartaoMp.path("issuer").path("id").asText(null);
+        if (issuerId != null && !issuerId.isBlank()) {
+            try {
+                body.put("issuer_id", Integer.parseInt(issuerId));
+            } catch (NumberFormatException ignored) {
+                body.put("issuer_id", issuerId);
+            }
+        }
     }
 
     private SavedCardResponse mapearCartao(JsonNode node) {
@@ -670,6 +710,41 @@ public class MercadoPagoPaymentService {
             case "PENDING" -> "Pendente";
             case "REJECTED", "CANCELLED" -> "Recusado";
             default -> status;
+        };
+    }
+
+    private String rotuloStatusPagamento(String status, String statusDetail) {
+        if (status == null) {
+            return "Desconhecido";
+        }
+        String normalized = status.toUpperCase(Locale.ROOT);
+        if (!"REJECTED".equals(normalized) && !"CANCELLED".equals(normalized)) {
+            return rotuloStatus(normalized);
+        }
+        return rotuloRejeicao(statusDetail);
+    }
+
+    private String rotuloRejeicao(String statusDetail) {
+        if (statusDetail == null || statusDetail.isBlank()) {
+            return "Pagamento recusado. Verifique o cartão ou tente outro meio de pagamento.";
+        }
+        return switch (statusDetail) {
+            case "cc_rejected_bad_filled_security_code" ->
+                    "CVV incorreto. Confira o código de segurança do cartão.";
+            case "cc_rejected_insufficient_amount" ->
+                    "Saldo ou limite insuficiente no cartão.";
+            case "cc_rejected_call_for_authorize" ->
+                    "O banco pediu autorização. Ligue para o emissor e tente novamente.";
+            case "cc_rejected_high_risk" ->
+                    "Pagamento recusado por segurança (antifraude ou banco). Tente outro cartão.";
+            case "cc_rejected_blacklist" ->
+                    "Cartão não aceito para este pagamento.";
+            case "cc_rejected_max_attempts" ->
+                    "Limite de tentativas excedido. Aguarde alguns minutos.";
+            case "cc_rejected_other_reason" ->
+                    "Cartão recusado pelo emissor. Verifique com o banco.";
+            default ->
+                    "Pagamento recusado (" + statusDetail + "). Tente outro cartão ou contato com o banco.";
         };
     }
 

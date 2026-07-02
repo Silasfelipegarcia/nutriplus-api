@@ -65,7 +65,7 @@ public class PaymentController {
     @PostMapping("/cards")
     public ResponseEntity<SavedCardResponse> salvarCartao(@RequestBody SaveCardRequest request) {
         Long userId = authorizationService.currentUserId();
-        SavedCardResponse card = paymentService.salvarCartao(userId, request.getToken());
+        SavedCardResponse card = paymentService.salvarCartao(userId, request.getToken(), request.getCpf());
         return ResponseEntity.status(201).body(card);
     }
 
