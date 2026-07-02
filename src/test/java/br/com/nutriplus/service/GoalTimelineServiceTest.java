@@ -68,7 +68,7 @@ class GoalTimelineServiceTest {
         List<GoalTimelineChartPoint> line = GoalTimelineService.buildProjectionLine(
                 LocalDate.of(2026, 7, 1),
                 new BigDecimal("78.0"),
-                new BigDecimal("0.30"),
+                -0.30,
                 new BigDecimal("74.0"),
                 Goal.LOSE_WEIGHT,
                 LocalDate.of(2026, 9, 22)
@@ -83,12 +83,37 @@ class GoalTimelineServiceTest {
         List<GoalTimelineChartPoint> line = GoalTimelineService.buildProjectionLine(
                 LocalDate.of(2026, 7, 1),
                 new BigDecimal("76.0"),
-                new BigDecimal("0.80"),
+                -0.80,
                 new BigDecimal("74.0"),
                 Goal.LOSE_WEIGHT,
                 LocalDate.of(2026, 9, 22)
         );
         assertTrue(line.stream().anyMatch(p -> p.weightKg().doubleValue() <= 74.01));
         assertEquals(74.0, line.getLast().weightKg().doubleValue());
+    }
+
+    @Test
+    void buildProjectionLine_rises_when_calorie_surplus_on_loss_goal() {
+        List<GoalTimelineChartPoint> line = GoalTimelineService.buildProjectionLine(
+                LocalDate.of(2026, 7, 1),
+                new BigDecimal("78.0"),
+                0.15,
+                new BigDecimal("74.0"),
+                Goal.LOSE_WEIGHT,
+                LocalDate.of(2026, 9, 22)
+        );
+        assertTrue(line.getLast().weightKg().doubleValue() > 78.0);
+    }
+
+    @Test
+    void blendSignedTrend_weights_calories_when_no_recent_weigh_in() {
+        Double blended = GoalTimelineService.blendSignedTrend(-0.4, 0.2, 0.15);
+        assertEquals(0.11, blended, 0.001);
+    }
+
+    @Test
+    void magnitudeTowardGoal_ignores_adverse_calorie_direction() {
+        assertEquals(0.0, GoalTimelineService.magnitudeTowardGoal(0.2, Goal.LOSE_WEIGHT).doubleValue());
+        assertEquals(0.2, GoalTimelineService.magnitudeTowardGoal(-0.2, Goal.LOSE_WEIGHT).doubleValue());
     }
 }

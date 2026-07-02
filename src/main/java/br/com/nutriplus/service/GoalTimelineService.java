@@ -108,7 +108,22 @@ public class GoalTimelineService {
         List<BodyMeasurementSession> planMeasurements = filterFromDate(allMeasurements, planStart);
         BigDecimal rawActualRate = resolveActualRate(
                 profile.getGoal(), planStart, planMeasurements, latestWeight, startWeight);
-        BigDecimal actualRate = normalizeActualRate(rawActualRate, requiredRateBd, profile.getGoal());
+        Double weightSigned = toSignedWeeklyKg(rawActualRate, profile.getGoal());
+
+        int recentAdherenceDays = 7;
+        CheckinAdherenceHistoryResponse recentAdherence =
+                checkinService.getAdherenceHistory(recentAdherenceDays);
+        Double calorieSigned = extractSignedWeeklyKg(recentAdherence);
+
+        double weightBlend = computeWeightBlendWeight(planMeasurements, today);
+        Double signedTrend = blendSignedTrend(weightSigned, calorieSigned, weightBlend);
+
+        BigDecimal actualRate = signedTrend != null
+                ? normalizeActualRate(
+                        magnitudeTowardGoal(signedTrend, profile.getGoal()),
+                        requiredRateBd,
+                        profile.getGoal())
+                : null;
         BigDecimal remainingKg = latestWeight.subtract(targetWeight).abs();
 
         List<GoalTimelineWeightPoint> weightHistory = buildWeightHistory(
@@ -119,11 +134,31 @@ public class GoalTimelineService {
         int daysAheadOrBehind = 0;
         String summary;
 
-        if (actualRate != null && actualRate.compareTo(BigDecimal.ZERO) > 0 && remainingKg.compareTo(BigDecimal.ZERO) > 0.05) {
+        if (signedTrend != null && signedTrend != 0 && remainingKg.compareTo(BigDecimal.ZERO) > 0.05) {
+            BigDecimal towardGoalRate = magnitudeTowardGoal(signedTrend, profile.getGoal());
+            if (towardGoalRate != null && towardGoalRate.compareTo(BigDecimal.ZERO) > 0) {
+                projectedFinish = projectFinishDate(today, remainingKg, towardGoalRate);
+                daysAheadOrBehind = (int) ChronoUnit.DAYS.between(targetDate, projectedFinish);
+                paceStatus = resolvePaceStatus(daysAheadOrBehind);
+                summary = buildSummary(profile.getGoal(), targetDate, projectedFinish, daysAheadOrBehind,
+                        towardGoalRate, requiredRateBd, planStart, previousPlanCount);
+                if (calorieSigned != null && (weightSigned == null || weightBlend < 0.5)) {
+                    summary = summary + " Tendência influenciada pelas calorias recentes do plano.";
+                } else if (calorieSigned != null && weightSigned != null) {
+                    summary = summary + " Tendência combina peso e calorias recentes.";
+                }
+            } else {
+                paceStatus = "BEHIND";
+                daysAheadOrBehind = (int) ChronoUnit.DAYS.between(targetDate, today.plusMonths(2));
+                summary = buildAdverseCalorieSummary(profile.getGoal(), planStart, previousPlanCount, calorieSigned);
+            }
+        } else if (actualRate != null && actualRate.compareTo(BigDecimal.ZERO) > 0
+                && remainingKg.compareTo(BigDecimal.ZERO) > 0.05) {
             projectedFinish = projectFinishDate(today, remainingKg, actualRate);
             daysAheadOrBehind = (int) ChronoUnit.DAYS.between(targetDate, projectedFinish);
             paceStatus = resolvePaceStatus(daysAheadOrBehind);
-            summary = buildSummary(profile.getGoal(), targetDate, projectedFinish, daysAheadOrBehind, actualRate, requiredRateBd, planStart, previousPlanCount);
+            summary = buildSummary(profile.getGoal(), targetDate, projectedFinish, daysAheadOrBehind,
+                    actualRate, requiredRateBd, planStart, previousPlanCount);
         } else {
             int adherenceDays = (int) Math.min(90, Math.max(7, ChronoUnit.DAYS.between(planStart, today) + 1));
             CheckinAdherenceHistoryResponse adherence = checkinService.getAdherenceHistory(adherenceDays);
@@ -131,15 +166,22 @@ public class GoalTimelineService {
             if (projection.estimatedWeightChangeKgPerWeek() != null
                     && projection.estimatedWeightChangeKgPerWeek() != 0
                     && remainingKg.compareTo(BigDecimal.ZERO) > 0.05) {
+                signedTrend = projection.estimatedWeightChangeKgPerWeek();
                 actualRate = normalizeActualRate(
-                        scale(Math.abs(projection.estimatedWeightChangeKgPerWeek())),
+                        magnitudeTowardGoal(signedTrend, profile.getGoal()),
                         requiredRateBd,
                         profile.getGoal());
-                projectedFinish = projectFinishDate(today, remainingKg, actualRate);
-                daysAheadOrBehind = (int) ChronoUnit.DAYS.between(targetDate, projectedFinish);
-                paceStatus = resolvePaceStatus(daysAheadOrBehind);
-                summary = buildSummary(profile.getGoal(), targetDate, projectedFinish, daysAheadOrBehind, actualRate, requiredRateBd, planStart, previousPlanCount)
-                        + " Ritmo estimado pelos check-ins do plano atual.";
+                if (actualRate != null && actualRate.compareTo(BigDecimal.ZERO) > 0) {
+                    projectedFinish = projectFinishDate(today, remainingKg, actualRate);
+                    daysAheadOrBehind = (int) ChronoUnit.DAYS.between(targetDate, projectedFinish);
+                    paceStatus = resolvePaceStatus(daysAheadOrBehind);
+                    summary = buildSummary(profile.getGoal(), targetDate, projectedFinish, daysAheadOrBehind,
+                            actualRate, requiredRateBd, planStart, previousPlanCount)
+                            + " Ritmo estimado pelos check-ins do plano atual.";
+                } else {
+                    paceStatus = "BEHIND";
+                    summary = buildAdverseCalorieSummary(profile.getGoal(), planStart, previousPlanCount, signedTrend);
+                }
             } else {
                 summary = buildInsufficientSummary(weeks, targetDate, planStart, previousPlanCount);
             }
@@ -154,7 +196,7 @@ public class GoalTimelineService {
         List<GoalTimelineChartPoint> projectionLine = buildProjectionLine(
                 trendStart,
                 trendWeight,
-                actualRate,
+                signedTrend,
                 targetWeight,
                 profile.getGoal(),
                 chartEndDate);
@@ -429,7 +471,7 @@ public class GoalTimelineService {
 
     static List<GoalTimelineChartPoint> buildProjectionLine(LocalDate trendStart,
                                                             BigDecimal trendWeight,
-                                                            BigDecimal actualRate,
+                                                            Double signedKgPerWeek,
                                                             BigDecimal targetWeight,
                                                             Goal goal,
                                                             LocalDate chartEndDate) {
@@ -439,14 +481,14 @@ public class GoalTimelineService {
         List<GoalTimelineChartPoint> points = new ArrayList<>();
         points.add(new GoalTimelineChartPoint(trendStart, trendWeight));
 
-        if (actualRate == null || actualRate.compareTo(BigDecimal.ZERO) <= 0 || targetWeight == null) {
+        if (signedKgPerWeek == null || signedKgPerWeek == 0 || targetWeight == null) {
             if (!trendStart.equals(chartEndDate)) {
                 points.add(new GoalTimelineChartPoint(chartEndDate, trendWeight));
             }
             return points;
         }
 
-        double rate = actualRate.doubleValue();
+        double signed = signedKgPerWeek;
         double origin = trendWeight.doubleValue();
         double target = targetWeight.doubleValue();
 
@@ -459,7 +501,14 @@ public class GoalTimelineService {
 
             long daysFromStart = ChronoUnit.DAYS.between(trendStart, date);
             double weeks = daysFromStart / 7.0;
-            double projected = projectWeightAtWeeks(origin, target, rate, weeks, goal);
+            double projected = origin + signed * weeks;
+
+            if (goal == Goal.LOSE_WEIGHT && signed < 0) {
+                projected = Math.max(projected, target);
+            } else if (goal == Goal.GAIN_MASS && signed > 0) {
+                projected = Math.min(projected, target);
+            }
+
             BigDecimal projectedBd = scale(projected);
 
             GoalTimelineChartPoint last = points.get(points.size() - 1);
@@ -468,8 +517,8 @@ public class GoalTimelineService {
             }
 
             boolean reachedGoal = goal == Goal.GAIN_MASS
-                    ? projected >= target - 0.01
-                    : projected <= target + 0.01;
+                    ? projected >= target - 0.01 && signed > 0
+                    : projected <= target + 0.01 && signed < 0;
             if (reachedGoal) {
                 points.set(points.size() - 1, new GoalTimelineChartPoint(date, targetWeight));
                 if (date.isBefore(chartEndDate)) {
@@ -484,11 +533,77 @@ public class GoalTimelineService {
         return points;
     }
 
-    private static double projectWeightAtWeeks(double origin, double target, double rate, double weeks, Goal goal) {
-        if (goal == Goal.GAIN_MASS) {
-            return Math.min(origin + rate * weeks, target);
+    static Double extractSignedWeeklyKg(CheckinAdherenceHistoryResponse adherence) {
+        if (adherence == null || adherence.projection() == null) {
+            return null;
         }
-        return Math.max(origin - rate * weeks, target);
+        return adherence.projection().estimatedWeightChangeKgPerWeek();
+    }
+
+    static Double toSignedWeeklyKg(BigDecimal magnitudeRate, Goal goal) {
+        if (magnitudeRate == null || goal == null || goal == Goal.MAINTAIN_WEIGHT) {
+            return null;
+        }
+        double value = magnitudeRate.doubleValue();
+        return goal == Goal.GAIN_MASS ? value : -value;
+    }
+
+    static double computeWeightBlendWeight(List<BodyMeasurementSession> planMeasurements, LocalDate today) {
+        if (planMeasurements.isEmpty()) {
+            return 0.15;
+        }
+        long daysSinceLast = ChronoUnit.DAYS.between(planMeasurements.getLast().getMeasuredOn(), today);
+        if (daysSinceLast <= 3) {
+            return 0.55;
+        }
+        if (daysSinceLast <= 7) {
+            return 0.45;
+        }
+        if (daysSinceLast <= 14) {
+            return 0.30;
+        }
+        if (daysSinceLast <= 21) {
+            return 0.20;
+        }
+        return 0.10;
+    }
+
+    static Double blendSignedTrend(Double weightSigned, Double calorieSigned, double weightBlend) {
+        if (weightSigned == null && calorieSigned == null) {
+            return null;
+        }
+        if (weightSigned == null) {
+            return calorieSigned;
+        }
+        if (calorieSigned == null) {
+            return weightSigned;
+        }
+        double w = Math.clamp(weightBlend, 0.0, 1.0);
+        return w * weightSigned + (1.0 - w) * calorieSigned;
+    }
+
+    static BigDecimal magnitudeTowardGoal(double signedKgPerWeek, Goal goal) {
+        if (goal == Goal.LOSE_WEIGHT) {
+            return signedKgPerWeek < 0 ? scale(-signedKgPerWeek) : scale(0);
+        }
+        if (goal == Goal.GAIN_MASS) {
+            return signedKgPerWeek > 0 ? scale(signedKgPerWeek) : scale(0);
+        }
+        return null;
+    }
+
+    private static String buildAdverseCalorieSummary(Goal goal,
+                                                     LocalDate planStart,
+                                                     int previousPlanCount,
+                                                     Double signedTrend) {
+        String prefix = planContextPrefix(planStart, previousPlanCount);
+        if (goal == Goal.LOSE_WEIGHT && signedTrend != null && signedTrend > 0) {
+            return prefix + "Calorias acima da meta nos últimos dias — a tendência aponta ganho de peso, não perda.";
+        }
+        if (goal == Goal.GAIN_MASS && signedTrend != null && signedTrend < 0) {
+            return prefix + "Calorias abaixo da meta nos últimos dias — a tendência aponta perda de peso, não ganho.";
+        }
+        return prefix + "Ajuste aderência ao plano para alinhar a tendência com sua meta.";
     }
 
     private static String resolvePaceStatus(int daysAheadOrBehind) {
