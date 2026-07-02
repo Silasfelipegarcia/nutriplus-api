@@ -86,7 +86,18 @@ public class TrialService {
     }
 
     public boolean trialDisponivel(User user) {
-        return !user.isTrialUtilizado() && user.getTrialAte() == null;
+        if (user.isTrialUtilizado()) {
+            return false;
+        }
+        if (user.getTrialAte() != null && Instant.now().isBefore(user.getTrialAte())) {
+            return false;
+        }
+        if (user.getPlanValidUntil() != null
+                && Instant.now().isBefore(user.getPlanValidUntil())
+                && SubscriptionPlans.isPaidB2cPlan(user.getSubscriptionPlan())) {
+            return false;
+        }
+        return true;
     }
 
     private boolean tentarCobrarAposTrial(User user) {

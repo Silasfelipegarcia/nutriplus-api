@@ -49,6 +49,7 @@ public class MercadoPagoPaymentService {
     private final UserRepository userRepository;
     
     private final MercadoPagoCustomerService customerService;
+    private final MercadoPagoAccountInspector accountInspector;
     private final SubscriptionService subscriptionService;
     private final SubscriptionPlanCatalogService planCatalogService;
     private final BillingEnforcementService billingEnforcementService;
@@ -59,6 +60,7 @@ public class MercadoPagoPaymentService {
                                      PaymentOrderRepository paymentOrderRepository,
                                      UserRepository userRepository,
                                      MercadoPagoCustomerService customerService,
+                                     MercadoPagoAccountInspector accountInspector,
                                      SubscriptionService subscriptionService,
                                      SubscriptionPlanCatalogService planCatalogService,
                                      BillingEnforcementService billingEnforcementService,
@@ -67,6 +69,7 @@ public class MercadoPagoPaymentService {
         this.paymentOrderRepository = paymentOrderRepository;
         this.userRepository = userRepository;
         this.customerService = customerService;
+        this.accountInspector = accountInspector;
         this.subscriptionService = subscriptionService;
         this.planCatalogService = planCatalogService;
         this.billingEnforcementService = billingEnforcementService;
@@ -170,10 +173,13 @@ public class MercadoPagoPaymentService {
     }
 
     public PaymentConfigResponse obterConfig() {
+        boolean ready = properties.isCheckoutReady() && !properties.isMockMode();
         return new PaymentConfigResponse(
                 properties.publicKey(),
-                properties.isMockMode() || properties.isCheckoutReady(),
-                billingEnforcementService.isBillingEnabled());
+                ready,
+                billingEnforcementService.isBillingEnabled(),
+                properties.supportsSandboxTestCards(),
+                accountInspector.useCardVaultMock());
     }
 
     @Transactional
@@ -186,6 +192,9 @@ public class MercadoPagoPaymentService {
         }
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+        if (accountInspector.useCardVaultMock()) {
+            return listarCartoesMock(user);
+        }
         if (user.getMpCustomerId() == null || user.getMpCustomerId().isBlank()) {
             return List.of();
         }
@@ -214,6 +223,67 @@ public class MercadoPagoPaymentService {
         }
     }
 
+    private List<SavedCardResponse> listarCartoesMock(User user) {
+        String cardId = user.getDefaultCardId();
+        if (cardId == null || cardId.isBlank() || !cardId.startsWith("mock-card-")) {
+            return List.of();
+        }
+        SavedCardResponse card = montarCartaoMock(user.getId(), cardId);
+        card.setDefaultCard(true);
+        return List.of(card);
+    }
+
+    private SavedCardResponse salvarCartaoMock(Long userId, String token) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
+        String cardId = "mock-card-" + userId;
+        SavedCardResponse card = montarCartaoMock(userId, cardId);
+        card.setDefaultCard(true);
+        if (token != null && !token.isBlank()) {
+            enriquecerCartaoMockComToken(card, token);
+        }
+        subscriptionService.definirCartaoPadrao(user, card.getId());
+        return card;
+    }
+
+    private SavedCardResponse montarCartaoMock(Long userId, String cardId) {
+        SavedCardResponse card = new SavedCardResponse();
+        card.setId(cardId);
+        card.setBrand("Visa");
+        card.setLastFourDigits("6351");
+        card.setExpirationMonth("11");
+        card.setExpirationYear("2030");
+        card.setHolderName("Sandbox");
+        return card;
+    }
+
+    private void enriquecerCartaoMockComToken(SavedCardResponse card, String token) {
+        try {
+            JsonNode response = restClient.get()
+                    .uri("/v1/card_tokens/{token}?public_key={publicKey}", token, properties.publicKey())
+                    .retrieve()
+                    .body(JsonNode.class);
+            if (response == null) {
+                return;
+            }
+            if (response.has("last_four_digits")) {
+                card.setLastFourDigits(response.get("last_four_digits").asText(card.getLastFourDigits()));
+            }
+            if (response.has("expiration_month")) {
+                card.setExpirationMonth(String.format("%02d", response.get("expiration_month").asInt()));
+            }
+            if (response.has("expiration_year")) {
+                card.setExpirationYear(String.valueOf(response.get("expiration_year").asInt()));
+            }
+            JsonNode holder = response.path("cardholder");
+            if (holder.has("name")) {
+                card.setHolderName(holder.get("name").asText(card.getHolderName()));
+            }
+        } catch (RestClientResponseException e) {
+            log.debug("Não foi possível enriquecer cartão mock com token MP: {}", e.getMessage());
+        }
+    }
+
     private void sincronizarCartaoPadrao(User user, List<SavedCardResponse> cards) {
         if (cards.isEmpty()) {
             if (user.getDefaultCardId() != null && !user.getDefaultCardId().isBlank()) {
@@ -231,19 +301,8 @@ public class MercadoPagoPaymentService {
 
     @Transactional
     public SavedCardResponse salvarCartao(Long userId, String token) {
-        if (properties.isMockMode()) {
-            SavedCardResponse card = new SavedCardResponse();
-            card.setId("mock-card-" + userId);
-            card.setBrand("Visa");
-            card.setLastFourDigits("4242");
-            card.setExpirationMonth("12");
-            card.setExpirationYear("2030");
-            card.setHolderName("Mock");
-            card.setDefaultCard(true);
-            User user = userRepository.findById(userId)
-                    .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
-            subscriptionService.definirCartaoPadrao(user, card.getId());
-            return card;
+        if (properties.isMockMode() || accountInspector.useCardVaultMock()) {
+            return salvarCartaoMock(userId, token);
         }
         if (!properties.isCheckoutReady()) {
             throw new IllegalStateException("Pagamentos não configurados. Defina MERCADOPAGO_ACCESS_TOKEN e MERCADOPAGO_PUBLIC_KEY.");
@@ -278,7 +337,7 @@ public class MercadoPagoPaymentService {
 
     @Transactional
     public void removerCartao(Long userId, String cardId) {
-        if (properties.isMockMode()) {
+        if (properties.isMockMode() || accountInspector.useCardVaultMock()) {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
             if (cardId.equals(user.getDefaultCardId())) {
@@ -318,7 +377,7 @@ public class MercadoPagoPaymentService {
         planCatalogService.requireEnabledPlan(plan);
 
         boolean cartaoSalvo = usaCartaoSalvo(request);
-        User user = cartaoSalvo && !properties.isMockMode()
+        User user = cartaoSalvo && !properties.isMockMode() && !accountInspector.useCardVaultMock()
                 ? customerService.obterOuCriar(userId)
                 : userRepository.findById(userId)
                         .orElseThrow(() -> new IllegalArgumentException("Usuário não encontrado"));
@@ -336,7 +395,7 @@ public class MercadoPagoPaymentService {
         order.setRenewal(request.isRenewal());
         paymentOrderRepository.save(order);
 
-        if (properties.isMockMode()) {
+        if (properties.isMockMode() || (accountInspector.useCardVaultMock() && cartaoSalvo)) {
             order.setStatus("APPROVED");
             order.setPaidAt(Instant.now());
             order.setMpPaymentId("mock-" + orderId);

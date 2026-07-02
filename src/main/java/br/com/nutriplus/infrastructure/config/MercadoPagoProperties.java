@@ -12,7 +12,9 @@ public record MercadoPagoProperties(
         String apiBaseUrl,
         int athleteMonthlyPriceCents,
         int athleteYearlyPriceCents,
-        boolean mockMode
+        boolean mockMode,
+        boolean sandboxMode,
+        boolean cardVaultMock
 ) {
     public MercadoPagoProperties {
         if (accessToken == null) accessToken = "";
@@ -35,5 +37,10 @@ public record MercadoPagoProperties(
 
     public boolean isMockMode() {
         return mockMode || !isConfigured();
+    }
+
+    /** Credenciais aceitam cartões de teste (5031…). TEST-* ou MERCADOPAGO_SANDBOX=true. */
+    public boolean supportsSandboxTestCards() {
+        return isMockMode() || sandboxMode || (publicKey != null && publicKey.startsWith("TEST-"));
     }
 }

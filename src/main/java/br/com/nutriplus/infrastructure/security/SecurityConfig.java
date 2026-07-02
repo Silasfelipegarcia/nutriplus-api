@@ -128,6 +128,7 @@ public class SecurityConfig {
                         "/training/sports",
                         "/feature-flags",
                         "/plans",
+                        "/payments/config",
                         "/payments/mercadopago/webhook",
                         "/webhooks/**",
                         "/actuator/health",

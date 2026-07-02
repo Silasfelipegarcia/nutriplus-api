@@ -48,6 +48,7 @@ public class SubscriptionService {
         user.setAutoRenew(true);
         user.setPlanCancelledAt(null);
         user.setTrialAte(null);
+        user.setTrialUtilizado(true);
         userRepository.save(user);
         syncTierFeatures(user, plan);
     }
@@ -207,13 +208,18 @@ public class SubscriptionService {
         response.setBillingEnforced(billingEnforcementService.isBillingEnabled());
         SubscriptionStatus status = statusAssinatura(user);
         response.setStatus(status.name());
+        response.setStatusLabel(rotuloStatusAssinatura(status));
         response.setAutoRenew(user.isAutoRenew());
-        response.setValidUntil(user.getPlanValidUntil());
+        if (emTrial(user) && user.getTrialAte() != null) {
+            response.setValidUntil(user.getTrialAte());
+        } else {
+            response.setValidUntil(user.getPlanValidUntil());
+        }
         response.setCancelledAt(user.getPlanCancelledAt());
         response.setDefaultCardId(user.getDefaultCardId());
         response.setPlan(user.getSubscriptionPlan());
         response.setPlanNome(planoNome(user.getSubscriptionPlan()));
-        response.setTrialDisponivel(!user.isTrialUtilizado() && user.getTrialAte() == null);
+        response.setTrialDisponivel(trialDisponivel(user, status));
         response.setEmTrial(emTrial(user));
 
         if (user.getPlanValidUntil() != null && periodoAindaValido(user)) {
@@ -265,6 +271,23 @@ public class SubscriptionService {
 
     public boolean periodoAindaValido(User user) {
         return user.getPlanValidUntil() != null && !Instant.now().isAfter(user.getPlanValidUntil());
+    }
+
+    /** Trial só para quem nunca usou e ainda não tem assinatura paga ativa. */
+    public boolean trialDisponivel(User user, SubscriptionStatus status) {
+        if (user.isTrialUtilizado()) {
+            return false;
+        }
+        if (emTrial(user)) {
+            return false;
+        }
+        if (status == SubscriptionStatus.ACTIVE || status == SubscriptionStatus.CANCELLED_PENDING) {
+            return false;
+        }
+        if (temAssinaturaPaga(user)) {
+            return false;
+        }
+        return true;
     }
 
     public int precoPlano(SubscriptionPlan plan) {
@@ -325,5 +348,18 @@ public class SubscriptionService {
                 nutritionProfileRepository.save(profile);
             }
         });
+    }
+
+    private String rotuloStatusAssinatura(SubscriptionStatus status) {
+        if (status == null) {
+            return "—";
+        }
+        return switch (status) {
+            case ACTIVE -> "Ativo";
+            case TRIAL -> "Período de teste";
+            case CANCELLED_PENDING -> "Cancelamento agendado";
+            case EXPIRED -> "Expirado";
+            case NONE -> "Gratuito";
+        };
     }
 }

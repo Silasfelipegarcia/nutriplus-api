@@ -12,6 +12,7 @@ public class SubscriptionStatusResponse {
     private String defaultCardId;
     private SubscriptionPlan plan;
     private String planNome;
+    private String statusLabel;
     private long daysRemaining;
     private boolean podeCancelar;
     private boolean podeReativar;
@@ -33,6 +34,8 @@ public class SubscriptionStatusResponse {
     public void setPlan(SubscriptionPlan plan) { this.plan = plan; }
     public String getPlanNome() { return planNome; }
     public void setPlanNome(String planNome) { this.planNome = planNome; }
+    public String getStatusLabel() { return statusLabel; }
+    public void setStatusLabel(String statusLabel) { this.statusLabel = statusLabel; }
     public long getDaysRemaining() { return daysRemaining; }
     public void setDaysRemaining(long daysRemaining) { this.daysRemaining = daysRemaining; }
     public boolean isPodeCancelar() { return podeCancelar; }

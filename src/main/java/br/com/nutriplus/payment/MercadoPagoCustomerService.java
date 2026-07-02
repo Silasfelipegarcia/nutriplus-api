@@ -121,6 +121,15 @@ public class MercadoPagoCustomerService {
     IllegalArgumentException traduzirErro(String prefixo, RestClientResponseException e) {
         log.warn("Mercado Pago {}: {} {}", prefixo, e.getStatusCode(), e.getResponseBodyAsString());
         String detalhe = extrairMensagem(e.getResponseBodyAsString());
+        String body = e.getResponseBodyAsString() != null ? e.getResponseBodyAsString() : "";
+        if (body.contains("\"code\":300")
+                || detalhe.toLowerCase(Locale.ROOT).contains("live credentials")
+                || detalhe.toLowerCase(Locale.ROOT).contains("access denied")) {
+            return new IllegalArgumentException(
+                    "O Mercado Pago não permite salvar cartões com credenciais de teste (API de clientes bloqueada). "
+                            + "Reinicie a API com a versão mais recente para usar o cofre local em desenvolvimento, "
+                            + "ou use Assinar com Mercado Pago (Checkout Pro).");
+        }
         if (detalhe.toLowerCase(Locale.ROOT).contains("card not found")) {
             return new IllegalArgumentException(
                     "Cartão salvo inválido ou expirado no Mercado Pago. Remova e cadastre novamente em Cobrança.");
