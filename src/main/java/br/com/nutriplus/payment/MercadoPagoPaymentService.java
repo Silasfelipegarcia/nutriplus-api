@@ -173,13 +173,15 @@ public class MercadoPagoPaymentService {
     }
 
     public PaymentConfigResponse obterConfig() {
-        boolean ready = properties.isCheckoutReady() && !properties.isMockMode();
+        boolean vaultMock = accountInspector.useCardVaultMock();
+        boolean configured = properties.isCheckoutReady()
+                && (!properties.mockMode() || vaultMock);
         return new PaymentConfigResponse(
                 properties.publicKey(),
-                ready,
+                configured,
                 billingEnforcementService.isBillingEnabled(),
                 properties.supportsSandboxTestCards(),
-                accountInspector.useCardVaultMock());
+                vaultMock);
     }
 
     @Transactional

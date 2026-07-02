@@ -30,6 +30,15 @@ public class MercadoPagoAccountInspector {
 
     @PostConstruct
     void probeOnStartup() {
+        if (!properties.isCheckoutReady()) {
+            log.warn(
+                    "Mercado Pago: pagamentos indisponíveis — defina MERCADOPAGO_ACCESS_TOKEN e MERCADOPAGO_PUBLIC_KEY "
+                            + "(e MERCADOPAGO_MOCK_MODE=false em produção).");
+        } else if (properties.mockMode()) {
+            log.warn(
+                    "Mercado Pago: MERCADOPAGO_MOCK_MODE=true — checkout real desativado; "
+                            + "use false em produção ou confira cofre local para credenciais de teste.");
+        }
         refresh();
     }
 
