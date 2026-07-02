@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 
@@ -66,13 +67,17 @@ public class MercadoPagoCustomerService {
             }
 
             user.setMpCustomerId(response.get("id").asText());
-            return userRepository.save(user);
+            User saved = userRepository.save(user);
+            sincronizarPerfil(saved);
+            return saved;
         } catch (RestClientResponseException e) {
             if (clienteJaExiste(e)) {
                 String customerId = buscarIdPorEmail(user.getEmail());
                 if (customerId != null) {
                     user.setMpCustomerId(customerId);
-                    return userRepository.save(user);
+                    User saved = userRepository.save(user);
+                    sincronizarPerfil(saved);
+                    return saved;
                 }
             }
             throw traduzirErro("Falha ao vincular cliente no Mercado Pago", e);
@@ -89,6 +94,70 @@ public class MercadoPagoCustomerService {
             log.warn("Não foi possível descriptografar CPF do usuário {}", user.getId());
             return null;
         }
+    }
+
+    public void sincronizarPerfil(User user) {
+        if (!properties.isConfigured() || properties.isMockMode()) {
+            return;
+        }
+        if (user.getMpCustomerId() == null || user.getMpCustomerId().isBlank()) {
+            return;
+        }
+
+        Map<String, Object> body = new HashMap<>();
+        body.put("email", user.getEmail());
+        adicionarNome(body, user.getName());
+        String cpf = resolverCpf(user);
+        if (cpf != null && !cpf.isBlank()) {
+            body.put("identification", Map.of("type", "CPF", "number", cpf));
+        }
+        Map<String, Object> phone = montarTelefone(user.getContactPhone());
+        if (phone != null) {
+            body.put("phone", phone);
+        }
+
+        try {
+            restClient.put()
+                    .uri("/v1/customers/{id}", user.getMpCustomerId())
+                    .header("Authorization", "Bearer " + properties.accessToken())
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(body)
+                    .retrieve()
+                    .toBodilessEntity();
+        } catch (RestClientResponseException e) {
+            log.warn("Falha ao sincronizar cliente MP {}: {}", user.getId(), e.getMessage());
+        }
+    }
+
+    private static void adicionarNome(Map<String, Object> body, String fullName) {
+        if (fullName == null || fullName.isBlank()) {
+            return;
+        }
+        String trimmed = fullName.trim();
+        int space = trimmed.indexOf(' ');
+        if (space > 0) {
+            body.put("first_name", trimmed.substring(0, space));
+            body.put("last_name", trimmed.substring(space + 1).trim());
+        } else {
+            body.put("first_name", trimmed);
+            body.put("last_name", trimmed);
+        }
+    }
+
+    private static Map<String, Object> montarTelefone(String contactPhone) {
+        if (contactPhone == null || contactPhone.isBlank()) {
+            return null;
+        }
+        String digits = contactPhone.replaceAll("\\D", "");
+        if (digits.startsWith("55") && digits.length() >= 12) {
+            digits = digits.substring(2);
+        }
+        if (digits.length() < 10) {
+            return null;
+        }
+        return Map.of(
+                "area_code", digits.substring(0, 2),
+                "number", digits.substring(2));
     }
 
     private boolean clienteJaExiste(RestClientResponseException e) {

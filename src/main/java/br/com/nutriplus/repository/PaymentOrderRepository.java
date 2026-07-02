@@ -34,4 +34,10 @@ public interface PaymentOrderRepository extends JpaRepository<PaymentOrder, Stri
               AND o.paidAt < :to
             """)
     long countApprovedBetween(@Param("from") Instant from, @Param("to") Instant to);
+
+    boolean existsByUserIdAndPlanAndStatusInAndCreatedAtAfter(
+            Long userId,
+            br.com.nutriplus.domain.enums.SubscriptionPlan plan,
+            List<String> statuses,
+            Instant createdAt);
 }

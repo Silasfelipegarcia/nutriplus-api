@@ -32,6 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientResponseException;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -341,6 +342,9 @@ public class MercadoPagoPaymentService {
             SavedCardResponse card = mapearCartao(response);
             subscriptionService.definirCartaoPadrao(user, card.getId());
             card.setDefaultCard(true);
+            if (!accountInspector.useCardVaultMock()) {
+                customerService.sincronizarPerfil(user);
+            }
             return card;
         } catch (RestClientResponseException e) {
             throw customerService.traduzirErro("Não foi possível salvar o cartão", e);
@@ -427,6 +431,12 @@ public class MercadoPagoPaymentService {
             throw new IllegalStateException("Pagamentos não configurados.");
         }
 
+        exigirCpfParaCobranca(user);
+        evitarTentativaDuplicada(userId, plan);
+        if (!accountInspector.useCardVaultMock()) {
+            customerService.sincronizarPerfil(user);
+        }
+
         JsonNode cartaoMp = null;
         if (cartaoSalvo && request.getCardId() != null && !request.getCardId().isBlank()) {
             cartaoMp = buscarCartaoSalvo(user, request.getCardId());
@@ -443,8 +453,17 @@ public class MercadoPagoPaymentService {
         body.put("payment_type_id", "credit_card");
         body.put("external_reference", orderId);
         body.put("payer", payer);
+        body.put("statement_descriptor", "NUTRIPLUS");
+        body.put("additional_info", montarAdditionalInfo(user, plan, amountCents,
+                subscriptionService.ehUpgradeProporcional(user, plan)));
+        body.put("metadata", Map.of(
+                "user_id", String.valueOf(userId),
+                "plan", plan.name(),
+                "renewal", String.valueOf(request.isRenewal())));
         if (cartaoMp != null) {
             adicionarDadosCartaoSalvo(body, cartaoMp);
+        } else {
+            adicionarDadosToken(body, paymentToken);
         }
         adicionarNotificationUrlSeAplicavel(body);
 
@@ -557,6 +576,7 @@ public class MercadoPagoPaymentService {
     private Map<String, Object> montarPayer(User user, boolean cartaoSalvo, JsonNode cartaoMp) {
         Map<String, Object> payer = new HashMap<>();
         payer.put("email", user.getEmail());
+        adicionarNomePayer(payer, user.getName());
         if (cartaoSalvo && user.getMpCustomerId() != null && !user.getMpCustomerId().isBlank()) {
             payer.put("type", "customer");
             payer.put("id", user.getMpCustomerId());
@@ -565,7 +585,123 @@ public class MercadoPagoPaymentService {
         if (cpf != null && !cpf.isBlank()) {
             payer.put("identification", Map.of("type", "CPF", "number", cpf));
         }
+        Map<String, Object> phone = montarTelefone(user.getContactPhone());
+        if (phone != null) {
+            payer.put("phone", phone);
+        }
         return payer;
+    }
+
+    private void exigirCpfParaCobranca(User user) {
+        String cpf = customerService.resolverCpf(user);
+        if (cpf == null || cpf.isBlank()) {
+            throw new BusinessException(
+                    "CPF obrigatório para pagamento com cartão. Cadastre seu CPF em Cobrança ao salvar o cartão.");
+        }
+    }
+
+    private void evitarTentativaDuplicada(Long userId, SubscriptionPlan plan) {
+        Instant since = Instant.now().minus(Duration.ofMinutes(3));
+        boolean recenteRecusado = paymentOrderRepository
+                .existsByUserIdAndPlanAndStatusInAndCreatedAtAfter(
+                        userId, plan, List.of("REJECTED", "CANCELLED"), since);
+        if (recenteRecusado) {
+            throw new BusinessException(
+                    "Houve uma tentativa recusada há pouco. Aguarde alguns minutos ou use outro cartão "
+                            + "antes de tentar de novo — repetir rápido aumenta o bloqueio antifraude.");
+        }
+    }
+
+    private Map<String, Object> montarAdditionalInfo(User user,
+                                                     SubscriptionPlan plan,
+                                                     int amountCents,
+                                                     boolean upgrade) {
+        String titulo = descricaoPagamento(plan, upgrade);
+        Map<String, Object> item = new HashMap<>();
+        item.put("id", plan.name());
+        item.put("title", titulo);
+        item.put("description", titulo);
+        item.put("category_id", "services");
+        item.put("quantity", 1);
+        item.put("unit_price", amountCents / 100.0);
+
+        Map<String, Object> payerInfo = new HashMap<>();
+        adicionarNomePayer(payerInfo, user.getName());
+        Map<String, Object> phone = montarTelefone(user.getContactPhone());
+        if (phone != null) {
+            payerInfo.put("phone", phone);
+        }
+        if (user.getCreatedAt() != null) {
+            payerInfo.put("registration_date", user.getCreatedAt().toString());
+        }
+
+        Map<String, Object> additional = new HashMap<>();
+        additional.put("items", List.of(item));
+        additional.put("payer", payerInfo);
+        return additional;
+    }
+
+    private static void adicionarNomePayer(Map<String, Object> payer, String fullName) {
+        if (fullName == null || fullName.isBlank()) {
+            return;
+        }
+        String trimmed = fullName.trim();
+        int space = trimmed.indexOf(' ');
+        if (space > 0) {
+            payer.put("first_name", trimmed.substring(0, space));
+            payer.put("last_name", trimmed.substring(space + 1).trim());
+        } else {
+            payer.put("first_name", trimmed);
+            payer.put("last_name", trimmed);
+        }
+    }
+
+    private static Map<String, Object> montarTelefone(String contactPhone) {
+        if (contactPhone == null || contactPhone.isBlank()) {
+            return null;
+        }
+        String digits = contactPhone.replaceAll("\\D", "");
+        if (digits.startsWith("55") && digits.length() >= 12) {
+            digits = digits.substring(2);
+        }
+        if (digits.length() < 10) {
+            return null;
+        }
+        return Map.of(
+                "area_code", digits.substring(0, 2),
+                "number", digits.substring(2));
+    }
+
+    private void adicionarDadosToken(Map<String, Object> body, String tokenId) {
+        JsonNode token = buscarTokenCartao(tokenId);
+        if (token == null) {
+            return;
+        }
+        String paymentMethodId = token.path("payment_method_id").asText(null);
+        if (paymentMethodId != null && !paymentMethodId.isBlank()) {
+            body.put("payment_method_id", paymentMethodId);
+        }
+        String issuerId = token.path("issuer_id").asText(null);
+        if (issuerId != null && !issuerId.isBlank()) {
+            try {
+                body.put("issuer_id", Integer.parseInt(issuerId));
+            } catch (NumberFormatException ignored) {
+                body.put("issuer_id", issuerId);
+            }
+        }
+    }
+
+    private JsonNode buscarTokenCartao(String tokenId) {
+        try {
+            return restClient.get()
+                    .uri("/v1/card_tokens/{tokenId}", tokenId)
+                    .header("Authorization", "Bearer " + properties.accessToken())
+                    .retrieve()
+                    .body(JsonNode.class);
+        } catch (RestClientResponseException e) {
+            log.debug("Não foi possível consultar token MP {}: {}", tokenId, e.getMessage());
+            return null;
+        }
     }
 
     private String resolverCpfPagamento(User user, JsonNode cartaoMp) {
@@ -736,7 +872,12 @@ public class MercadoPagoPaymentService {
             case "cc_rejected_call_for_authorize" ->
                     "O banco pediu autorização. Ligue para o emissor e tente novamente.";
             case "cc_rejected_high_risk" ->
-                    "Pagamento recusado por segurança (antifraude ou banco). Tente outro cartão.";
+                    "Pagamento recusado por segurança (antifraude ou banco). Aguarde alguns minutos, "
+                            + "evite repetir a mesma cobrança e tente outro cartão ou ligue para o banco.";
+            case "cc_rejected_duplicated_payment" ->
+                    "Pagamento duplicado detectado. Aguarde alguns minutos antes de tentar novamente.";
+            case "rejected_high_risk", "rejected_insufficient_data" ->
+                    "Pagamento recusado por segurança ou dados insuficientes. Confira CPF e telefone no cadastro.";
             case "cc_rejected_blacklist" ->
                     "Cartão não aceito para este pagamento.";
             case "cc_rejected_max_attempts" ->
