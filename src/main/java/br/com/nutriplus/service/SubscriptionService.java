@@ -130,8 +130,8 @@ public class SubscriptionService {
         if (!temAssinaturaPaga(user) && !emTrial(user)) {
             throw new IllegalStateException("Você não possui uma assinatura ativa para cancelar.");
         }
-        if (user.getPlanCancelledAt() != null) {
-            throw new IllegalStateException("A renovação automática já está cancelada.");
+        if (user.getPlanCancelledAt() != null || !user.isAutoRenew()) {
+            return user;
         }
 
         user.setAutoRenew(false);
@@ -184,6 +184,9 @@ public class SubscriptionService {
 
     public SubscriptionStatus statusAssinatura(User user) {
         if (emTrial(user)) {
+            if (user.getPlanCancelledAt() != null || !user.isAutoRenew()) {
+                return SubscriptionStatus.CANCELLED_PENDING;
+            }
             return SubscriptionStatus.TRIAL;
         }
         if (!SubscriptionPlans.isPaidB2cPlan(user.getSubscriptionPlan()) || user.getPlanValidUntil() == null) {
@@ -208,7 +211,7 @@ public class SubscriptionService {
         response.setBillingEnforced(billingEnforcementService.isBillingEnabled());
         SubscriptionStatus status = statusAssinatura(user);
         response.setStatus(status.name());
-        response.setStatusLabel(rotuloStatusAssinatura(status));
+        response.setStatusLabel(rotuloStatusAssinatura(status, user));
         response.setAutoRenew(user.isAutoRenew());
         if (emTrial(user) && user.getTrialAte() != null) {
             response.setValidUntil(user.getTrialAte());
@@ -220,7 +223,7 @@ public class SubscriptionService {
         response.setPlan(user.getSubscriptionPlan());
         response.setPlanNome(planoNome(user.getSubscriptionPlan()));
         response.setTrialDisponivel(trialDisponivel(user, status));
-        response.setEmTrial(emTrial(user));
+        response.setEmTrial(emTrial(user) && user.getPlanCancelledAt() == null && user.isAutoRenew());
 
         if (user.getPlanValidUntil() != null && periodoAindaValido(user)) {
             long dias = ChronoUnit.DAYS.between(Instant.now(), user.getPlanValidUntil());
@@ -232,9 +235,23 @@ public class SubscriptionService {
             response.setDaysRemaining(0);
         }
 
-        response.setPodeCancelar(status == SubscriptionStatus.ACTIVE || status == SubscriptionStatus.TRIAL);
-        response.setPodeReativar(status == SubscriptionStatus.CANCELLED_PENDING);
+        response.setPodeCancelar(podeCancelarRenovacao(user, status));
+        response.setPodeReativar(podeReativarRenovacao(user));
         return response;
+    }
+
+    private boolean podeCancelarRenovacao(User user, SubscriptionStatus status) {
+        if (user.getPlanCancelledAt() != null || !user.isAutoRenew()) {
+            return false;
+        }
+        return status == SubscriptionStatus.ACTIVE || status == SubscriptionStatus.TRIAL;
+    }
+
+    private boolean podeReativarRenovacao(User user) {
+        if (user.getPlanCancelledAt() == null) {
+            return false;
+        }
+        return periodoAindaValido(user) || emTrial(user);
     }
 
     public boolean temAssinaturaPaga(User user) {
@@ -350,9 +367,12 @@ public class SubscriptionService {
         });
     }
 
-    private String rotuloStatusAssinatura(SubscriptionStatus status) {
+    private String rotuloStatusAssinatura(SubscriptionStatus status, User user) {
         if (status == null) {
             return "—";
+        }
+        if (status == SubscriptionStatus.CANCELLED_PENDING && emTrial(user)) {
+            return "Trial cancelado";
         }
         return switch (status) {
             case ACTIVE -> "Ativo";
