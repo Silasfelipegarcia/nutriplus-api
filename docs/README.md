@@ -68,6 +68,7 @@ Hub canônico da documentação da plataforma Nutri+. Este repositório (`nutrip
 | [**GITFLOW.md**](./GITFLOW.md) | Branches e releases |
 | [**MERCADOPAGO_SETUP.md**](./MERCADOPAGO_SETUP.md) | Runbook Mercado Pago (assinatura atleta) |
 | [**FLYWAY_V38_RECOVERY.md**](./FLYWAY_V38_RECOVERY.md) | Runbook: reparo migration V38 |
+| [**FLYWAY_V56_V57_RECOVERY.md**](./FLYWAY_V56_V57_RECOVERY.md) | Runbook: reparo migrations V56/V57 (deploy bloqueado) |
 | [**postmortems/**](./postmortems/README.md) | Postmortems e lições de incidentes |
 
 ---

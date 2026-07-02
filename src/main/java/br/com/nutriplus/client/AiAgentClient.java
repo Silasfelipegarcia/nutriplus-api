@@ -7,6 +7,8 @@ import br.com.nutriplus.client.dto.AiNutritionCalculateResponse;
 import br.com.nutriplus.client.dto.AiProgressAnalyzeResponse;
 import br.com.nutriplus.domain.entity.BodyMeasurementSession;
 import br.com.nutriplus.domain.entity.NutritionProfile;
+import br.com.nutriplus.domain.entity.UserTrainingActivity;
+import br.com.nutriplus.util.AthleteHungerJson;
 import br.com.nutriplus.domain.util.LifeStageUtil;
 import br.com.nutriplus.exception.AiAgentException;
 import br.com.nutriplus.infrastructure.config.AiAgentProperties;
@@ -15,6 +17,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.resilience4j.circuitbreaker.CallNotPermittedException;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import io.github.resilience4j.circuitbreaker.CircuitBreaker;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
@@ -28,8 +33,6 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
-import java.util.HashMap;
-import java.util.Map;
 
 @Component
 public class AiAgentClient {
@@ -66,6 +69,12 @@ public class AiAgentClient {
     }
 
     public AiMealPlanGenerateResponse generateMealPlan(NutritionProfile profile, String nutritionistNotes) {
+        return generateMealPlan(profile, List.of(), nutritionistNotes);
+    }
+
+    public AiMealPlanGenerateResponse generateMealPlan(NutritionProfile profile,
+                                                       List<UserTrainingActivity> activities,
+                                                       String nutritionistNotes) {
         Map<String, Object> body = profileToMap(profile);
         body.put("targetCalories", profile.getTargetCalories());
         body.put("targetProteinG", profile.getTargetProteinG());
@@ -74,7 +83,23 @@ public class AiAgentClient {
         if (nutritionistNotes != null && !nutritionistNotes.isBlank()) {
             body.put("nutritionistNotes", nutritionistNotes.trim());
         }
+        if (profile.isAthleteModeEnabled() && activities != null && !activities.isEmpty()) {
+            body.put("trainingActivities", activities.stream().map(this::activityToMap).toList());
+        }
         return post("/api/v1/meal-plan/generate", body, AiMealPlanGenerateResponse.class);
+    }
+
+    private Map<String, Object> activityToMap(UserTrainingActivity activity) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("sportType", activity.getSportType().name());
+        map.put("daysPerWeek", activity.getDaysPerWeek());
+        map.put("minutesPerSession", activity.getMinutesPerSession());
+        String label = activity.getCustomLabel();
+        if (label == null || label.isBlank()) {
+            label = activity.getSportType().labelPt();
+        }
+        map.put("label", label);
+        return map;
     }
 
     public AiProgressAnalyzeResponse analyzeProgress(NutritionProfile profile,
@@ -254,6 +279,13 @@ public class AiAgentClient {
             body.put("athleteModeEnabled", true);
             if (profile.getTrainingDailyExtraKcal() != null) {
                 body.put("trainingDailyExtraKcal", profile.getTrainingDailyExtraKcal());
+            }
+            if (profile.getPrimaryTrainingTime() != null) {
+                body.put("primaryTrainingTime", profile.getPrimaryTrainingTime().toString().substring(0, 5));
+            }
+            var hunger = AthleteHungerJson.fromJson(profile.getAthleteHungerJson());
+            if (hunger != null) {
+                body.put("athleteHungerByMeal", hunger);
             }
         }
         if (profile.getWakeTime() != null) {

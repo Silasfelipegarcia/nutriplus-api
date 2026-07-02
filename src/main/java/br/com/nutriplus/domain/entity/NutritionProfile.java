@@ -157,6 +157,12 @@ public class NutritionProfile {
     @Column(name = "sleep_time")
     private LocalTime sleepTime;
 
+    @Column(name = "primary_training_time")
+    private LocalTime primaryTrainingTime;
+
+    @Column(name = "athlete_hunger_json", length = 400)
+    private String athleteHungerJson;
+
     @Column(name = "health_conditions", columnDefinition = "TEXT")
     private String healthConditions;
 
@@ -274,6 +280,8 @@ public class NutritionProfile {
         this.estimatedWeeklyRateKg = builder.estimatedWeeklyRateKg;
         this.wakeTime = builder.wakeTime;
         this.sleepTime = builder.sleepTime;
+        this.primaryTrainingTime = builder.primaryTrainingTime;
+        this.athleteHungerJson = builder.athleteHungerJson;
         this.healthConditions = builder.healthConditions;
         this.medications = builder.medications;
         this.allergies = builder.allergies;
@@ -653,6 +661,22 @@ public class NutritionProfile {
         this.sleepTime = sleepTime;
     }
 
+    public LocalTime getPrimaryTrainingTime() {
+        return primaryTrainingTime;
+    }
+
+    public void setPrimaryTrainingTime(LocalTime primaryTrainingTime) {
+        this.primaryTrainingTime = primaryTrainingTime;
+    }
+
+    public String getAthleteHungerJson() {
+        return athleteHungerJson;
+    }
+
+    public void setAthleteHungerJson(String athleteHungerJson) {
+        this.athleteHungerJson = athleteHungerJson;
+    }
+
     public String getHealthConditions() {
         return healthConditions;
     }
@@ -866,6 +890,8 @@ public class NutritionProfile {
         private BigDecimal estimatedWeeklyRateKg;
         private LocalTime wakeTime;
         private LocalTime sleepTime;
+        private LocalTime primaryTrainingTime;
+        private String athleteHungerJson;
         private String healthConditions;
         private String medications;
         private String allergies;

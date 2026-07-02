@@ -31,11 +31,11 @@ public class OnboardingService {
         if (Boolean.TRUE.equals(request.athleteModeEnabled())) {
             List<br.com.nutriplus.dto.request.TrainingActivityRequest> activities =
                     request.activities() != null ? request.activities() : List.of();
-            trainingService.saveProfile(new TrainingProfileRequest(true, activities));
+            trainingService.saveProfile(new TrainingProfileRequest(true, activities, null, null));
             return trainingService.applyToPlan();
         }
 
-        trainingService.saveProfile(new TrainingProfileRequest(false, List.of()));
+        trainingService.saveProfile(new TrainingProfileRequest(false, List.of(), null, null));
         return profile;
     }
 }

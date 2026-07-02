@@ -12,6 +12,8 @@ public record TrainingProfileResponse(
         BigDecimal adjustedTargetCalories,
         boolean appliedToPlan,
         boolean weightRequired,
+        String primaryTrainingTime,
+        AthleteHungerByMealResponse athleteHungerByMeal,
         CoachInsightResponse coachInsight
 ) {
 }

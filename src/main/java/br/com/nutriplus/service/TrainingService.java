@@ -10,6 +10,8 @@ import br.com.nutriplus.dto.request.TrainingActivityRequest;
 import br.com.nutriplus.dto.request.TrainingProfileRequest;
 import br.com.nutriplus.dto.response.CoachInsightResponse;
 import br.com.nutriplus.dto.response.SportCatalogItemResponse;
+import br.com.nutriplus.dto.request.AthleteHungerByMealRequest;
+import br.com.nutriplus.dto.response.AthleteHungerByMealResponse;
 import br.com.nutriplus.dto.response.TrainingActivityResponse;
 import br.com.nutriplus.dto.response.TrainingProfileResponse;
 import br.com.nutriplus.exception.BusinessException;
@@ -24,6 +26,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.cache.annotation.Cacheable;
 import br.com.nutriplus.infrastructure.config.NutriCacheNames;
 
+import br.com.nutriplus.util.AthleteHungerJson;
+import br.com.nutriplus.util.TimeInputNormalizer;
+import java.time.LocalTime;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Arrays;
@@ -99,6 +104,10 @@ public class TrainingService {
         }
         if (!profile.isAthleteModeEnabled()) {
             profile.setTrainingDailyExtraKcal(null);
+            profile.setPrimaryTrainingTime(null);
+            profile.setAthleteHungerJson(null);
+        } else {
+            applyAthleteMealPreferences(profile, request);
         }
         nutritionProfileRepository.save(profile);
 
@@ -233,7 +242,32 @@ public class TrainingService {
                 adjusted,
                 applied,
                 weightRequired,
+                formatTrainingTime(profile.getPrimaryTrainingTime()),
+                toAthleteHungerResponse(profile.getAthleteHungerJson()),
                 coachInsight
+        );
+    }
+
+    private void applyAthleteMealPreferences(NutritionProfile profile, TrainingProfileRequest request) {
+        LocalTime trainingTime = TimeInputNormalizer.parseFlexible(request.primaryTrainingTime());
+        profile.setPrimaryTrainingTime(trainingTime);
+        profile.setAthleteHungerJson(AthleteHungerJson.toJson(request.athleteHungerByMeal()));
+    }
+
+    private String formatTrainingTime(LocalTime time) {
+        return time != null ? time.toString().substring(0, 5) : null;
+    }
+
+    private AthleteHungerByMealResponse toAthleteHungerResponse(String json) {
+        AthleteHungerByMealRequest parsed = AthleteHungerJson.fromJson(json);
+        if (parsed == null) {
+            return null;
+        }
+        return new AthleteHungerByMealResponse(
+                parsed.breakfast(),
+                parsed.lunch(),
+                parsed.afternoonSnack(),
+                parsed.dinner()
         );
     }
 

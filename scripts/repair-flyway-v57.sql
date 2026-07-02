@@ -1,4 +1,5 @@
 -- Reparo Flyway V57 após falha de deploy (BIGSERIAL / sintaxe PostgreSQL).
+-- Preferir o script unificado: scripts/repair-flyway-prod-deploy.sql (V56 + V57).
 -- Rodar no MySQL de prod se flyway_schema_history tiver V57 com success = 0.
 
 -- 1) Estado atual

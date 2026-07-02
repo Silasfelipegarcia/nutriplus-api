@@ -113,7 +113,9 @@ class TrainingServiceMacrosTest {
 
         TrainingProfileRequest request = new TrainingProfileRequest(
                 true,
-                List.of(new TrainingActivityRequest("WEIGHT_TRAINING", 3, 60, null))
+                List.of(new TrainingActivityRequest("WEIGHT_TRAINING", 3, 60, null)),
+                null,
+                null
         );
 
         var response = trainingService.saveProfile(request);
@@ -148,7 +150,7 @@ class TrainingServiceMacrosTest {
                         null
                 ));
 
-        TrainingProfileRequest request = new TrainingProfileRequest(false, List.of());
+        TrainingProfileRequest request = new TrainingProfileRequest(false, List.of(), null, null);
 
         trainingService.saveProfile(request);
 

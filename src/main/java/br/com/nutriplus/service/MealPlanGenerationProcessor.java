@@ -21,6 +21,7 @@ import br.com.nutriplus.repository.MealRepository;
 import br.com.nutriplus.repository.NutritionProfileRepository;
 import br.com.nutriplus.repository.ShoppingListRepository;
 import br.com.nutriplus.repository.UserRepository;
+import br.com.nutriplus.repository.UserTrainingActivityRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -55,6 +56,7 @@ public class MealPlanGenerationProcessor {
     private final NutriCacheEvictionService cacheEvictionService;
     private final PlanRegenerationPolicyService regenerationPolicyService;
     private final TrainingService trainingService;
+    private final UserTrainingActivityRepository trainingActivityRepository;
 
     public MealPlanGenerationProcessor(MealPlanGenerationJobRepository jobRepository,
                                        UserRepository userRepository,
@@ -70,7 +72,8 @@ public class MealPlanGenerationProcessor {
                                        AuditLogService auditLogService,
                                        NutriCacheEvictionService cacheEvictionService,
                                        PlanRegenerationPolicyService regenerationPolicyService,
-                                       TrainingService trainingService) {
+                                       TrainingService trainingService,
+                                       UserTrainingActivityRepository trainingActivityRepository) {
         this.jobRepository = jobRepository;
         this.userRepository = userRepository;
         this.nutritionProfileRepository = nutritionProfileRepository;
@@ -86,6 +89,7 @@ public class MealPlanGenerationProcessor {
         this.cacheEvictionService = cacheEvictionService;
         this.regenerationPolicyService = regenerationPolicyService;
         this.trainingService = trainingService;
+        this.trainingActivityRepository = trainingActivityRepository;
     }
 
     public void run(Long jobId, Long userId, long startMs) throws Exception {
@@ -103,7 +107,11 @@ public class MealPlanGenerationProcessor {
         profile = refreshMacroTargets(profile);
 
         String requestJson = objectMapper.writeValueAsString(profile.getId());
-        AiMealPlanGenerateResponse aiResponse = aiAgentClient.generateMealPlan(profile, job.getNutritionistNotes());
+        List<UserTrainingActivity> activities = profile.isAthleteModeEnabled()
+                ? trainingActivityRepository.findByUserIdOrderByIdAsc(userId)
+                : List.of();
+        AiMealPlanGenerateResponse aiResponse = aiAgentClient.generateMealPlan(
+                profile, activities, job.getNutritionistNotes());
 
         persistSuccess(jobId, user, profile, aiResponse, requestJson, startMs);
     }
