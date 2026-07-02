@@ -79,7 +79,7 @@ public class CareService {
                     .thenComparing(comparator);
         }
 
-        return nutritionistRepository.findByMarketplaceVisibleTrueAndCrnVerifiedTrueOrderByCreatedAtDesc()
+        return nutritionistRepository.findMarketplaceListedWithUser()
                 .stream()
                 .filter(n -> matchesMode(n, mode))
                 .filter(n -> matchesState(n, normalizedState))
@@ -89,7 +89,7 @@ public class CareService {
     }
 
     public Nutritionist getMarketplaceNutritionist(Long id) {
-        Nutritionist n = nutritionistRepository.findById(id)
+        Nutritionist n = nutritionistRepository.findByIdWithUser(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Nutricionista não encontrado"));
         if (!n.isMarketplaceVisible() || !n.isCrnVerified()) {
             throw new ResourceNotFoundException("Nutricionista não disponível");

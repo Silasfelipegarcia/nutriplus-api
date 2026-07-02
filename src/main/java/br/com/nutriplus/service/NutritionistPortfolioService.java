@@ -42,7 +42,7 @@ public class NutritionistPortfolioService {
         }
         Map<Long, List<NutritionistPortfolioItemResponse>> result = new HashMap<>();
         for (NutritionistPortfolioItem item : portfolioRepository
-                .findByNutritionistIdInOrderByNutritionistIdAscSortOrderAsc(nutritionistIds)) {
+                .findByNutritionistIdInWithNutritionist(nutritionistIds)) {
             result.computeIfAbsent(item.getNutritionist().getId(), id -> new ArrayList<>())
                     .add(toResponse(item));
         }

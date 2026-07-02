@@ -8,6 +8,7 @@ import br.com.nutriplus.mapper.ProMapper;
 import br.com.nutriplus.service.CareRatingService;
 import br.com.nutriplus.service.CareService;
 import br.com.nutriplus.service.PricingGuidelineService;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -31,6 +32,7 @@ public class MarketplaceController {
     }
 
     @GetMapping("/nutritionists")
+    @Transactional(readOnly = true)
     public List<NutritionistPublicResponse> list(
             @RequestParam(required = false) ServiceMode mode,
             @RequestParam(required = false) String state,
@@ -39,6 +41,7 @@ public class MarketplaceController {
     }
 
     @GetMapping("/nutritionists/{id}")
+    @Transactional(readOnly = true)
     public NutritionistPublicResponse get(@PathVariable Long id) {
         return proMapper.toPublic(careService.getMarketplaceNutritionist(id));
     }
