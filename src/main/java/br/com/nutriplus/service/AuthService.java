@@ -9,6 +9,7 @@ import br.com.nutriplus.application.port.TokenPort;
 import br.com.nutriplus.application.port.UserQueryPort;
 import br.com.nutriplus.domain.entity.User;
 import br.com.nutriplus.domain.enums.RegistrationSource;
+import br.com.nutriplus.domain.enums.UserRole;
 import br.com.nutriplus.dto.request.LoginRequest;
 import br.com.nutriplus.domain.util.ContactPhoneNormalizer;
 import br.com.nutriplus.dto.request.RegisterRequest;
@@ -149,25 +150,30 @@ public class AuthService {
     }
 
     private AuthResponse toAuthResponse(br.com.nutriplus.domain.model.User user) {
-        boolean hasProfile = nutritionProfileRepository.findByUserId(user.id()).isPresent();
         return new AuthResponse(
                 tokenPort.generateAccessToken(user),
                 tokenPort.generateRefreshToken(user),
                 "Bearer",
                 tokenPort.accessExpirationSeconds(),
-                responseMapper.toUserResponse(user, hasProfile)
+                responseMapper.toUserResponse(user, resolveHasNutritionProfile(user))
         );
     }
 
     private AuthResponse fromLoginResponse(LoginUseCase.Response result) {
-        boolean hasProfile = nutritionProfileRepository.findByUserId(result.user().id()).isPresent();
         return new AuthResponse(
                 result.accessToken(),
                 result.refreshToken(),
                 result.tokenType(),
                 result.expiresInSeconds(),
-                responseMapper.toUserResponse(result.user(), hasProfile)
+                responseMapper.toUserResponse(result.user(), resolveHasNutritionProfile(result.user()))
         );
+    }
+
+    private boolean resolveHasNutritionProfile(br.com.nutriplus.domain.model.User user) {
+        if (user.role() == UserRole.NUTRITIONIST) {
+            return true;
+        }
+        return nutritionProfileRepository.findByUserId(user.id()).isPresent();
     }
 
     private User toEntity(br.com.nutriplus.domain.model.User user) {
