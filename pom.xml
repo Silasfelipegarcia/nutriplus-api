@@ -25,6 +25,7 @@
         <flyway.user>root</flyway.user>
         <flyway.password></flyway.password>
         <resend.version>4.4.0</resend.version>
+        <newrelic.version>9.3.0</newrelic.version>
     </properties>
 
     <dependencies>
@@ -118,6 +119,12 @@
             <groupId>net.logstash.logback</groupId>
             <artifactId>logstash-logback-encoder</artifactId>
             <version>8.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.newrelic.agent.java</groupId>
+            <artifactId>newrelic-api</artifactId>
+            <version>${newrelic.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
