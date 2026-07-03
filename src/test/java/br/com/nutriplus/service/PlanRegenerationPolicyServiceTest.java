@@ -37,6 +37,8 @@ class PlanRegenerationPolicyServiceTest {
     private ProgressScheduleService progressScheduleService;
     @Mock
     private FeatureFlagService featureFlagService;
+    @Mock
+    private PlanResetService planResetService;
 
     private PlanRegenerationPolicyService service;
     private User user;
@@ -50,7 +52,8 @@ class PlanRegenerationPolicyServiceTest {
                 jobRepository,
                 reviewRepository,
                 progressScheduleService,
-                featureFlagService
+                featureFlagService,
+                planResetService
         );
         user = org.mockito.Mockito.mock(User.class);
         org.mockito.Mockito.when(user.getId()).thenReturn(1L);
@@ -86,5 +89,22 @@ class PlanRegenerationPolicyServiceTest {
 
         assertDoesNotThrow(() -> service.assertAllowed(
                 user, profile, PlanRegenerationReason.UNLOCKED_REGEN, null));
+    }
+
+    @Test
+    void planResetBypassesRegenLock() {
+        when(mealPlanRepository.findByUserIdOrderByCreatedAtDesc(1L)).thenReturn(List.of(org.mockito.Mockito.mock(br.com.nutriplus.domain.entity.MealPlan.class)));
+        profile.setPlanRegenLockedUntil(java.time.LocalDate.now().plusDays(10));
+
+        assertDoesNotThrow(() -> service.assertAllowed(
+                user, profile, PlanRegenerationReason.PLAN_RESET, null));
+    }
+
+    @Test
+    void planResetRequiresExistingPlan() {
+        when(mealPlanRepository.findByUserIdOrderByCreatedAtDesc(1L)).thenReturn(Collections.emptyList());
+
+        assertThrows(BusinessException.class, () -> service.assertAllowed(
+                user, profile, PlanRegenerationReason.PLAN_RESET, null));
     }
 }

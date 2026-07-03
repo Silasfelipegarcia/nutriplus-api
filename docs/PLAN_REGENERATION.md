@@ -29,6 +29,35 @@ Após geração **COMPLETED**, `plan_regen_locked_until = hoje + progressReviewI
 | `ONE_TIME_CORRECTION` | `one_time_correction_used_at == null` | Marca correção única usada |
 | `CYCLE_REVIEW` | Reavaliação due + review COMPLETED recente + `planChangeSuggested == true` + `reviewId` válido | Consome token do review |
 | `NUTRITIONIST_BYPASS` | Fluxo interno PRO/nutricionista | Ignora locks de produto |
+| `PLAN_RESET` | Usuário confirma zerar plano atual e gerar outro | Apaga tracking da era atual; reinicia lock de 15 dias; **não** consome correção única |
+
+## Zerar plano (`PLAN_RESET`)
+
+Fluxo de produto para voltar do zero sem esperar 15 dias ou consumir a correção única.
+
+### O que acontece
+
+1. Cliente exibe confirmação destrutiva (checkbox + digitar `ZERAR PLANO`).
+2. `POST /meal-plans/generate` com `{ "reason": "PLAN_RESET" }`.
+3. API apaga **tracking da era do plano atual** (latest):
+   - check-ins das refeições desse plano
+   - extras alimentares desde `plan_date`
+   - reavaliações e medidas corporais desde o início desse plano
+4. Enfileira geração de um **novo** plano (plano anterior permanece no histórico).
+5. Ao concluir, `plan_regen_locked_until = hoje + 15` (ciclo reinicia).
+
+### Campos extras em `GET /meal-plans/regeneration-eligibility`
+
+```json
+{
+  "planResetAvailable": true,
+  "currentPlanStarted": false,
+  "currentPlanCheckinCount": 0,
+  "currentPlanDaysActive": 3
+}
+```
+
+Usados pelo app para montar o texto de confirmação.
 
 ## Endpoints
 

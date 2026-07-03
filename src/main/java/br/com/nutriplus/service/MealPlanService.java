@@ -61,6 +61,7 @@ public class MealPlanService {
     private final MealPlanGenerationQuotaService generationQuotaService;
     private final PlanRegenerationPolicyService regenerationPolicyService;
     private final HealthEligibilityService healthEligibilityService;
+    private final PlanResetService planResetService;
 
     public MealPlanService(CurrentUser currentUser,
                            NutritionProfileService nutritionProfileService,
@@ -73,7 +74,8 @@ public class MealPlanService {
                            UserRepository userRepository,
                            MealPlanGenerationQuotaService generationQuotaService,
                            PlanRegenerationPolicyService regenerationPolicyService,
-                           HealthEligibilityService healthEligibilityService) {
+                           HealthEligibilityService healthEligibilityService,
+                           PlanResetService planResetService) {
         this.currentUser = currentUser;
         this.nutritionProfileService = nutritionProfileService;
         this.mealPlanRepository = mealPlanRepository;
@@ -86,6 +88,7 @@ public class MealPlanService {
         this.generationQuotaService = generationQuotaService;
         this.regenerationPolicyService = regenerationPolicyService;
         this.healthEligibilityService = healthEligibilityService;
+        this.planResetService = planResetService;
     }
 
     public PlanRegenerationEligibilityResponse getRegenerationEligibility() {
@@ -114,6 +117,9 @@ public class MealPlanService {
         NutritionProfile profile = nutritionProfileService.getEntityForUser(user);
         healthEligibilityService.assertAiPlanAllowed(profile);
         regenerationPolicyService.assertAllowed(user, profile, request.reason(), request.reviewId());
+        if (request.reason() == PlanRegenerationReason.PLAN_RESET) {
+            planResetService.purgeCurrentPlanTracking(user);
+        }
         generationQuotaService.assertCanGenerate(user);
 
         List<MealPlanGenerationJob> active = jobRepository.findByUserIdAndStatusIn(user.getId(), ACTIVE_STATUSES);

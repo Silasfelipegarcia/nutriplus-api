@@ -16,6 +16,10 @@ public record PlanRegenerationEligibilityResponse(
         Long pendingCycleReviewId,
         boolean aiPlanEligible,
         String aiPlanIneligibleReason,
-        String aiPlanIneligibleMessagePt
+        String aiPlanIneligibleMessagePt,
+        boolean planResetAvailable,
+        boolean currentPlanStarted,
+        int currentPlanCheckinCount,
+        int currentPlanDaysActive
 ) {
 }

@@ -29,11 +29,22 @@ public class NutriCacheEvictionService {
     public void evictCheckinCaches(Long userId) {
         Cache today = cacheManager.getCache(NutriCacheNames.CHECKINS_TODAY);
         Cache stats = cacheManager.getCache(NutriCacheNames.CHECKINS_STATS);
+        Cache adherence = cacheManager.getCache(NutriCacheNames.CHECKINS_ADHERENCE);
         if (today != null) {
             today.clear();
         }
         if (stats != null) {
             stats.clear();
         }
+        if (adherence != null) {
+            adherence.clear();
+        }
+    }
+
+    public void evictPlanTrackingCaches(Long userId) {
+        evictCheckinCaches(userId);
+        evictForUser(userId,
+                NutriCacheNames.PROGRESS_SCHEDULE,
+                NutriCacheNames.PROGRESS_MEASUREMENT_LATEST);
     }
 }

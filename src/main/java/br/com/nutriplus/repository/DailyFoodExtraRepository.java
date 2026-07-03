@@ -2,6 +2,9 @@ package br.com.nutriplus.repository;
 
 import br.com.nutriplus.domain.entity.DailyFoodExtra;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -12,4 +15,11 @@ public interface DailyFoodExtraRepository extends JpaRepository<DailyFoodExtra, 
 
     List<DailyFoodExtra> findByUserIdAndEntryDateBetweenOrderByEntryDateAscCreatedAtAsc(
             Long userId, LocalDate start, LocalDate end);
+
+    @Modifying
+    @Query("""
+            DELETE FROM DailyFoodExtra e
+            WHERE e.user.id = :userId AND e.entryDate >= :fromDate
+            """)
+    void deleteByUserIdAndEntryDateGreaterThanEqual(@Param("userId") Long userId, @Param("fromDate") LocalDate fromDate);
 }

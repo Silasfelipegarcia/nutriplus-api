@@ -7,5 +7,6 @@ public enum PlanRegenerationReason {
     CYCLE_REVIEW,
     GENERATION_RETRY,
     NUTRITIONIST_BYPASS,
-    UNLOCKED_REGEN
+    UNLOCKED_REGEN,
+    PLAN_RESET
 }
