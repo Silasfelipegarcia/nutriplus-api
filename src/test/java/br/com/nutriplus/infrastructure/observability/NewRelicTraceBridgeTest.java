@@ -13,6 +13,7 @@ class NewRelicTraceBridgeTest {
     @AfterEach
     void tearDown() {
         MDC.clear();
+        NewRelicTraceBridge.resetForTests();
     }
 
     @Test
