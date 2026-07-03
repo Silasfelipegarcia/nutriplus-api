@@ -92,8 +92,9 @@ Engajamento: [ENGAGEMENT.md](./ENGAGEMENT.md). Progresso: [PROGRESS_ANALYSIS.md]
 | Metas desatualizadas vs plano | Banner na aba Plano se diferença de calorias > 50 kcal |
 | Gerar novo plano | Cria **novo** registro; `/meal-plans/latest` retorna o mais recente |
 | Plano anterior | Permanece no banco (histórico); não é exibido ao usuário |
+| **Zerar plano** | `PLAN_RESET`: apaga tracking da era atual, gera novo, reinicia ciclo 15d — ver [PLAN_REGENERATION.md](./PLAN_REGENERATION.md) |
 
-**Não existe** botão "cancelar plano alimentar" — o fluxo é **regenerar**.
+**Não existe** botão "cancelar plano alimentar" — o fluxo é **regenerar** ou **zerar** (reset destrutivo).
 
 Implementação da detecção de sync: `plan_target_sync.dart` no frontend.
 
@@ -124,7 +125,18 @@ stateDiagram-v2
 
 Detalhes: [SUBSCRIPTIONS.md](./SUBSCRIPTIONS.md).
 
-**Gap conhecido:** app Flutter tem cancelar, mas **não** tem botão reativar (web portal tem).
+---
+
+## Jornada 6 — Ciclo de vida da conta
+
+1. Usuário acessa configurações no **portal web**.
+2. **Congelar:** confirma senha/e-mail → `POST /users/me/freeze` → login bloqueado, dados preservados.
+3. **Reativar:** `POST /auth/reactivate-account` com credenciais → novos tokens.
+4. Após **90 dias** congelada sem reativar → purge automático (`AccountPurgeScheduler`).
+
+Alternativa: **hard delete** imediato via `DELETE /users/me` (portal web).
+
+Doc: [ACCOUNT_LIFECYCLE.md](./ACCOUNT_LIFECYCLE.md) · Regras: [RULES_MAP.md](./RULES_MAP.md) (RULE-ACCT-*)
 
 ---
 

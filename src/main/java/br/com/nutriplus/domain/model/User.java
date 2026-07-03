@@ -24,7 +24,8 @@ public record User(
         String healthEligibilityVersion,
         LocalDateTime createdAt,
         LocalDateTime updatedAt,
-        LocalDateTime accessRejectedAt
+        LocalDateTime accessRejectedAt,
+        LocalDateTime accountFrozenAt
 ) {
     public String photoForClient() {
         if (photoThumbnailUrl != null && !photoThumbnailUrl.isBlank()) {
@@ -35,5 +36,9 @@ public record User(
 
     public boolean accessRejected() {
         return accessRejectedAt != null;
+    }
+
+    public boolean accountFrozen() {
+        return accountFrozenAt != null;
     }
 }

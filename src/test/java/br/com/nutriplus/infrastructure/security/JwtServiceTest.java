@@ -37,6 +37,7 @@ class JwtServiceTest {
                 null,
                 null,
                 null,
+                null,
                 null
         );
 
@@ -66,6 +67,7 @@ class JwtServiceTest {
                 null,
                 0,
                 false,
+                null,
                 null,
                 null,
                 null,

@@ -30,7 +30,15 @@ Mesmo padrão do `lupa-cnpj-api`: multi-stage Dockerfile + [`docker-entrypoint.s
 | homolog | `nutriplus-api-homolog` | `staging` |
 | prod | `nutriplus-api-prod` | `production` |
 
-**Instrumentação automática:** Spring MVC, JDBC/HikariCP (queries MySQL), HTTP client (`AiAgentClient`), JVM metrics, log forwarding (stdout JSON em prod).
+**Instrumentação automática:** Spring MVC, JDBC/HikariCP (queries MySQL), HTTP client (`AiAgentClient`), JVM metrics.
+
+**Config versionada:** [`newrelic.yml`](../../newrelic.yml) (distributed tracing + log forwarding + custom attributes permitidos).
+
+**Custom attributes na API** (via [`NewRelicTraceBridge`](../../src/main/java/br/com/nutriplus/infrastructure/observability/NewRelicTraceBridge.java)): `correlationId`, `traceId`, `flowId`, `sessionId`, `userId`, `idempotencyKey`, `httpMethod`, `httpPath`, `httpStatus`, `durationMs`.
+
+**Logs JSON:** profiles `prod` e `homolog` (`logback-spring.xml` + LogstashEncoder) — ingestão no NR Logs.
+
+**Queries NRQL:** [`NRQL_COOKBOOK.md`](./NRQL_COOKBOOK.md)
 
 ---
 

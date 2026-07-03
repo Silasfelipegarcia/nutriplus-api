@@ -11,4 +11,6 @@ public interface UserUpdatePort {
     void resetFailedLoginAttempts(Long userId);
 
     void updatePassword(Long userId, String passwordHash, boolean passwordMustChange);
+
+    User reactivateFrozenAccount(Long userId);
 }

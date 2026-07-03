@@ -38,8 +38,9 @@ Hub canônico da documentação da plataforma Nutri+. Este repositório (`nutrip
 | [**ENGAGEMENT.md**](./ENGAGEMENT.md) | Gamificação, lembretes, motivação |
 | [**HELP_CONTENT.md**](./HELP_CONTENT.md) | FAQ in-app (copy canônico) |
 | [**APP_FEEDBACK.md**](./APP_FEEDBACK.md) | Feedback Likert in-app |
-| [**PLAN_REGENERATION.md**](./PLAN_REGENERATION.md) | Travas de regeração, flag `UNLIMITED_PLAN_REGEN` |
+| [**PLAN_REGENERATION.md**](./PLAN_REGENERATION.md) | Travas de regeração, PLAN_RESET, flags |
 | [**RELEASE_UX_MINIMALISTA.md**](./RELEASE_UX_MINIMALISTA.md) | **Release jun/2026:** UX minimalista, plano, quantidades, checklist |
+| [**RELEASE_NOTES_2026-07.md**](./RELEASE_NOTES_2026-07.md) | **Release jul/2026:** PLAN_RESET, loading UX, freeze, NR fix |
 
 ---
 
@@ -48,6 +49,10 @@ Hub canônico da documentação da plataforma Nutri+. Este repositório (`nutrip
 | Documento | Conteúdo |
 |-----------|----------|
 | [**C4.md**](./C4.md) | Modelo C4: contexto, containers, componentes, sequências |
+| [**RULES_MAP.md**](./RULES_MAP.md) | **Mapa mestre de regras** (IDs RULE-*) |
+| [**LATENCY_GUARDRAILS.md**](./LATENCY_GUARDRAILS.md) | Guardrails de latência (API + clientes + agentes) |
+| [**CLIENT_LOADING_UX.md**](./CLIENT_LOADING_UX.md) | Padrões async/loading nos clientes |
+| [**ACCOUNT_LIFECYCLE.md**](./ACCOUNT_LIFECYCLE.md) | Congelar, reativar, purge de conta |
 | [**INTEGRATIONS.md**](./INTEGRATIONS.md) | Mapa de integrações externas (Groq, MP, Stripe, analytics) |
 | [**ARCHITECTURE.md**](./ARCHITECTURE.md) | Clean Architecture, packages, bounded contexts |
 | [**SECURITY.md**](./SECURITY.md) | JWT, rate limit, lockout, threat model |
@@ -103,6 +108,7 @@ Hub canônico da documentação da plataforma Nutri+. Este repositório (`nutrip
 Ao implementar features ou mudanças transversais:
 
 1. Atualize [**FEATURES.md**](./FEATURES.md) se afetar escopo de produto ou paridade entre clientes.
-2. Atualize o doc técnico do repositório alterado (frontend, agentes, web).
+2. Registre regras novas em [**RULES_MAP.md**](./RULES_MAP.md).
+3. Atualize o doc técnico do repositório alterado (frontend, agentes, web).
 3. Se afetar integração ou trace, atualize [**C4.md**](./C4.md), [**INTEGRATIONS.md**](./INTEGRATIONS.md) e [**OBSERVABILITY.md**](./OBSERVABILITY.md).
 4. Se afetar billing, atualize [**SUBSCRIPTIONS.md**](./SUBSCRIPTIONS.md) (estado atual) — **não** confundir com [`BILLING_AND_AUTH_ROADMAP.md`](./BILLING_AND_AUTH_ROADMAP.md) (futuro).

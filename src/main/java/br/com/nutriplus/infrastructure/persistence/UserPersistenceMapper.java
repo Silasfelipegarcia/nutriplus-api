@@ -26,7 +26,8 @@ final class UserPersistenceMapper {
                 entity.getHealthEligibilityVersion(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt(),
-                entity.getAccessRejectedAt()
+                entity.getAccessRejectedAt(),
+                entity.getAccountFrozenAt()
         );
     }
 

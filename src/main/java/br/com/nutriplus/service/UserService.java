@@ -4,6 +4,7 @@ import br.com.nutriplus.application.auth.LoginUseCase;
 import br.com.nutriplus.application.shared.ActingUserResolver;
 import br.com.nutriplus.application.user.ChangePasswordUseCase;
 import br.com.nutriplus.application.user.DeleteAccountUseCase;
+import br.com.nutriplus.application.user.FreezeAccountUseCase;
 import br.com.nutriplus.application.user.GetCurrentUserUseCase;
 import br.com.nutriplus.application.user.UpdateUserProfileUseCase;
 import br.com.nutriplus.domain.entity.UserLegalAcceptance;
@@ -37,6 +38,7 @@ public class UserService {
     private final UpdateUserProfileUseCase updateUserProfileUseCase;
     private final ChangePasswordUseCase changePasswordUseCase;
     private final DeleteAccountUseCase deleteAccountUseCase;
+    private final FreezeAccountUseCase freezeAccountUseCase;
     private final NutritionProfileRepository nutritionProfileRepository;
     private final ResponseMapper responseMapper;
     private final CurrentUser currentUser;
@@ -49,6 +51,7 @@ public class UserService {
                        UpdateUserProfileUseCase updateUserProfileUseCase,
                        ChangePasswordUseCase changePasswordUseCase,
                        DeleteAccountUseCase deleteAccountUseCase,
+                       FreezeAccountUseCase freezeAccountUseCase,
                        NutritionProfileRepository nutritionProfileRepository,
                        ResponseMapper responseMapper,
                        CurrentUser currentUser,
@@ -60,6 +63,7 @@ public class UserService {
         this.updateUserProfileUseCase = updateUserProfileUseCase;
         this.changePasswordUseCase = changePasswordUseCase;
         this.deleteAccountUseCase = deleteAccountUseCase;
+        this.freezeAccountUseCase = freezeAccountUseCase;
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.responseMapper = responseMapper;
         this.currentUser = currentUser;
@@ -125,6 +129,13 @@ public class UserService {
 
         boolean hasProfile = nutritionProfileRepository.findByUserId(entity.getId()).isPresent();
         return responseMapper.toUserResponse(entity, hasProfile);
+    }
+
+    @Transactional
+    @CacheEvict(value = NutriCacheNames.USER_ME, keyGenerator = "userIdCacheKeyGenerator")
+    public void freezeAccount(DeleteAccountRequest request) {
+        var entity = currentUser.get();
+        freezeAccountUseCase.execute(entity, request);
     }
 
     @Transactional

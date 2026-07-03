@@ -9,6 +9,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class GoalTimelineServiceTest {
@@ -93,16 +95,31 @@ class GoalTimelineServiceTest {
     }
 
     @Test
-    void buildProjectionLine_rises_when_calorie_surplus_on_loss_goal() {
+    void buildProjectionLine_stays_flat_when_adverse_trend_suppressed() {
+        Double forChart = GoalTimelineService.signedTrendForProjection(0.15, Goal.LOSE_WEIGHT);
         List<GoalTimelineChartPoint> line = GoalTimelineService.buildProjectionLine(
                 LocalDate.of(2026, 7, 1),
                 new BigDecimal("78.0"),
-                0.15,
+                forChart,
                 new BigDecimal("74.0"),
                 Goal.LOSE_WEIGHT,
                 LocalDate.of(2026, 9, 22)
         );
-        assertTrue(line.getLast().weightKg().doubleValue() > 78.0);
+        assertEquals(78.0, line.getLast().weightKg().doubleValue());
+    }
+
+    @Test
+    void signedTrendForProjection_keeps_favorable_loss_direction() {
+        assertEquals(-0.30, GoalTimelineService.signedTrendForProjection(-0.30, Goal.LOSE_WEIGHT));
+        assertNull(GoalTimelineService.signedTrendForProjection(0.15, Goal.LOSE_WEIGHT));
+    }
+
+    @Test
+    void hasMinimumTrendData_false_on_first_plan_days() {
+        LocalDate planStart = LocalDate.of(2026, 7, 1);
+        LocalDate today = LocalDate.of(2026, 7, 2);
+        assertFalse(GoalTimelineService.hasMinimumTrendData(
+                planStart, today, List.of(), null));
     }
 
     @Test

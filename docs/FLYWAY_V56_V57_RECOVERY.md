@@ -1,6 +1,52 @@
 # Recuperação Flyway V56/V57 — deploy bloqueado (Railway / produção)
 
-## Sintoma nos logs
+## IntelliJ / MySQL local
+
+### Erro A — checksum mismatch V56
+
+```
+Migration checksum mismatch for migration version 56
+-> Applied to database : 797521757
+-> Resolved locally    : 242365722
+```
+
+### Erro B — V1 failed / histórico corrompido
+
+```
+Detected failed migration to version 1 (initial nutriplus schema).
+Please remove any half-completed changes then run repair to fix the schema history.
+```
+
+Causa comum: `flyway:repair` após duplicatas marcou entradas como `type = DELETE`, ou ficou linha com `success = 0` enquanto as tabelas já existem.
+
+### Correção (1 comando)
+
+```bash
+cd nutriplus-api
+chmod +x scripts/local-dev-flyway-repair.sh
+./scripts/local-dev-flyway-repair.sh
+```
+
+O script:
+1. `mvn clean`
+2. Se histórico OK → `flyway:repair` (checksum)
+3. Se corrompido → drop `flyway_schema_history`, **baseline V58**, `migrate` (V59+)
+4. `flyway:validate`
+
+Depois rode **NutriplusApplication** com profile `local`.
+
+**Banco zerado (sem dados a perder):**
+
+```bash
+mysql -uroot -e "DROP DATABASE IF EXISTS nutriplus; CREATE DATABASE nutriplus CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+./scripts/local-dev-flyway-repair.sh
+```
+
+**Importante:** sempre `mvn clean` antes de subir no IntelliJ se aparecer "Found more than one migration with version 56" (artefatos antigos em `target/`).
+
+---
+
+## Sintoma nos logs (Railway / prod)
 
 ```
 Cannot resolve reference to bean 'jpaSharedEM_entityManagerFactory'

@@ -6,6 +6,8 @@ Complementa [`OBSERVABILITY.md`](../OBSERVABILITY.md).
 
 Setup completo (APM, logs, MySQL): [`NEW_RELIC.md`](./NEW_RELIC.md).
 
+Queries NRQL para investigar erros: [`NRQL_COOKBOOK.md`](./NRQL_COOKBOOK.md).
+
 Prometheus/Grafana **permanecem ativos** — NR é camada adicional.
 
 ## Prometheus — métricas novas

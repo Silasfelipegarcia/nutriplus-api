@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -72,4 +73,6 @@ public interface UserRepository extends JpaRepository<User, Long> {
     List<Object[]> countActiveSubscriptionsByPlan(
             @Param("plans") Collection<SubscriptionPlan> plans,
             @Param("now") Instant now);
+
+    List<User> findByAccountFrozenAtBefore(LocalDateTime cutoff);
 }

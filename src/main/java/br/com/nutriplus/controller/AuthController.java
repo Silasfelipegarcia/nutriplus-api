@@ -70,4 +70,9 @@ public class AuthController {
     public void resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         passwordResetService.resetPassword(request);
     }
+
+    @PostMapping("/reactivate-account")
+    public AuthResponse reactivateAccount(@Valid @RequestBody LoginRequest request) {
+        return authService.reactivateFrozenAccount(request);
+    }
 }

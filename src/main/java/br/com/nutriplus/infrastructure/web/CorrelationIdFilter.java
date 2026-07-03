@@ -1,5 +1,6 @@
 package br.com.nutriplus.infrastructure.web;
 
+import br.com.nutriplus.infrastructure.observability.NewRelicTraceBridge;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -40,6 +41,7 @@ public class CorrelationIdFilter extends OncePerRequestFilter {
         MDC.put(MDC_TRACE, traceId);
         putOptionalMdc(request, FLOW_HEADER, MDC_FLOW);
         putOptionalMdc(request, SESSION_HEADER, MDC_SESSION);
+        NewRelicTraceBridge.syncFromMdc();
 
         try {
             filterChain.doFilter(request, response);

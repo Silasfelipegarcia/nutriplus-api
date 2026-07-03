@@ -3,6 +3,7 @@ package br.com.nutriplus.service;
 import br.com.nutriplus.application.auth.LoginAccessPolicy;
 import br.com.nutriplus.application.auth.LoginUseCase;
 import br.com.nutriplus.application.auth.RefreshTokenUseCase;
+import br.com.nutriplus.application.user.ReactivateFrozenAccountUseCase;
 import br.com.nutriplus.application.port.PasswordHasherPort;
 import br.com.nutriplus.application.port.TokenPort;
 import br.com.nutriplus.application.port.UserQueryPort;
@@ -29,6 +30,7 @@ public class AuthService {
     private final UserQueryPort userQueryPort;
     private final LoginUseCase loginUseCase;
     private final RefreshTokenUseCase refreshTokenUseCase;
+    private final ReactivateFrozenAccountUseCase reactivateFrozenAccountUseCase;
     private final ResponseMapper responseMapper;
     private final AuditLogService auditLogService;
     private final CpfRegistrationService cpfRegistrationService;
@@ -43,6 +45,7 @@ public class AuthService {
                        UserQueryPort userQueryPort,
                        LoginUseCase loginUseCase,
                        RefreshTokenUseCase refreshTokenUseCase,
+                       ReactivateFrozenAccountUseCase reactivateFrozenAccountUseCase,
                        ResponseMapper responseMapper,
                        AuditLogService auditLogService,
                        CpfRegistrationService cpfRegistrationService,
@@ -56,6 +59,7 @@ public class AuthService {
         this.userQueryPort = userQueryPort;
         this.loginUseCase = loginUseCase;
         this.refreshTokenUseCase = refreshTokenUseCase;
+        this.reactivateFrozenAccountUseCase = reactivateFrozenAccountUseCase;
         this.responseMapper = responseMapper;
         this.auditLogService = auditLogService;
         this.cpfRegistrationService = cpfRegistrationService;
@@ -131,6 +135,14 @@ public class AuthService {
     public AuthResponse refresh(String refreshToken) {
         LoginUseCase.Response result = refreshTokenUseCase.execute(refreshToken);
         auditLogService.log("TOKEN_REFRESH", "USER", toEntity(result.user()));
+        AuthResponse response = fromLoginResponse(result);
+        cacheWarmService.warmTierSCaches(result.accessToken());
+        return response;
+    }
+
+    public AuthResponse reactivateFrozenAccount(LoginRequest request) {
+        LoginUseCase.Response result = reactivateFrozenAccountUseCase.execute(request);
+        auditLogService.log("ACCOUNT_REACTIVATED_LOGIN", "USER", toEntity(result.user()));
         AuthResponse response = fromLoginResponse(result);
         cacheWarmService.warmTierSCaches(result.accessToken());
         return response;

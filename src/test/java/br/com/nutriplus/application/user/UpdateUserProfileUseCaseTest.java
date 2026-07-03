@@ -90,6 +90,7 @@ class UpdateUserProfileUseCaseTest {
                 null,
                 LocalDateTime.now(),
                 LocalDateTime.now(),
+                null,
                 null
         );
     }

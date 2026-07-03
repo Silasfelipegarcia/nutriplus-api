@@ -60,6 +60,7 @@ class LoginUseCaseImplTest {
             null,
             LocalDateTime.now(),
             LocalDateTime.now(),
+            null,
             null
     );
 
@@ -100,7 +101,7 @@ class LoginUseCaseImplTest {
     void lockedAccountRejected() {
         User locked = new User(
                 1L, "Test", "test@nutriplus.com", UserRole.PATIENT, true, "hash",
-                null, null, null, 3, false, null, null, null, null, null, null, LocalDateTime.now(), LocalDateTime.now(), null);
+                null, null, null, 3, false, null, null, null, null, null, null, LocalDateTime.now(), LocalDateTime.now(), null, null);
         when(userQueryPort.findByEmail("test@nutriplus.com")).thenReturn(Optional.of(locked));
 
         assertThatThrownBy(() -> loginUseCase.execute(new LoginUseCase.Request("test@nutriplus.com", "secret123")))
@@ -111,7 +112,7 @@ class LoginUseCaseImplTest {
     void loginDisabledRejected() {
         User pending = new User(
                 1L, "Test", "test@nutriplus.com", UserRole.PATIENT, false, "hash",
-                null, null, null, 0, false, null, null, null, null, null, null, LocalDateTime.now(), LocalDateTime.now(), null);
+                null, null, null, 0, false, null, null, null, null, null, null, LocalDateTime.now(), LocalDateTime.now(), null, null);
         when(userQueryPort.findByEmail("test@nutriplus.com")).thenReturn(Optional.of(pending));
         when(passwordHasherPort.matches("secret123", "hash")).thenReturn(true);
 
@@ -124,7 +125,7 @@ class LoginUseCaseImplTest {
         User rejected = new User(
                 1L, "Test", "test@nutriplus.com", UserRole.PATIENT, false, "hash",
                 null, null, null, 0, false,                 null, null, null, null, null, null, LocalDateTime.now(), LocalDateTime.now(),
-                LocalDateTime.now());
+                LocalDateTime.now(), null);
         when(userQueryPort.findByEmail("test@nutriplus.com")).thenReturn(Optional.of(rejected));
         when(passwordHasherPort.matches("secret123", "hash")).thenReturn(true);
 

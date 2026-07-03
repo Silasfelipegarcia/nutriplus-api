@@ -53,4 +53,11 @@ public class UserController {
         webPortalClientVerifier.requireWebPortal(httpRequest);
         userService.deleteAccount(request);
     }
+
+    @PostMapping("/me/freeze")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void freezeAccount(@Valid @RequestBody DeleteAccountRequest request, HttpServletRequest httpRequest) {
+        webPortalClientVerifier.requireWebPortal(httpRequest);
+        userService.freezeAccount(request);
+    }
 }

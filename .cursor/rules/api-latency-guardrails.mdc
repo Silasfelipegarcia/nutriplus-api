@@ -3,6 +3,8 @@ description: Guardrails de latência da API — não degradar performance do cli
 alwaysApply: true
 ---
 
+> Ver documentação humana: [`docs/LATENCY_GUARDRAILS.md`](../../docs/LATENCY_GUARDRAILS.md) · [`docs/RULES_MAP.md`](../../docs/RULES_MAP.md)
+
 # Latência da API (Nutri+)
 
 Referência: `docs/PERFORMANCE.md`, `docs/PERFORMANCE_BASELINE.md`, `docs/RAILWAY_PERFORMANCE.md`.

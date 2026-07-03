@@ -3,6 +3,7 @@ package br.com.nutriplus.service;
 import br.com.nutriplus.application.auth.LoginAccessPolicy;
 import br.com.nutriplus.application.auth.LoginUseCase;
 import br.com.nutriplus.application.auth.RefreshTokenUseCase;
+import br.com.nutriplus.application.user.ReactivateFrozenAccountUseCase;
 import br.com.nutriplus.application.port.PasswordHasherPort;
 import br.com.nutriplus.application.port.TokenPort;
 import br.com.nutriplus.application.port.UserQueryPort;
@@ -42,6 +43,7 @@ class AuthServiceBetaRequestTest {
     @Mock private UserRegistrationValidator userRegistrationValidator;
     @Mock private FeatureFlagService featureFlagService;
     @Mock private CacheWarmService cacheWarmService;
+    @Mock private ReactivateFrozenAccountUseCase reactivateFrozenAccountUseCase;
 
     private AuthService authService;
 
@@ -55,6 +57,7 @@ class AuthServiceBetaRequestTest {
                 userQueryPort,
                 loginUseCase,
                 refreshTokenUseCase,
+                reactivateFrozenAccountUseCase,
                 responseMapper,
                 auditLogService,
                 cpfRegistrationService,

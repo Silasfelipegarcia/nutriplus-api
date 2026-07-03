@@ -1,5 +1,6 @@
 package br.com.nutriplus.infrastructure.web;
 
+import br.com.nutriplus.infrastructure.observability.NewRelicTraceBridge;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,6 +30,7 @@ public class MdcUserFilter extends OncePerRequestFilter {
             String sub = jwt.getSubject();
             if (sub != null && !sub.isBlank()) {
                 MDC.put(MDC_USER, sub);
+                NewRelicTraceBridge.syncFromMdc();
             }
         }
         try {

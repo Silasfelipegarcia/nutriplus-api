@@ -15,10 +15,11 @@ import br.com.nutriplus.service.SubscriptionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
-public class DeleteAccountUseCase {
+public class FreezeAccountUseCase {
 
     private final UserRepository userRepository;
     private final NutritionistRepository nutritionistRepository;
@@ -27,7 +28,7 @@ public class DeleteAccountUseCase {
     private final SubscriptionService subscriptionService;
     private final AuditLogService auditLogService;
 
-    public DeleteAccountUseCase(UserRepository userRepository,
+    public FreezeAccountUseCase(UserRepository userRepository,
                                 NutritionistRepository nutritionistRepository,
                                 CareRelationshipRepository careRelationshipRepository,
                                 PasswordHasherPort passwordHasherPort,
@@ -43,19 +44,24 @@ public class DeleteAccountUseCase {
 
     @Transactional
     public void execute(User user, DeleteAccountRequest request) {
-        ensureCanDelete(user);
+        ensureCanFreeze(user);
         AccountConfirmationSupport.verifyPasswordAndEmail(
-                user, request, passwordHasherPort, "a exclusão permanente");
+                user, request, passwordHasherPort, "o congelamento");
         disableAutoRenewSilently(user.getId());
 
-        auditLogService.log("ACCOUNT_DELETE_REQUEST", "USER", user);
-        userRepository.delete(user);
+        user.setAccountFrozenAt(LocalDateTime.now());
+        user.setLoginEnabled(false);
+        userRepository.save(user);
+        auditLogService.log("ACCOUNT_FROZEN", "USER", user);
     }
 
-    private void ensureCanDelete(User user) {
+    private void ensureCanFreeze(User user) {
+        if (user.getAccountFrozenAt() != null) {
+            throw new BusinessException("Sua conta já está congelada.");
+        }
         if (user.getRole() == UserRole.ADMIN) {
             throw new BusinessException(
-                    "Contas de administrador não podem ser excluídas por aqui. Fale com o suporte.");
+                    "Contas de administrador não podem ser congeladas por aqui. Fale com o suporte.");
         }
         if (user.getRole() == UserRole.NUTRITIONIST) {
             Nutritionist nutritionist = nutritionistRepository.findByUserId(user.getId()).orElse(null);
@@ -65,7 +71,7 @@ public class DeleteAccountUseCase {
                         List.of(CareRelationshipStatus.ACTIVE));
                 if (!activeCare.isEmpty()) {
                     throw new BusinessException(
-                            "Encerre o atendimento aos pacientes antes de excluir a conta de nutricionista.");
+                            "Encerre o atendimento aos pacientes antes de congelar a conta de nutricionista.");
                 }
             }
         }

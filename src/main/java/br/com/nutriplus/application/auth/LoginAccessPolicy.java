@@ -15,6 +15,9 @@ public final class LoginAccessPolicy {
     public static final String REJECTED_MESSAGE =
             "Sua solicitação de acesso ao Nutri+ não foi aprovada neste momento. Verifique o e-mail que enviamos com mais detalhes.";
 
+    public static final String FROZEN_MESSAGE =
+            "Sua conta está congelada. Seus dados foram preservados — reative quando quiser voltar ao Nutri+.";
+
     private LoginAccessPolicy() {
     }
 
@@ -24,6 +27,9 @@ public final class LoginAccessPolicy {
         }
         if (user.accessRejected()) {
             throw new LoginDisabledException(REJECTED_MESSAGE);
+        }
+        if (user.accountFrozen()) {
+            throw new LoginDisabledException(FROZEN_MESSAGE);
         }
         if (!user.loginEnabled()) {
             throw new LoginDisabledException(PENDING_MESSAGE);
@@ -36,6 +42,9 @@ public final class LoginAccessPolicy {
         }
         if (user.accessRejected()) {
             return REJECTED_MESSAGE;
+        }
+        if (user.accountFrozen()) {
+            return FROZEN_MESSAGE;
         }
         if (!user.loginEnabled()) {
             return PENDING_MESSAGE;

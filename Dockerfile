@@ -17,6 +17,7 @@ RUN apk add --no-cache curl unzip \
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app
 COPY --from=newrelic /opt/newrelic /opt/newrelic
+COPY newrelic.yml /opt/newrelic/newrelic.yml
 COPY --from=build /app/target/*.jar app.jar
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh

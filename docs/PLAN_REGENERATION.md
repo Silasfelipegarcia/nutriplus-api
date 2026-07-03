@@ -141,5 +141,20 @@ Campos em `meal_plan_generation_jobs`:
 2. **Virou atleta** — dialog após salvar treinos; `ATHLETE_SWITCH` se elegível.
 3. **Correção única** — hub nutricional → `PlanCorrectionFlowScreen` → `ONE_TIME_CORRECTION`.
 4. **Ciclo 15 dias** — `ProgressReviewScreen` (medidas → sensações → IA → manter/gerar).
+5. **Zerar plano** — hub ou aba Plano → `PlanResetFlowScreen` → confirmação `ZERAR PLANO` → `PLAN_RESET`.
+
+## Fluxos no portal web
+
+- **Zerar plano:** `plan-reset-entry.component` em `/app/plano` e perfil.
+- **Elegibilidade:** `GET /meal-plans/regeneration-eligibility` antes de CTAs.
+
+## Feature flags
+
+| Flag | Efeito |
+|------|--------|
+| `UNLIMITED_PLAN_REGEN` | Bypass locks de regeração (dev/homolog) |
+| `UNLOCKED_REGEN` | Reason explícito quando desbloqueado |
 
 Fora desses caminhos, CTAs de regeração exibem mensagem de bloqueio e apontam para Evolução.
+
+Doc UX loading: [CLIENT_LOADING_UX.md](./CLIENT_LOADING_UX.md)

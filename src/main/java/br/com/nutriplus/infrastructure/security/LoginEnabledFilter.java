@@ -40,17 +40,22 @@ public class LoginEnabledFilter extends OncePerRequestFilter {
             if (subject != null && !subject.isBlank()) {
                 Long userId = Long.parseLong(subject);
                 User user = userQueryPort.findById(userId).orElse(null);
-                if (user != null && user.role() != UserRole.ADMIN && !user.loginEnabled()) {
+                if (user != null && user.role() != UserRole.ADMIN && (!user.loginEnabled() || user.accountFrozen())) {
                     String message = LoginAccessPolicy.messageFor(user);
                     if (message == null) {
                         filterChain.doFilter(request, response);
                         return;
                     }
+                    String code = user.accountFrozen()
+                            ? "LOGIN_ACCOUNT_FROZEN"
+                            : user.accessRejected()
+                                    ? "LOGIN_ACCESS_REJECTED"
+                                    : "LOGIN_PENDING_APPROVAL";
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                     response.setContentType(MediaType.APPLICATION_JSON_VALUE);
                     response.getWriter().write(objectMapper.writeValueAsString(Map.of(
                             "message", message,
-                            "code", user.accessRejected() ? "LOGIN_ACCESS_REJECTED" : "LOGIN_PENDING_APPROVAL"
+                            "code", code
                     )));
                     return;
                 }

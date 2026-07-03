@@ -5,6 +5,8 @@ import br.com.nutriplus.domain.model.User;
 import br.com.nutriplus.repository.UserRepository;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+
 @Component
 public class UserUpdateAdapter implements UserUpdatePort {
 
@@ -55,5 +57,16 @@ public class UserUpdateAdapter implements UserUpdatePort {
         entity.setPasswordMustChange(passwordMustChange);
         entity.setFailedLoginAttempts(0);
         userRepository.save(entity);
+    }
+
+    @Override
+    public User reactivateFrozenAccount(Long userId) {
+        br.com.nutriplus.domain.entity.User entity = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalStateException("User not found"));
+        entity.setAccountFrozenAt(null);
+        entity.setLoginEnabled(true);
+        entity.setLoginEnabledAt(LocalDateTime.now());
+        entity.setFailedLoginAttempts(0);
+        return UserPersistenceMapper.toDomain(userRepository.save(entity));
     }
 }

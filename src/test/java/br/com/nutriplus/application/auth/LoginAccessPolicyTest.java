@@ -63,7 +63,8 @@ class LoginAccessPolicyTest {
                 null,
                 LocalDateTime.now(),
                 LocalDateTime.now(),
-                rejectedAt
+                rejectedAt,
+                null
         );
     }
 }

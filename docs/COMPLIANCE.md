@@ -11,6 +11,8 @@ Use após cada release que toque em IA, dados de saúde ou textos legais.
 - [ ] Registro auditável em `user_legal_acceptances`
 - [ ] Links legais no Perfil
 - [ ] Exclusão de conta funcional (`DELETE /users/me`)
+- [ ] Congelamento de conta (`POST /users/me/freeze`) e reativação documentados — ver [ACCOUNT_LIFECYCLE.md](./ACCOUNT_LIFECYCLE.md)
+- [ ] Purge automático após 90 dias congelada (`AccountPurgeScheduler`)
 - [ ] Disclaimer visível no plano alimentar
 - [ ] `NutriAiDisclaimer` em evolução, reavaliação e treinos
 - [ ] Linguagem de IA: "indício sugerido", "estimativa", sem "diagnóstico"

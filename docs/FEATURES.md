@@ -63,7 +63,8 @@ Doc: [ONBOARDING.md](./ONBOARDING.md), [METABOLISM_AND_BODY_COMPOSITION.md](./ME
 | Item | Flutter | Web | API | Status |
 |------|---------|-----|-----|--------|
 | Dashboard do dia | `TodayScreen` | `/app/dashboard` | `GET /checkins/today` | MVP |
-| Check-in refeição | inline | portal dashboard | `POST /checkins` | MVP |
+| Check-in refeição | inline (optimistic UI) | portal dashboard | `POST /checkins` | MVP |
+| Bootstrap dashboard | `AppDataStore.bootstrap` | portal bootstrap | `GET /app/bootstrap` | MVP jul/26 |
 | Extras fora do plano | `OffPlanFoodSheet` | — | `POST /checkins/extras` | Flutter |
 | Balance insight | `TodayBalanceSheet` | — | `POST /checkins/balance-insight` | Flutter |
 | Saldo carboidratos (low carb) | `TodayBalanceSheet` | — | `consumedCarbsG` / `remainingCarbsG` | MVP jul/25 |
@@ -84,8 +85,12 @@ Doc: [ENGAGEMENT.md](./ENGAGEMENT.md)
 | Sync metas desatualizadas | banner + CTA | `plan-target-sync.ts` | compara perfil vs plano | MVP |
 | Notas revisão médica | `PlanDayHeader` | meal-plan component | campos review no plano | MVP |
 | Flexibilidade semanal | `WeeklyFlexibilitySection` | — | via shopping guidance | Flutter |
+| Elegibilidade regeração | `plan_regeneration_gate` | portal | `GET /meal-plans/regeneration-eligibility` | MVP |
+| Correção única perfil | `PlanCorrectionFlowScreen` | portal | `ONE_TIME_CORRECTION` | MVP |
+| **Zerar plano** | `PlanResetFlowScreen` | `plan-reset-entry` | `PLAN_RESET` | MVP jul/26 |
+| Hub nutricional | `ProfileNutritionHubScreen` | portal perfil | — | MVP |
 
-Doc: [INTEGRATIONS.md](./INTEGRATIONS.md), `nutriplus-agentes/docs/SECONDARY_AGENTS.md`
+Doc: [PLAN_REGENERATION.md](./PLAN_REGENERATION.md), [CLIENT_LOADING_UX.md](./CLIENT_LOADING_UX.md)
 
 ---
 
@@ -121,8 +126,12 @@ Doc: [PROGRESS_ANALYSIS.md](./PROGRESS_ANALYSIS.md)
 | Perfil usuário | `ProfileScreen` | `/app/perfil` | `GET/PUT /users/me` | MVP |
 | Resumo nutricional | `ProfileSummaryCard` | profile | `GET /nutrition-profile` | MVP |
 | Foto avatar | upload | — | `PUT /users/me` | MVP |
-| Excluir conta | — | — | `DELETE /users/me` | API only |
-| Hub para sub-features | tiles | portal nav | — | MVP |
+| Excluir conta | — | portal | `DELETE /users/me` | Web only |
+| Congelar conta | — | portal | `POST /users/me/freeze` | Web only jul/26 |
+| Reativar conta congelada | login flow | portal | `POST /auth/reactivate-account` | MVP jul/26 |
+| Hub para sub-features | `ProfileNutritionHubScreen` | portal nav | — | MVP |
+
+Doc: [ACCOUNT_LIFECYCLE.md](./ACCOUNT_LIFECYCLE.md)
 
 ---
 
@@ -133,8 +142,8 @@ Doc: [PROGRESS_ANALYSIS.md](./PROGRESS_ANALYSIS.md)
 | Status assinatura | `SubscriptionScreen` | `/app/assinatura` | `GET /payments/subscription` | MVP |
 | Catálogo planos | `PlansScreen` | `PlanCatalogComponent` | `GET /plans` | MVP |
 | Checkout | `CheckoutScreen` (WebView) | checkout redirect | `POST /payments/checkout` | MVP |
-| Cancelar renovação | botão | portal subscription | `POST /payments/subscription/cancel` | MVP |
-| Reativar renovação | **Gap** | portal subscription | `POST /payments/subscription/reactivate` | Gap Flutter |
+| Cancelar renovação | busy button | portal subscription | `POST /payments/subscription/cancel` | MVP |
+| Reativar renovação | busy button | portal subscription | `POST /payments/subscription/reactivate` | MVP jul/26 |
 | Trial | — | card register | `POST /payments/trial` | Web |
 | Cadastro cartão | — | `/app/cobranca` | `POST /payments/cards` | Web |
 | Cotação upgrade | — | plan catalog | `GET /payments/quote` | Web |

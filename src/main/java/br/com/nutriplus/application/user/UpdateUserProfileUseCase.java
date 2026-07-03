@@ -62,7 +62,8 @@ public class UpdateUserProfileUseCase {
                 current.healthEligibilityVersion(),
                 current.createdAt(),
                 current.updatedAt(),
-                current.accessRejectedAt()
+                current.accessRejectedAt(),
+                current.accountFrozenAt()
         );
         return userUpdatePort.save(updated);
     }

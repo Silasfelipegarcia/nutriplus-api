@@ -1,6 +1,7 @@
 package br.com.nutriplus.infrastructure.web;
 
 import br.com.nutriplus.infrastructure.config.ObservabilityProperties;
+import br.com.nutriplus.infrastructure.observability.NewRelicTraceBridge;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import jakarta.servlet.FilterChain;
@@ -63,7 +64,12 @@ public class RequestPerformanceFilter extends OncePerRequestFilter {
                 MDC.put("clientDurationMs", clientDuration.strip());
             }
 
-            if (sync && durationMs > observabilityProperties.syncSlowRequestMs()) {
+            NewRelicTraceBridge.syncFromMdc();
+            NewRelicTraceBridge.syncHttpContext(method, path, status, durationMs);
+
+            if (shouldLogHttpError(status, path)) {
+                log.warn("[HTTP] {} {} {} {}ms (client-error flow={})", method, path, status, durationMs, flowTag);
+            } else if (sync && durationMs > observabilityProperties.syncSlowRequestMs()) {
                 log.warn("[HTTP] {} {} {} {}ms (sync-slow flow={})", method, path, status, durationMs, flowTag);
             } else if (durationMs > observabilityProperties.slowRequestMs()) {
                 log.warn("[HTTP] {} {} {} {}ms (slow)", method, path, status, durationMs);
@@ -87,5 +93,12 @@ public class RequestPerformanceFilter extends OncePerRequestFilter {
                 .publishPercentileHistogram()
                 .register(meterRegistry)
                 .record(durationMs, TimeUnit.MILLISECONDS);
+    }
+
+    private static boolean shouldLogHttpError(int status, String path) {
+        if (status < 400) {
+            return false;
+        }
+        return !path.startsWith("/actuator") && !"/health".equals(path);
     }
 }

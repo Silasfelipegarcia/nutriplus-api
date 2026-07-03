@@ -44,10 +44,10 @@ interfaces (REST) → application (use cases) → domain
 
 ## Bounded contexts
 
-- **auth** — registro, login, refresh, lockout, forgot/reset password
-- **user** — perfil, foto, senha, aceite termos, exclusão conta
+- **auth** — registro, login, refresh, lockout, forgot/reset password, reactivate frozen
+- **user** — perfil, foto, senha, aceite termos, exclusão conta, **congelamento** (freeze/purge)
 - **nutrition** — perfil nutricional, onboarding (`NutritionProfileService`)
-- **mealplan** — planos alimentares, listas de compras, geração assíncrona
+- **mealplan** — planos alimentares, listas de compras, geração assíncrona, **PLAN_RESET**, política de regeração
 - **progress** — medidas corporais, evolução, reavaliação IA
 - **training** — modo atleta, atividades, MET, calorias extras
 - **checkin** — check-ins diários, aderência, streak

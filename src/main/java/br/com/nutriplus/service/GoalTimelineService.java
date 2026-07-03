@@ -32,6 +32,8 @@ public class GoalTimelineService {
 
     private static final double MAX_SAFE_LOSS_KG_PER_WEEK = 1.0;
     private static final int MIN_DAYS_FOR_RATE = 7;
+    private static final int MIN_DAYS_ON_PLAN_FOR_TREND = 3;
+    private static final int MIN_DAYS_WITH_INTAKE_FOR_TREND = 3;
     private static final int PROJECTION_STEP_DAYS = 7;
 
     private final CurrentUser currentUser;
@@ -96,7 +98,7 @@ public class GoalTimelineService {
 
         BigDecimal startWeight = resolvePlanStartWeight(profile, planStart, allMeasurements);
         BigDecimal targetWeight = profile.getTargetWeightKg();
-        BigDecimal latestWeight = resolveLatestWeight(user.getId(), profile, allMeasurements);
+        BigDecimal latestWeight = resolveLatestWeightInPlan(profile, planStart, allMeasurements, startWeight);
         BigDecimal deltaTotal = startWeight.subtract(targetWeight).abs();
 
         double requiredRate = deltaTotal.doubleValue() / weeks;
@@ -110,10 +112,14 @@ public class GoalTimelineService {
                 profile.getGoal(), planStart, planMeasurements, latestWeight, startWeight);
         Double weightSigned = toSignedWeeklyKg(rawActualRate, profile.getGoal());
 
-        int recentAdherenceDays = 7;
-        CheckinAdherenceHistoryResponse recentAdherence =
-                checkinService.getAdherenceHistory(recentAdherenceDays);
-        Double calorieSigned = extractSignedWeeklyKg(recentAdherence);
+        CheckinAdherenceHistoryResponse planAdherence =
+                checkinService.getAdherenceHistorySince(planStart);
+        Double calorieSigned = hasMinimumTrendData(planStart, today, planMeasurements, planAdherence)
+                ? extractSignedWeeklyKg(planAdherence)
+                : null;
+        if (weightSigned != null && !hasMinimumTrendData(planStart, today, planMeasurements, planAdherence)) {
+            weightSigned = null;
+        }
 
         double weightBlend = computeWeightBlendWeight(planMeasurements, today);
         Double signedTrend = blendSignedTrend(weightSigned, calorieSigned, weightBlend);
@@ -160,10 +166,9 @@ public class GoalTimelineService {
             summary = buildSummary(profile.getGoal(), targetDate, projectedFinish, daysAheadOrBehind,
                     actualRate, requiredRateBd, planStart, previousPlanCount);
         } else {
-            int adherenceDays = (int) Math.min(90, Math.max(7, ChronoUnit.DAYS.between(planStart, today) + 1));
-            CheckinAdherenceHistoryResponse adherence = checkinService.getAdherenceHistory(adherenceDays);
-            CheckinAdherenceProjectionResponse projection = adherence.projection();
-            if (projection.estimatedWeightChangeKgPerWeek() != null
+            CheckinAdherenceProjectionResponse projection = planAdherence.projection();
+            if (hasMinimumTrendData(planStart, today, planMeasurements, planAdherence)
+                    && projection.estimatedWeightChangeKgPerWeek() != null
                     && projection.estimatedWeightChangeKgPerWeek() != 0
                     && remainingKg.compareTo(BigDecimal.ZERO) > 0.05) {
                 signedTrend = projection.estimatedWeightChangeKgPerWeek();
@@ -188,18 +193,24 @@ public class GoalTimelineService {
         }
 
         LocalDate chartEndDate = resolveChartEndDate(journeyStart, targetDate, projectedFinish, daysAheadOrBehind);
-        LocalDate trendStart = resolveTrendStart(today, planMeasurements);
-        BigDecimal trendWeight = resolveTrendWeight(trendStart, today, latestWeight, planMeasurements);
+        boolean trendDataReady = hasMinimumTrendData(planStart, today, planMeasurements, planAdherence);
+        LocalDate trendStart = resolveTrendStart(planStart, today, planMeasurements);
+        BigDecimal trendWeight = resolveTrendWeight(trendStart, latestWeight, startWeight, planMeasurements);
+        Double signedTrendForChart = trendDataReady
+                ? signedTrendForProjection(signedTrend, profile.getGoal())
+                : null;
 
         List<GoalTimelineChartPoint> requiredPaceLine = buildPaceLine(
                 journeyStart, startWeight, targetDate, targetWeight, profile.getGoal());
-        List<GoalTimelineChartPoint> projectionLine = buildProjectionLine(
-                trendStart,
-                trendWeight,
-                signedTrend,
-                targetWeight,
-                profile.getGoal(),
-                chartEndDate);
+        List<GoalTimelineChartPoint> projectionLine = trendDataReady
+                ? buildProjectionLine(
+                        trendStart,
+                        trendWeight,
+                        signedTrendForChart,
+                        targetWeight,
+                        profile.getGoal(),
+                        chartEndDate)
+                : List.of();
 
         return new GoalTimelineResponse(
                 journeyStart,
@@ -343,6 +354,18 @@ public class GoalTimelineService {
         return profile.getCurrentWeightKg();
     }
 
+    private BigDecimal resolveLatestWeightInPlan(NutritionProfile profile,
+                                                 LocalDate planStart,
+                                                 List<BodyMeasurementSession> all,
+                                                 BigDecimal startWeight) {
+        for (int i = all.size() - 1; i >= 0; i--) {
+            if (!all.get(i).getMeasuredOn().isBefore(planStart)) {
+                return all.get(i).getWeightKg();
+            }
+        }
+        return startWeight != null ? startWeight : profile.getCurrentWeightKg();
+    }
+
     private BigDecimal resolveLatestWeight(Long userId,
                                            NutritionProfile profile,
                                            List<BodyMeasurementSession> all) {
@@ -415,21 +438,22 @@ public class GoalTimelineService {
         return end;
     }
 
-    private static LocalDate resolveTrendStart(LocalDate today, List<BodyMeasurementSession> planMeasurements) {
-        if (planMeasurements.isEmpty()) {
-            return today;
+    private static LocalDate resolveTrendStart(LocalDate planStart,
+                                               LocalDate today,
+                                               List<BodyMeasurementSession> planMeasurements) {
+        if (!planMeasurements.isEmpty()) {
+            BodyMeasurementSession last = planMeasurements.getLast();
+            long daysSinceLast = ChronoUnit.DAYS.between(last.getMeasuredOn(), today);
+            if (daysSinceLast <= 21) {
+                return last.getMeasuredOn();
+            }
         }
-        BodyMeasurementSession last = planMeasurements.getLast();
-        long daysSinceLast = ChronoUnit.DAYS.between(last.getMeasuredOn(), today);
-        if (daysSinceLast <= 21) {
-            return last.getMeasuredOn();
-        }
-        return today;
+        return planStart != null && !planStart.isAfter(today) ? planStart : today;
     }
 
     private static BigDecimal resolveTrendWeight(LocalDate trendStart,
-                                                 LocalDate today,
-                                                 BigDecimal latestWeight,
+                                                 BigDecimal planLatestWeight,
+                                                 BigDecimal startWeight,
                                                  List<BodyMeasurementSession> planMeasurements) {
         if (!planMeasurements.isEmpty()) {
             BodyMeasurementSession last = planMeasurements.getLast();
@@ -437,7 +461,46 @@ public class GoalTimelineService {
                 return last.getWeightKg();
             }
         }
-        return latestWeight;
+        return planLatestWeight != null ? planLatestWeight : startWeight;
+    }
+
+    static boolean hasMinimumTrendData(LocalDate planStart,
+                                       LocalDate today,
+                                       List<BodyMeasurementSession> planMeasurements,
+                                       CheckinAdherenceHistoryResponse adherence) {
+        if (planStart == null || planStart.isAfter(today)) {
+            return false;
+        }
+        long daysOnPlan = ChronoUnit.DAYS.between(planStart, today) + 1;
+        if (daysOnPlan < MIN_DAYS_ON_PLAN_FOR_TREND) {
+            return false;
+        }
+        if (planMeasurements.size() >= 2) {
+            long span = ChronoUnit.DAYS.between(
+                    planMeasurements.getFirst().getMeasuredOn(),
+                    planMeasurements.getLast().getMeasuredOn());
+            if (span >= MIN_DAYS_FOR_RATE) {
+                return true;
+            }
+        }
+        if (adherence == null || adherence.daily() == null) {
+            return false;
+        }
+        long daysWithIntake = adherence.daily().stream()
+                .filter(d -> !"NO_DATA".equals(d.dayStatus()) && !"MISSED".equals(d.dayStatus()))
+                .count();
+        return daysWithIntake >= MIN_DAYS_WITH_INTAKE_FOR_TREND;
+    }
+
+    static Double signedTrendForProjection(Double signedTrend, Goal goal) {
+        if (signedTrend == null || signedTrend == 0 || goal == null || goal == Goal.MAINTAIN_WEIGHT) {
+            return signedTrend;
+        }
+        BigDecimal towardGoal = magnitudeTowardGoal(signedTrend, goal);
+        if (towardGoal == null || towardGoal.compareTo(BigDecimal.ZERO) <= 0) {
+            return null;
+        }
+        return signedTrend;
     }
 
     private static LocalDate projectFinishDate(LocalDate today, BigDecimal remainingKg, BigDecimal actualRate) {
@@ -647,7 +710,8 @@ public class GoalTimelineService {
                                                    LocalDate planStart,
                                                    int previousPlanCount) {
         return planContextPrefix(planStart, previousPlanCount)
-                + "Registre refeições e peso no plano atual para estimar se você chega na meta em "
+                + "Registre pelo menos 3 dias de refeições (ou duas pesagens com 7+ dias de intervalo) "
+                + "no plano atual para estimar se você chega na meta em "
                 + weeks + " semanas (até " + formatDate(targetDate) + ").";
     }
 

@@ -95,7 +95,12 @@ Resumo — detalhes em [docs/OBSERVABILITY.md](docs/OBSERVABILITY.md) e [docs/C4
 | POST | `/auth/register` | Não |
 | POST | `/auth/login` | Não |
 | POST | `/auth/refresh` | Não |
+| POST | `/auth/reactivate-account` | Não |
+| GET | `/app/bootstrap` | JWT |
 | GET | `/users/me` | JWT |
+| POST | `/users/me/freeze` | JWT (portal web) |
+| DELETE | `/users/me` | JWT (portal web) |
+| GET | `/meal-plans/regeneration-eligibility` | JWT |
 | POST | `/nutrition-profile` | JWT |
 | GET | `/nutrition-profile` | JWT |
 | POST | `/meal-plans/generate` | JWT |

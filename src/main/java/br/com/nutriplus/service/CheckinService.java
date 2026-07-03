@@ -40,11 +40,14 @@ import br.com.nutriplus.infrastructure.config.NutriCacheNames;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -268,22 +271,57 @@ public class CheckinService {
     @Cacheable(value = NutriCacheNames.CHECKINS_ADHERENCE, keyGenerator = "userDaysCacheKeyGenerator")
     public CheckinAdherenceHistoryResponse getAdherenceHistory(int days) {
         int windowDays = normalizeWindowDays(days);
-        User user = currentUser.get();
         LocalDate today = LocalDate.now();
         LocalDate start = today.minusDays(windowDays - 1L);
+        return buildAdherenceHistory(start, today);
+    }
 
+    /**
+     * Aderência apenas desde o início do plano atual (usado na curva de evolução).
+     */
+    public CheckinAdherenceHistoryResponse getAdherenceHistorySince(LocalDate planStart) {
+        LocalDate today = LocalDate.now();
+        if (planStart == null || planStart.isAfter(today)) {
+            return emptyAdherenceHistory(today);
+        }
+        return buildAdherenceHistory(planStart, today);
+    }
+
+    private CheckinAdherenceHistoryResponse emptyAdherenceHistory(LocalDate today) {
+        return new CheckinAdherenceHistoryResponse(
+                0,
+                0,
+                0,
+                null,
+                Goal.MAINTAIN_WEIGHT.name(),
+                List.of(),
+                new CheckinAdherenceProjectionResponse(
+                        0,
+                        null,
+                        "Registre refeições no plano atual para ver uma projeção do seu ritmo."));
+    }
+
+    private CheckinAdherenceHistoryResponse buildAdherenceHistory(LocalDate start, LocalDate today) {
+        int windowDays = (int) ChronoUnit.DAYS.between(start, today) + 1;
+        if (windowDays < 1) {
+            return emptyAdherenceHistory(today);
+        }
+
+        User user = currentUser.get();
         NutritionProfile profile = nutritionProfileRepository.findByUserId(user.getId()).orElse(null);
         Integer target = targetCalories(profile);
         Goal goal = profile != null ? profile.getGoal() : Goal.MAINTAIN_WEIGHT;
 
         ActivePlanContext planContext = activePlanContext(user.getId());
         int mealsExpected = planContext.mealsExpected();
+        Set<Long> currentPlanMealIds = planContext.currentPlanMealIds();
 
         List<DailyMealCheckin> checkins = checkinRepository.findByUserIdAndDateRange(user.getId(), start, today);
         List<DailyFoodExtra> extras = foodExtraRepository
                 .findByUserIdAndEntryDateBetweenOrderByEntryDateAscCreatedAtAsc(user.getId(), start, today);
 
         Map<LocalDate, List<DailyMealCheckin>> checkinsByDate = checkins.stream()
+                .filter(c -> c.getMeal() != null && currentPlanMealIds.contains(c.getMeal().getId()))
                 .collect(Collectors.groupingBy(DailyMealCheckin::getCheckinDate));
         Map<LocalDate, List<DailyFoodExtra>> extrasByDate = extras.stream()
                 .collect(Collectors.groupingBy(DailyFoodExtra::getEntryDate));
@@ -300,7 +338,10 @@ public class CheckinService {
             boolean hasPlan = mealsExpected > 0 && !beforePlan;
 
             List<DailyMealCheckin> dayCheckins = checkinsByDate.getOrDefault(date, List.of());
-            List<DailyFoodExtra> dayExtras = extrasByDate.getOrDefault(date, List.of());
+            List<DailyFoodExtra> dayExtras = extrasByDate.getOrDefault(date, List.of()).stream()
+                    .filter(extra -> planContext.planStartDate() == null
+                            || !extra.getEntryDate().isBefore(planContext.planStartDate()))
+                    .toList();
 
             int completed = (int) dayCheckins.stream().filter(c -> c.getStatus() == CheckinStatus.DONE).count();
             int skipped = (int) dayCheckins.stream().filter(c -> c.getStatus() == CheckinStatus.SKIPPED).count();
@@ -369,18 +410,19 @@ public class CheckinService {
                 projection);
     }
 
-    private record ActivePlanContext(LocalDate planStartDate, int mealsExpected) {
+    private record ActivePlanContext(LocalDate planStartDate, int mealsExpected, Set<Long> currentPlanMealIds) {
     }
 
     private ActivePlanContext activePlanContext(Long userId) {
         List<MealPlan> plans = mealPlanRepository.findByUserIdOrderByCreatedAtDesc(userId);
         if (plans.isEmpty()) {
-            return new ActivePlanContext(null, 0);
+            return new ActivePlanContext(null, 0, Set.of());
         }
         MealPlan plan = plans.getFirst();
-        int count = mealLoader.mealsForPlan(plan.getId()).size();
+        List<Meal> meals = mealLoader.mealsForPlan(plan.getId());
+        Set<Long> mealIds = meals.stream().map(Meal::getId).collect(Collectors.toCollection(HashSet::new));
         LocalDate start = plan.getPlanDate() != null ? plan.getPlanDate() : plan.getCreatedAt().toLocalDate();
-        return new ActivePlanContext(start, count);
+        return new ActivePlanContext(start, meals.size(), mealIds);
     }
 
     private int activeMealsExpected(Long userId) {

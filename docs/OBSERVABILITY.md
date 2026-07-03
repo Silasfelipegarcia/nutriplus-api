@@ -86,7 +86,7 @@ Config (12-factor): `IDEMPOTENCY_ENABLED`, `IDEMPOTENCY_REQUIRE_KEY`, `IDEMPOTEN
 %d [%thread] %-5level %logger [cid=%X{correlationId} trace=%X{traceId} flow=%X{flowId} session=%X{sessionId} user=%X{userId}] - %msg
 ```
 
-**Produção** (`logback-spring.xml`, profile `prod`):
+**Produção** (`logback-spring.xml`, profiles `prod` e `homolog`):
 
 - `LogstashEncoder` — JSON estruturado com campos MDC.
 
@@ -177,6 +177,31 @@ Cada método define `flowId` explícito (ex.: `generate-meal-plan`).
 
 ## Como investigar um incidente (runbook)
 
+### 0. New Relic (prod/homolog com agent ativo)
+
+Receitas NRQL em [`observability/NRQL_COOKBOOK.md`](./observability/NRQL_COOKBOOK.md).
+
+Com `correlationId` do usuário:
+
+```sql
+SELECT timestamp, message, correlationId, traceId, flowId, userId, httpPath, httpStatus
+FROM Log
+WHERE entity.name = 'nutriplus-api-prod'
+  AND correlationId = '<cid>'
+SINCE 24 hours ago
+LIMIT 100
+```
+
+```sql
+SELECT name, duration, error, correlationId, flowId, userId
+FROM Transaction
+WHERE appName = 'nutriplus-api-prod'
+  AND correlationId = '<cid>'
+SINCE 24 hours ago
+```
+
+Distributed tracing: APM → transaction → spans (API → agente → JDBC).
+
 ### 1. Usuário reporta erro com `correlationId`
 
 ```text
@@ -213,6 +238,18 @@ SELECT * FROM audit_log WHERE correlation_id = '<cid>' ORDER BY created_at DESC;
 
 ## New Relic (APM + logs + MySQL)
 
+### NewRelicTraceBridge (modo defensivo)
+
+`NewRelicTraceBridge` (`infrastructure/observability/NewRelicTraceBridge.java`) adiciona custom attributes ao MDC/NR sem derrubar requests se o agent Java não estiver no classpath:
+
+- Tenta carregar `com.newrelic.api.agent.NewRelic` uma vez no boot.
+- Em falha (`ClassNotFoundException`), seta flag `disabled` e ignora chamadas subsequentes.
+- `newrelic-api` deve estar no **fat jar** (não `provided` scope) — ver [RELEASE_NOTES_2026-07.md](./RELEASE_NOTES_2026-07.md).
+
+Chamado por `CorrelationIdFilter` / `MdcUserFilter` / `RequestPerformanceFilter`.
+
+Receitas NRQL: [`observability/NRQL_COOKBOOK.md`](./observability/NRQL_COOKBOOK.md). Setup: [`observability/NEW_RELIC.md`](./observability/NEW_RELIC.md).
+
 Camada adicional ao Prometheus/Grafana. **Mesma conta/license key do `lupa-cnpj-api`** — copie `NEW_RELIC_LICENSE_KEY` do Railway do Lupa para os services Nutri+.
 
 Detalhes de setup em [`observability/NEW_RELIC.md`](./observability/NEW_RELIC.md).
@@ -239,7 +276,7 @@ Os mesmos IDs do contrato HTTP aparecem como atributos pesquisáveis:
 
 | ID | API (MDC / logs JSON) | Agente (logs + NR custom attrs) | Mobile |
 |----|----------------------|--------------------------------|--------|
-| `correlationId` | Sim | Sim | Header `X-Correlation-Id` |
+| `correlationId` | Sim (MDC + NR custom attrs) | Sim | Header `X-Correlation-Id` |
 | `traceId` | Sim | Sim | Header `X-Trace-Id` |
 | `flowId` | Sim | Sim | Header `X-Flow-Id` |
 | `sessionId` | Sim | Sim | Header + Crashlytics `session_id` |

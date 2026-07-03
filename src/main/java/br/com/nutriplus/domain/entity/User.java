@@ -49,6 +49,9 @@ public class User {
     @Column(name = "access_rejection_reason", length = 500)
     private String accessRejectionReason;
 
+    @Column(name = "account_frozen_at")
+    private LocalDateTime accountFrozenAt;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "registration_source", nullable = false, length = 32)
     private RegistrationSource registrationSource = RegistrationSource.OPEN;
@@ -274,6 +277,18 @@ public class User {
 
     public boolean isAccessRejected() {
         return accessRejectedAt != null;
+    }
+
+    public LocalDateTime getAccountFrozenAt() {
+        return accountFrozenAt;
+    }
+
+    public void setAccountFrozenAt(LocalDateTime accountFrozenAt) {
+        this.accountFrozenAt = accountFrozenAt;
+    }
+
+    public boolean isAccountFrozen() {
+        return accountFrozenAt != null;
     }
 
     public RegistrationSource getRegistrationSource() {
