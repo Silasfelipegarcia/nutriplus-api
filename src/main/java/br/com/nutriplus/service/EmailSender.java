@@ -15,4 +15,6 @@ public interface EmailSender {
     void sendTestEmail(String email, String name);
 
     void sendCareExpiredRatingPrompt(String email, String patientName, String nutritionistName);
+
+    void sendHouseholdPlanInvitation(String email, String inviteeName, String inviterName, String inviteUrl, int expiryDays);
 }

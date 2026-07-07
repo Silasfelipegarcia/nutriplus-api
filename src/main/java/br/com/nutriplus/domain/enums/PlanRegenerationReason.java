@@ -8,5 +8,6 @@ public enum PlanRegenerationReason {
     GENERATION_RETRY,
     NUTRITIONIST_BYPASS,
     UNLOCKED_REGEN,
-    PLAN_RESET
+    PLAN_RESET,
+    HOUSEHOLD_SHARED_PLAN
 }

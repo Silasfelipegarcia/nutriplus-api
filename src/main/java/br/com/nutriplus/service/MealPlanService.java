@@ -113,6 +113,39 @@ public class MealPlanService {
         return enqueueGenerationInternal(currentUser.get(), request);
     }
 
+    @Transactional
+    public boolean enqueueHouseholdSharedGeneration(User user, Long householdId, Long sharedFromMealPlanId) {
+        NutritionProfile profile = nutritionProfileService.getEntityForUser(user);
+        healthEligibilityService.assertAiPlanAllowed(profile);
+        generationQuotaService.assertCanGenerate(user);
+
+        List<MealPlanGenerationJob> active = jobRepository.findByUserIdAndStatusIn(user.getId(), ACTIVE_STATUSES);
+        failStaleJobs(active);
+        active = jobRepository.findByUserIdAndStatusIn(user.getId(), ACTIVE_STATUSES);
+        if (!active.isEmpty()) {
+            return false;
+        }
+
+        MealPlanGenerationJob job = MealPlanGenerationJob.builder()
+                .user(user)
+                .status(MealPlanGenerationStatus.PENDING)
+                .regenerationReason(PlanRegenerationReason.HOUSEHOLD_SHARED_PLAN)
+                .householdId(householdId)
+                .sharedFromMealPlanId(sharedFromMealPlanId)
+                .build();
+        job = jobRepository.save(job);
+
+        final Long jobId = job.getId();
+        final Long userId = user.getId();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                generationWorker.processAsync(jobId, userId);
+            }
+        });
+        return true;
+    }
+
     private MealPlanGenerationStatusResponse enqueueGenerationInternal(User user, MealPlanGenerateRequest request) {
         NutritionProfile profile = nutritionProfileService.getEntityForUser(user);
         healthEligibilityService.assertAiPlanAllowed(profile);

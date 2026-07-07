@@ -22,6 +22,7 @@ import br.com.nutriplus.repository.NutritionProfileRepository;
 import br.com.nutriplus.repository.ShoppingListRepository;
 import br.com.nutriplus.repository.UserRepository;
 import br.com.nutriplus.repository.UserTrainingActivityRepository;
+import br.com.nutriplus.repository.HouseholdRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -35,6 +36,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class MealPlanGenerationProcessor {
@@ -57,6 +59,8 @@ public class MealPlanGenerationProcessor {
     private final PlanRegenerationPolicyService regenerationPolicyService;
     private final TrainingService trainingService;
     private final UserTrainingActivityRepository trainingActivityRepository;
+    private final SharedPlanSnapshotBuilder sharedPlanSnapshotBuilder;
+    private final HouseholdRepository householdRepository;
 
     public MealPlanGenerationProcessor(MealPlanGenerationJobRepository jobRepository,
                                        UserRepository userRepository,
@@ -73,7 +77,9 @@ public class MealPlanGenerationProcessor {
                                        NutriCacheEvictionService cacheEvictionService,
                                        PlanRegenerationPolicyService regenerationPolicyService,
                                        TrainingService trainingService,
-                                       UserTrainingActivityRepository trainingActivityRepository) {
+                                       UserTrainingActivityRepository trainingActivityRepository,
+                                       SharedPlanSnapshotBuilder sharedPlanSnapshotBuilder,
+                                       HouseholdRepository householdRepository) {
         this.jobRepository = jobRepository;
         this.userRepository = userRepository;
         this.nutritionProfileRepository = nutritionProfileRepository;
@@ -90,6 +96,8 @@ public class MealPlanGenerationProcessor {
         this.regenerationPolicyService = regenerationPolicyService;
         this.trainingService = trainingService;
         this.trainingActivityRepository = trainingActivityRepository;
+        this.sharedPlanSnapshotBuilder = sharedPlanSnapshotBuilder;
+        this.householdRepository = householdRepository;
     }
 
     public void run(Long jobId, Long userId, long startMs) throws Exception {
@@ -110,10 +118,14 @@ public class MealPlanGenerationProcessor {
         List<UserTrainingActivity> activities = profile.isAthleteModeEnabled()
                 ? trainingActivityRepository.findByUserIdOrderByIdAsc(userId)
                 : List.of();
+        Map<String, Object> sharedSnapshot = null;
+        if (job.getSharedFromMealPlanId() != null) {
+            sharedSnapshot = sharedPlanSnapshotBuilder.buildSnapshot(job.getSharedFromMealPlanId());
+        }
         AiMealPlanGenerateResponse aiResponse = aiAgentClient.generateMealPlan(
-                profile, activities, job.getNutritionistNotes());
+                profile, activities, job.getNutritionistNotes(), sharedSnapshot);
 
-        persistSuccess(jobId, user, profile, aiResponse, requestJson, startMs);
+        persistSuccess(jobId, user, profile, aiResponse, requestJson, startMs, job);
     }
 
     @Transactional
@@ -137,7 +149,8 @@ public class MealPlanGenerationProcessor {
                                NutritionProfile profile,
                                AiMealPlanGenerateResponse aiResponse,
                                String requestJson,
-                               long startMs) throws Exception {
+                               long startMs,
+                               MealPlanGenerationJob jobContext) throws Exception {
         MealPlanGenerationJob job = jobRepository.findById(jobId)
                 .orElseThrow(() -> new IllegalStateException("Job não encontrado"));
 
@@ -145,7 +158,7 @@ public class MealPlanGenerationProcessor {
             return;
         }
 
-        MealPlan mealPlan = MealPlan.builder()
+        MealPlan.Builder planBuilder = MealPlan.builder()
                 .user(user)
                 .nutritionProfile(profile)
                 .planDate(LocalDate.now())
@@ -160,10 +173,20 @@ public class MealPlanGenerationProcessor {
                 .dietReviewStatus(aiResponse.dietReviewStatus())
                 .dietReviewNotes(aiResponse.dietReviewNotes())
                 .seniorReviewStatus(aiResponse.seniorReviewStatus())
-                .seniorReviewNotes(aiResponse.seniorReviewNotes())
-                .build();
+                .seniorReviewNotes(aiResponse.seniorReviewNotes());
 
-        mealPlan = mealPlanRepository.save(mealPlan);
+        MealPlan mealPlan = mealPlanRepository.save(planBuilder.build());
+
+        if (jobContext.getHouseholdId() != null) {
+            householdRepository.findById(jobContext.getHouseholdId()).ifPresent(household -> {
+                mealPlan.setHousehold(household);
+                if (jobContext.getSharedFromMealPlanId() != null) {
+                    mealPlanRepository.findById(jobContext.getSharedFromMealPlanId())
+                            .ifPresent(mealPlan::setBaseMealPlan);
+                }
+                mealPlanRepository.save(mealPlan);
+            });
+        }
 
         if (aiResponse.meals() != null) {
             for (AiMealDto aiMeal : aiResponse.meals()) {

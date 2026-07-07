@@ -73,6 +73,32 @@ public class ResendEmailService implements EmailSender {
         dispatch(email, subject, html, text, "care-expired-rating");
     }
 
+    @Override
+    public void sendHouseholdPlanInvitation(String email,
+                                            String inviteeName,
+                                            String inviterName,
+                                            String inviteUrl,
+                                            int expiryDays) {
+        String subject = inviterName + " convidou você para o plano familiar — Nutri+";
+        String greeting = greetingHtml(inviteeName);
+        String html = """
+                <!DOCTYPE html>
+                <html lang="pt-BR">
+                <body style="font-family: system-ui, sans-serif; color: #333; line-height: 1.5;">
+                <p>%s</p>
+                <p><strong>%s</strong> convidou você para seguir o mesmo cardápio da casa no Nutri+ — mesmos alimentos, porções ajustadas ao seu perfil.</p>
+                <p><a href="%s" style="display:inline-block;padding:12px 20px;background:#2d6a4f;color:#fff;text-decoration:none;border-radius:8px;">Aceitar convite</a></p>
+                <p style="font-size:14px;color:#666;">O link expira em %d dias. Baixe o app Nutri+ se ainda não tiver instalado.</p>
+                </body>
+                </html>
+                """.formatted(greeting, escapeHtml(inviterName), escapeHtml(inviteUrl), expiryDays);
+        String text = greetingText(inviteeName) + "\n\n"
+                + inviterName + " convidou você para o plano familiar no Nutri+.\n"
+                + "Aceite em: " + inviteUrl + "\n"
+                + "O link expira em " + expiryDays + " dias.\n";
+        dispatch(email, subject, html, text, "household-plan-invite");
+    }
+
     private String buildCareExpiredHtml(String patientName, String nutritionistName) {
         String greeting = greetingHtml(patientName);
         return """

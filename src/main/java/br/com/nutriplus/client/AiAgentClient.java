@@ -75,6 +75,13 @@ public class AiAgentClient {
     public AiMealPlanGenerateResponse generateMealPlan(NutritionProfile profile,
                                                        List<UserTrainingActivity> activities,
                                                        String nutritionistNotes) {
+        return generateMealPlan(profile, activities, nutritionistNotes, null);
+    }
+
+    public AiMealPlanGenerateResponse generateMealPlan(NutritionProfile profile,
+                                                       List<UserTrainingActivity> activities,
+                                                       String nutritionistNotes,
+                                                       Map<String, Object> sharedFromPlan) {
         Map<String, Object> body = profileToMap(profile);
         body.put("targetCalories", profile.getTargetCalories());
         body.put("targetProteinG", profile.getTargetProteinG());
@@ -85,6 +92,9 @@ public class AiAgentClient {
         }
         if (profile.isAthleteModeEnabled() && activities != null && !activities.isEmpty()) {
             body.put("trainingActivities", activities.stream().map(this::activityToMap).toList());
+        }
+        if (sharedFromPlan != null && !sharedFromPlan.isEmpty()) {
+            body.put("sharedFromPlan", sharedFromPlan);
         }
         return post("/api/v1/meal-plan/generate", body, AiMealPlanGenerateResponse.class);
     }

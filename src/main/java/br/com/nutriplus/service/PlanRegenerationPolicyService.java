@@ -168,6 +168,7 @@ public class PlanRegenerationPolicyService {
                 }
             }
             case PLAN_RESET -> requireMealPlan(user.getId());
+            case HOUSEHOLD_SHARED_PLAN -> { }
             default -> throw new BusinessException("Motivo de geração inválido.");
         }
 
@@ -178,7 +179,8 @@ public class PlanRegenerationPolicyService {
                 && reason != PlanRegenerationReason.ONE_TIME_CORRECTION
                 && reason != PlanRegenerationReason.CYCLE_REVIEW
                 && reason != PlanRegenerationReason.UNLOCKED_REGEN
-                && reason != PlanRegenerationReason.PLAN_RESET) {
+                && reason != PlanRegenerationReason.PLAN_RESET
+                && reason != PlanRegenerationReason.HOUSEHOLD_SHARED_PLAN) {
             throw new BusinessException("Motivo de geração inválido.");
         }
 
@@ -189,7 +191,8 @@ public class PlanRegenerationPolicyService {
                 && reason != PlanRegenerationReason.GENERATION_RETRY
                 && reason != PlanRegenerationReason.NUTRITIONIST_BYPASS
                 && reason != PlanRegenerationReason.UNLOCKED_REGEN
-                && reason != PlanRegenerationReason.PLAN_RESET) {
+                && reason != PlanRegenerationReason.PLAN_RESET
+                && reason != PlanRegenerationReason.HOUSEHOLD_SHARED_PLAN) {
             int days = (int) ChronoUnit.DAYS.between(LocalDate.now(), profile.getPlanRegenLockedUntil());
             throw new BusinessException(
                     days > 0
@@ -222,7 +225,7 @@ public class PlanRegenerationPolicyService {
                 }
             }
             case UNLOCKED_REGEN -> profile.setPlanRegenLockedUntil(null);
-            case FIRST_PLAN, GENERATION_RETRY, NUTRITIONIST_BYPASS, PLAN_RESET -> { }
+            case FIRST_PLAN, GENERATION_RETRY, NUTRITIONIST_BYPASS, PLAN_RESET, HOUSEHOLD_SHARED_PLAN -> { }
         }
 
         if (reason != PlanRegenerationReason.UNLOCKED_REGEN) {

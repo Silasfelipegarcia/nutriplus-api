@@ -11,6 +11,7 @@ import br.com.nutriplus.domain.entity.NutritionProfile;
 import br.com.nutriplus.domain.entity.User;
 import br.com.nutriplus.domain.enums.CheckinStatus;
 import br.com.nutriplus.domain.enums.Goal;
+import br.com.nutriplus.domain.enums.MealType;
 import br.com.nutriplus.domain.enums.NutritionMode;
 import br.com.nutriplus.dto.request.FoodExtraRequest;
 import br.com.nutriplus.dto.request.MealCheckinRequest;
@@ -117,16 +118,22 @@ public class CheckinService {
         List<Meal> meals = mealLoader.mealsForPlan(plan.getId());
         Map<Long, List<MealItem>> itemsByMeal = mealLoader.itemsByMealId(meals);
 
-        Map<Long, CheckinStatus> statusByMeal = checkinRepository.findByUserIdAndCheckinDate(user.getId(), today)
-                .stream()
+        List<DailyMealCheckin> todayCheckins = checkinRepository.findByUserIdAndCheckinDate(user.getId(), today);
+        Map<Long, CheckinStatus> statusByMealId = todayCheckins.stream()
                 .filter(c -> c.getMeal() != null)
                 .collect(Collectors.toMap(c -> c.getMeal().getId(), DailyMealCheckin::getStatus, (a, b) -> b));
+        Map<MealType, CheckinStatus> statusByMealType = todayCheckins.stream()
+                .filter(c -> c.getMealType() != null)
+                .collect(Collectors.toMap(DailyMealCheckin::getMealType, DailyMealCheckin::getStatus, (a, b) -> b));
 
         List<TodayMealCheckinResponse> items = meals.stream()
                 .map(meal -> {
                     List<MealItem> mealItems = itemsByMeal.getOrDefault(meal.getId(), List.of());
                     int mealKcal = mealCalories(mealItems);
-                    CheckinStatus stored = statusByMeal.get(meal.getId());
+                    CheckinStatus stored = statusByMealId.get(meal.getId());
+                    if (stored == null) {
+                        stored = statusByMealType.get(meal.getMealType());
+                    }
                     return new TodayMealCheckinResponse(
                             meal.getId(),
                             meal.getMealType(),

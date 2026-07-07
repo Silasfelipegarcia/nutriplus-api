@@ -16,6 +16,7 @@ import br.com.nutriplus.mapper.ResponseMapper;
 import br.com.nutriplus.repository.NutritionProfileRepository;
 import br.com.nutriplus.security.CurrentUser;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.cache.annotation.CacheEvict;
@@ -25,6 +26,7 @@ import br.com.nutriplus.infrastructure.config.NutriCacheNames;
 import java.time.LocalTime;
 import java.time.LocalDate;
 import java.time.Period;
+import java.math.BigDecimal;
 import br.com.nutriplus.util.TimeInputNormalizer;
 
 @Service
@@ -39,6 +41,7 @@ public class NutritionProfileService {
     private final ObjectMapper objectMapper;
     private final SubscriptionService subscriptionService;
     private final HealthEligibilityService healthEligibilityService;
+    private final ProgressService progressService;
 
     public NutritionProfileService(CurrentUser currentUser,
                                    NutritionProfileRepository nutritionProfileRepository,
@@ -48,7 +51,8 @@ public class NutritionProfileService {
                                    ResponseMapper responseMapper,
                                    ObjectMapper objectMapper,
                                    SubscriptionService subscriptionService,
-                                   HealthEligibilityService healthEligibilityService) {
+                                   HealthEligibilityService healthEligibilityService,
+                                   @Lazy ProgressService progressService) {
         this.currentUser = currentUser;
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.trainingService = trainingService;
@@ -58,6 +62,7 @@ public class NutritionProfileService {
         this.objectMapper = objectMapper;
         this.subscriptionService = subscriptionService;
         this.healthEligibilityService = healthEligibilityService;
+        this.progressService = progressService;
     }
 
     @Transactional
@@ -69,6 +74,7 @@ public class NutritionProfileService {
         NutritionProfile profile = nutritionProfileRepository.findByUserId(user.getId())
                 .orElse(NutritionProfile.builder().user(user).build());
 
+        BigDecimal previousWeight = profile.getCurrentWeightKg();
         applyRequest(profile, request);
         trainingService.syncTrainingDailyExtra(profile);
 
@@ -88,6 +94,11 @@ public class NutritionProfileService {
             profile.setEstimatedWeeklyRateKg(macros.estimatedWeeklyRateKg());
 
             profile = nutritionProfileRepository.save(profile);
+
+            BigDecimal newWeight = profile.getCurrentWeightKg();
+            if (newWeight != null && (previousWeight == null || previousWeight.compareTo(newWeight) != 0)) {
+                progressService.syncProfileWeightFromEdit(user.getId(), newWeight);
+            }
 
             aiRequestLogService.log(user, AiRequestType.CALCULATE_MACROS, requestJson,
                     toJson(macros), AiRequestStatus.SUCCESS, null,

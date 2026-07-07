@@ -50,6 +50,12 @@ public class MealPlanGenerationJob {
     @Column(name = "nutritionist_notes", columnDefinition = "TEXT")
     private String nutritionistNotes;
 
+    @Column(name = "household_id")
+    private Long householdId;
+
+    @Column(name = "shared_from_meal_plan_id")
+    private Long sharedFromMealPlanId;
+
     protected MealPlanGenerationJob() {
     }
 
@@ -65,6 +71,8 @@ public class MealPlanGenerationJob {
         this.regenerationReason = builder.regenerationReason;
         this.progressReviewId = builder.progressReviewId;
         this.nutritionistNotes = builder.nutritionistNotes;
+        this.householdId = builder.householdId;
+        this.sharedFromMealPlanId = builder.sharedFromMealPlanId;
     }
 
     public static Builder builder() {
@@ -147,6 +155,14 @@ public class MealPlanGenerationJob {
         this.nutritionistNotes = nutritionistNotes;
     }
 
+    public Long getHouseholdId() {
+        return householdId;
+    }
+
+    public Long getSharedFromMealPlanId() {
+        return sharedFromMealPlanId;
+    }
+
     public static final class Builder {
         private Long id;
         private User user;
@@ -159,6 +175,8 @@ public class MealPlanGenerationJob {
         private PlanRegenerationReason regenerationReason;
         private Long progressReviewId;
         private String nutritionistNotes;
+        private Long householdId;
+        private Long sharedFromMealPlanId;
 
         public Builder id(Long id) {
             this.id = id;
@@ -212,6 +230,16 @@ public class MealPlanGenerationJob {
 
         public Builder nutritionistNotes(String nutritionistNotes) {
             this.nutritionistNotes = nutritionistNotes;
+            return this;
+        }
+
+        public Builder householdId(Long householdId) {
+            this.householdId = householdId;
+            return this;
+        }
+
+        public Builder sharedFromMealPlanId(Long sharedFromMealPlanId) {
+            this.sharedFromMealPlanId = sharedFromMealPlanId;
             return this;
         }
 

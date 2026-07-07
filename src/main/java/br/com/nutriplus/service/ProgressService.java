@@ -167,6 +167,28 @@ public class ProgressService {
         return toResponse(session);
     }
 
+    /**
+     * Mantém a medição de hoje alinhada ao peso do perfil após edição no app/web.
+     * Não exige janela de progresso — só atualiza ou cria registro do dia.
+     */
+    @Transactional
+    @CacheEvict(value = {NutriCacheNames.PROGRESS_SCHEDULE, NutriCacheNames.PROGRESS_MEASUREMENT_LATEST},
+            keyGenerator = "userIdCacheKeyGenerator")
+    public void syncProfileWeightFromEdit(Long userId, java.math.BigDecimal weightKg) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
+        LocalDate today = LocalDate.now();
+        BodyMeasurementSession session = measurementRepository
+                .findFirstByUserIdAndMeasuredOnOrderByIdDesc(userId, today)
+                .orElseGet(() -> new BodyMeasurementSession(user));
+        if (session.getId() == null) {
+            session.setUser(user);
+            session.setMeasuredOn(today);
+        }
+        session.setWeightKg(weightKg);
+        measurementRepository.save(session);
+    }
+
     @Cacheable(value = NutriCacheNames.PROGRESS_MEASUREMENT_LATEST, keyGenerator = "userIdCacheKeyGenerator")
     public BodyMeasurementResponse getLatestMeasurement() {
         User user = currentUser.get();

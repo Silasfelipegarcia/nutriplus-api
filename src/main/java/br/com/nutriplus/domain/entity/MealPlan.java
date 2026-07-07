@@ -71,6 +71,14 @@ public class MealPlan {
     @JoinColumn(name = "nutritionist_id")
     private Nutritionist nutritionist;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "household_id")
+    private Household household;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "base_meal_plan_id")
+    private MealPlan baseMealPlan;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -244,6 +252,22 @@ public class MealPlan {
 
     public void setNutritionist(Nutritionist nutritionist) {
         this.nutritionist = nutritionist;
+    }
+
+    public Household getHousehold() {
+        return household;
+    }
+
+    public void setHousehold(Household household) {
+        this.household = household;
+    }
+
+    public MealPlan getBaseMealPlan() {
+        return baseMealPlan;
+    }
+
+    public void setBaseMealPlan(MealPlan baseMealPlan) {
+        this.baseMealPlan = baseMealPlan;
     }
 
     public LocalDateTime getCreatedAt() {
