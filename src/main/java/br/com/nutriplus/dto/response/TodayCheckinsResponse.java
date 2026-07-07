@@ -18,7 +18,8 @@ public record TodayCheckinsResponse(
         BigDecimal consumedCarbsG,
         BigDecimal extraCarbsG,
         BigDecimal remainingCarbsG,
-        String nutritionMode
+        String nutritionMode,
+        String checkinDate
 ) {
     public TodayCheckinsResponse(
             List<TodayMealCheckinResponse> meals,
@@ -34,6 +35,6 @@ public record TodayCheckinsResponse(
     ) {
         this(meals, completedCount, totalCount, targetCalories, consumedCalories, extraCalories,
                 totalIntakeCalories, remainingCalories, goal, extras,
-                null, null, null, null, "STANDARD");
+                null, null, null, null, "STANDARD", null);
     }
 }

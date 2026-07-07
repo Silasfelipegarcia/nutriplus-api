@@ -5,7 +5,7 @@ import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Method;
-import java.time.LocalDate;
+import br.com.nutriplus.util.NutriTime;
 
 @Component("userDateCacheKeyGenerator")
 public class UserDateCacheKeyGenerator implements KeyGenerator {
@@ -18,6 +18,6 @@ public class UserDateCacheKeyGenerator implements KeyGenerator {
 
     @Override
     public Object generate(Object target, Method method, Object... params) {
-        return LocalDate.now() + "-" + currentUser.get().getId();
+        return NutriTime.today() + "-" + currentUser.get().getId();
     }
 }

@@ -31,6 +31,7 @@ import br.com.nutriplus.repository.MealPlanRepository;
 import br.com.nutriplus.repository.MealRepository;
 import br.com.nutriplus.repository.NutritionProfileRepository;
 import br.com.nutriplus.security.CurrentUser;
+import br.com.nutriplus.util.NutriTime;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -92,7 +93,8 @@ public class CheckinService {
     @Cacheable(value = NutriCacheNames.CHECKINS_TODAY, keyGenerator = "userDateCacheKeyGenerator")
     public TodayCheckinsResponse getToday() {
         User user = currentUser.get();
-        LocalDate today = LocalDate.now();
+        LocalDate today = NutriTime.today();
+        String checkinDate = today.toString();
         NutritionProfile profile = nutritionProfileRepository.findByUserId(user.getId()).orElse(null);
         Integer target = targetCalories(profile);
         String goal = profile != null ? profile.getGoal().name() : Goal.MAINTAIN_WEIGHT.name();
@@ -111,7 +113,7 @@ public class CheckinService {
             BigDecimal remainingCarbs = remainingCarbs(targetCarbs, BigDecimal.ZERO, extraCarbs);
             return new TodayCheckinsResponse(
                     List.of(), 0, 0, target, 0, extraCalories, extraCalories, remaining, goal, extraResponses,
-                    targetCarbs, BigDecimal.ZERO, extraCarbs, remainingCarbs, nutritionMode);
+                    targetCarbs, BigDecimal.ZERO, extraCarbs, remainingCarbs, nutritionMode, checkinDate);
         }
 
         MealPlan plan = plans.getFirst();
@@ -161,14 +163,14 @@ public class CheckinService {
         return new TodayCheckinsResponse(
                 items, completed, items.size(), target, consumed, extraCalories,
                 totalIntake, remaining, goal, extraResponses,
-                targetCarbs, consumedCarbs, extraCarbs, remainingCarbs, nutritionMode);
+                targetCarbs, consumedCarbs, extraCarbs, remainingCarbs, nutritionMode, checkinDate);
     }
 
     @Transactional
     @CacheEvict(value = {NutriCacheNames.CHECKINS_TODAY, NutriCacheNames.CHECKINS_STATS, NutriCacheNames.CHECKINS_ADHERENCE}, allEntries = true)
     public TodayMealCheckinResponse saveCheckin(MealCheckinRequest request) {
         User user = currentUser.get();
-        LocalDate today = LocalDate.now();
+        LocalDate today = NutriTime.today();
         Meal meal = mealRepository.findById(request.mealId())
                 .orElseThrow(() -> new ResourceNotFoundException("Refeição não encontrada"));
 
@@ -210,7 +212,7 @@ public class CheckinService {
     @CacheEvict(value = {NutriCacheNames.CHECKINS_TODAY, NutriCacheNames.CHECKINS_STATS, NutriCacheNames.CHECKINS_ADHERENCE}, allEntries = true)
     public void deleteCheckin(Long mealId) {
         User user = currentUser.get();
-        LocalDate today = LocalDate.now();
+        LocalDate today = NutriTime.today();
         Meal meal = mealRepository.findById(mealId)
                 .orElseThrow(() -> new ResourceNotFoundException("Refeição não encontrada"));
         if (!meal.getMealPlan().getUser().getId().equals(user.getId())) {
@@ -223,7 +225,7 @@ public class CheckinService {
     @CacheEvict(value = {NutriCacheNames.CHECKINS_TODAY, NutriCacheNames.CHECKINS_ADHERENCE}, allEntries = true)
     public DailyFoodExtraResponse addFoodExtra(FoodExtraRequest request) {
         User user = currentUser.get();
-        LocalDate today = LocalDate.now();
+        LocalDate today = NutriTime.today();
         NutritionProfile profile = nutritionProfileRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Perfil nutricional não encontrado"));
 
@@ -261,7 +263,7 @@ public class CheckinService {
     @Cacheable(value = NutriCacheNames.CHECKINS_STATS, keyGenerator = "userDateCacheKeyGenerator")
     public CheckinStatsResponse getStats() {
         User user = currentUser.get();
-        LocalDate today = LocalDate.now();
+        LocalDate today = NutriTime.today();
         LocalDate weekStart = today.minusDays(6);
         int mealsExpected = activeMealsExpected(user.getId());
 
@@ -278,7 +280,7 @@ public class CheckinService {
     @Cacheable(value = NutriCacheNames.CHECKINS_ADHERENCE, keyGenerator = "userDaysCacheKeyGenerator")
     public CheckinAdherenceHistoryResponse getAdherenceHistory(int days) {
         int windowDays = normalizeWindowDays(days);
-        LocalDate today = LocalDate.now();
+        LocalDate today = NutriTime.today();
         LocalDate start = today.minusDays(windowDays - 1L);
         return buildAdherenceHistory(start, today);
     }
@@ -287,7 +289,7 @@ public class CheckinService {
      * Aderência apenas desde o início do plano atual (usado na curva de evolução).
      */
     public CheckinAdherenceHistoryResponse getAdherenceHistorySince(LocalDate planStart) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = NutriTime.today();
         if (planStart == null || planStart.isAfter(today)) {
             return emptyAdherenceHistory(today);
         }

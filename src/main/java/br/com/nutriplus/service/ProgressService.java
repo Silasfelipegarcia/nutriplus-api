@@ -177,7 +177,7 @@ public class ProgressService {
     public void syncProfileWeightFromEdit(Long userId, java.math.BigDecimal weightKg) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Usuário não encontrado"));
-        LocalDate today = LocalDate.now();
+        LocalDate today = br.com.nutriplus.util.NutriTime.today();
         BodyMeasurementSession session = measurementRepository
                 .findFirstByUserIdAndMeasuredOnOrderByIdDesc(userId, today)
                 .orElseGet(() -> new BodyMeasurementSession(user));
