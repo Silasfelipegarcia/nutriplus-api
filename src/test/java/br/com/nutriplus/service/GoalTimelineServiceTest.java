@@ -133,4 +133,16 @@ class GoalTimelineServiceTest {
         assertEquals(0.0, GoalTimelineService.magnitudeTowardGoal(0.2, Goal.LOSE_WEIGHT).doubleValue());
         assertEquals(0.2, GoalTimelineService.magnitudeTowardGoal(-0.2, Goal.LOSE_WEIGHT).doubleValue());
     }
+
+    @Test
+    void isWeightOutOfSync_true_when_profile_differs_by_more_than_tolerance() {
+        assertTrue(GoalTimelineService.isWeightOutOfSync(
+                new BigDecimal("77.0"),
+                new BigDecimal("75.0")
+        ));
+        assertFalse(GoalTimelineService.isWeightOutOfSync(
+                new BigDecimal("75.2"),
+                new BigDecimal("75.0")
+        ));
+    }
 }
