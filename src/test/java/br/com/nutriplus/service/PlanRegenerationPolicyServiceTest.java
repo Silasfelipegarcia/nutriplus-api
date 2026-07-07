@@ -82,7 +82,7 @@ class PlanRegenerationPolicyServiceTest {
 
     @Test
     void unlockedRegenAllowedWhenFeatureFlagOn() {
-        when(featureFlagService.isEnabled("UNLIMITED_PLAN_REGEN")).thenReturn(true);
+        when(featureFlagService.isUnlimitedPlanRegenEnabled()).thenReturn(true);
         when(mealPlanRepository.findByUserIdOrderByCreatedAtDesc(1L)).thenReturn(List.of(org.mockito.Mockito.mock(br.com.nutriplus.domain.entity.MealPlan.class)));
         profile.setOneTimeCorrectionUsedAt(LocalDateTime.now());
         profile.setPlanRegenLockedUntil(java.time.LocalDate.now().plusDays(10));

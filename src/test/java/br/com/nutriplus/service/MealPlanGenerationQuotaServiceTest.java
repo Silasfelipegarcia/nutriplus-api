@@ -6,6 +6,7 @@ import br.com.nutriplus.exception.BusinessException;
 import br.com.nutriplus.exception.SubscriptionRequiredException;
 import br.com.nutriplus.infrastructure.config.MealPlanGenerationQuotaProperties;
 import br.com.nutriplus.repository.MealPlanGenerationJobRepository;
+import br.com.nutriplus.util.NutriTime;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -50,31 +51,31 @@ class MealPlanGenerationQuotaServiceTest {
         lenient().when(subscriptionService.emTrial(user)).thenReturn(false);
         lenient().when(subscriptionService.temAssinaturaPaga(user)).thenReturn(false);
         lenient().when(subscriptionService.resolverPlanoEfetivo(user)).thenReturn(SubscriptionPlan.FREE);
-        lenient().when(featureFlagService.isEnabled("UNLIMITED_PLAN_REGEN")).thenReturn(false);
+        lenient().when(featureFlagService.isUnlimitedPlanRegenEnabled()).thenReturn(false);
     }
 
     @Test
     void betaModeAllowsUntilDailyLimit() {
         when(billingEnforcementService.isBillingEnabled()).thenReturn(false);
         when(jobRepository.countByUserIdAndStatusInAndCreatedAtGreaterThanEqual(
-                eq(42L), any(), eq(LocalDate.now().atStartOfDay()))).thenReturn(1L);
+                eq(42L), any(), eq(NutriTime.today().atStartOfDay()))).thenReturn(1L);
 
         assertDoesNotThrow(() -> quotaService.assertCanGenerate(user));
     }
 
     @Test
     void unlimitedFlagBypassesDailyAndMonthlyQuota() {
-        when(featureFlagService.isEnabled("UNLIMITED_PLAN_REGEN")).thenReturn(true);
+        when(featureFlagService.isUnlimitedPlanRegenEnabled()).thenReturn(true);
 
         assertDoesNotThrow(() -> quotaService.assertCanGenerate(user));
     }
 
     @Test
     void betaModeBlocksAfterDailyLimit() {
-        when(featureFlagService.isEnabled("UNLIMITED_PLAN_REGEN")).thenReturn(false);
+        when(featureFlagService.isUnlimitedPlanRegenEnabled()).thenReturn(false);
         when(billingEnforcementService.isBillingEnabled()).thenReturn(false);
         when(jobRepository.countByUserIdAndStatusInAndCreatedAtGreaterThanEqual(
-                eq(42L), any(), eq(LocalDate.now().atStartOfDay()))).thenReturn(2L);
+                eq(42L), any(), eq(NutriTime.today().atStartOfDay()))).thenReturn(2L);
 
         assertThrows(BusinessException.class, () -> quotaService.assertCanGenerate(user));
     }
@@ -83,7 +84,7 @@ class MealPlanGenerationQuotaServiceTest {
     void freeTierBlocksAfterDailyGeneration() {
         when(billingEnforcementService.isBillingEnabled()).thenReturn(true);
         when(jobRepository.countByUserIdAndStatusInAndCreatedAtGreaterThanEqual(
-                eq(42L), any(), eq(LocalDate.now().atStartOfDay()))).thenReturn(1L);
+                eq(42L), any(), eq(NutriTime.today().atStartOfDay()))).thenReturn(1L);
 
         assertThrows(BusinessException.class, () -> quotaService.assertCanGenerate(user));
     }
@@ -105,7 +106,7 @@ class MealPlanGenerationQuotaServiceTest {
         when(subscriptionService.temAssinaturaPaga(user)).thenReturn(true);
         when(subscriptionService.resolverPlanoEfetivo(user)).thenReturn(SubscriptionPlan.ATHLETE_MONTHLY);
         when(jobRepository.countByUserIdAndStatusInAndCreatedAtGreaterThanEqual(
-                eq(42L), any(), eq(LocalDate.now().atStartOfDay()))).thenReturn(2L);
+                eq(42L), any(), eq(NutriTime.today().atStartOfDay()))).thenReturn(2L);
 
         assertDoesNotThrow(() -> quotaService.assertCanGenerate(user));
     }
@@ -116,7 +117,7 @@ class MealPlanGenerationQuotaServiceTest {
         when(subscriptionService.temAssinaturaPaga(user)).thenReturn(true);
         when(subscriptionService.resolverPlanoEfetivo(user)).thenReturn(SubscriptionPlan.ATHLETE_MONTHLY);
         when(jobRepository.countByUserIdAndStatusInAndCreatedAtGreaterThanEqual(
-                eq(42L), any(), eq(LocalDate.now().atStartOfDay()))).thenReturn(3L);
+                eq(42L), any(), eq(NutriTime.today().atStartOfDay()))).thenReturn(3L);
 
         assertThrows(BusinessException.class, () -> quotaService.assertCanGenerate(user));
     }
@@ -126,7 +127,7 @@ class MealPlanGenerationQuotaServiceTest {
         when(billingEnforcementService.isBillingEnabled()).thenReturn(true);
         when(subscriptionService.emTrial(user)).thenReturn(true);
         when(jobRepository.countByUserIdAndStatusInAndCreatedAtGreaterThanEqual(
-                eq(42L), any(), eq(LocalDate.now().atStartOfDay()))).thenReturn(2L);
+                eq(42L), any(), eq(NutriTime.today().atStartOfDay()))).thenReturn(2L);
 
         assertDoesNotThrow(() -> quotaService.assertCanGenerate(user));
         assertEquals(1, quotaService.remainingGenerationsToday(user));
@@ -136,7 +137,7 @@ class MealPlanGenerationQuotaServiceTest {
     void remainingGenerationsTodayForLimitedTier() {
         when(billingEnforcementService.isBillingEnabled()).thenReturn(true);
         when(jobRepository.countByUserIdAndStatusInAndCreatedAtGreaterThanEqual(
-                eq(42L), any(), eq(LocalDate.now().atStartOfDay()))).thenReturn(1L);
+                eq(42L), any(), eq(NutriTime.today().atStartOfDay()))).thenReturn(1L);
 
         assertEquals(0, quotaService.remainingGenerationsToday(user));
     }

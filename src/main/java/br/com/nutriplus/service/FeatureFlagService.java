@@ -7,10 +7,13 @@ import br.com.nutriplus.dto.request.UpdateFeatureFlagRequest;
 import br.com.nutriplus.dto.response.FeatureFlagResponse;
 import br.com.nutriplus.exception.BusinessException;
 import br.com.nutriplus.exception.ResourceNotFoundException;
+import br.com.nutriplus.domain.FeatureFlags;
 import br.com.nutriplus.repository.AppFeatureFlagRepository;
 import br.com.nutriplus.security.AuthorizationService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,11 +24,18 @@ public class FeatureFlagService {
 
     private final AppFeatureFlagRepository featureFlagRepository;
     private final AuthorizationService authorizationService;
+    private FeatureFlagService self;
 
     public FeatureFlagService(AppFeatureFlagRepository featureFlagRepository,
                               AuthorizationService authorizationService) {
         this.featureFlagRepository = featureFlagRepository;
         this.authorizationService = authorizationService;
+    }
+
+    @Autowired
+    @Lazy
+    void setSelf(FeatureFlagService self) {
+        this.self = self;
     }
 
     @Cacheable(value = NutriCacheNames.FEATURE_FLAGS, key = "'public'")
@@ -41,9 +51,12 @@ public class FeatureFlagService {
     }
 
     public boolean isEnabled(String code) {
-        return featureFlagRepository.findByCode(code)
-                .map(AppFeatureFlag::isEnabled)
-                .orElse(false);
+        return self.listPublic().stream()
+                .anyMatch(flag -> code.equals(flag.code()) && flag.enabled());
+    }
+
+    public boolean isUnlimitedPlanRegenEnabled() {
+        return isEnabled(FeatureFlags.UNLIMITED_PLAN_REGEN);
     }
 
     @Transactional

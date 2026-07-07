@@ -20,6 +20,7 @@ public record PlanRegenerationEligibilityResponse(
         boolean planResetAvailable,
         boolean currentPlanStarted,
         int currentPlanCheckinCount,
-        int currentPlanDaysActive
+        int currentPlanDaysActive,
+        boolean unlimitedRegenEnabled
 ) {
 }

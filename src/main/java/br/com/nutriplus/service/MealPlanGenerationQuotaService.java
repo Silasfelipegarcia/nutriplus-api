@@ -9,9 +9,9 @@ import br.com.nutriplus.exception.SubscriptionRequiredException;
 import br.com.nutriplus.infrastructure.config.MealPlanGenerationQuotaProperties;
 import br.com.nutriplus.infrastructure.i18n.UserMessages;
 import br.com.nutriplus.repository.MealPlanGenerationJobRepository;
+import br.com.nutriplus.util.NutriTime;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -47,7 +47,7 @@ public class MealPlanGenerationQuotaService {
     }
 
     public void assertCanGenerate(User user) {
-        if (featureFlagService.isEnabled("UNLIMITED_PLAN_REGEN")) {
+        if (featureFlagService.isUnlimitedPlanRegenEnabled()) {
             return;
         }
         subscriptionService.expirarSeNecessario(user);
@@ -72,6 +72,9 @@ public class MealPlanGenerationQuotaService {
     }
 
     public int remainingGenerationsThisMonth(User user) {
+        if (featureFlagService.isUnlimitedPlanRegenEnabled()) {
+            return -1;
+        }
         if (!billingEnforcementService.isBillingEnabled() || hasUnlimitedMonthlyGenerations(user)) {
             return -1;
         }
@@ -80,6 +83,9 @@ public class MealPlanGenerationQuotaService {
     }
 
     public int remainingGenerationsToday(User user) {
+        if (featureFlagService.isUnlimitedPlanRegenEnabled()) {
+            return -1;
+        }
         int used = countGenerationsSince(user.getId(), startOfToday());
         return Math.max(0, resolveDailyLimit(user) - used);
     }
@@ -111,11 +117,11 @@ public class MealPlanGenerationQuotaService {
     }
 
     private static LocalDateTime startOfToday() {
-        return LocalDate.now().atStartOfDay();
+        return NutriTime.today().atStartOfDay();
     }
 
     private static LocalDateTime startOfMonth() {
-        return LocalDate.now().withDayOfMonth(1).atStartOfDay();
+        return NutriTime.today().withDayOfMonth(1).atStartOfDay();
     }
 
     private BusinessException dailyQuotaExceeded(User user, int dailyLimit) {

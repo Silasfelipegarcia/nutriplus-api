@@ -1,5 +1,6 @@
 package br.com.nutriplus.service;
 
+import br.com.nutriplus.domain.FeatureFlags;
 import br.com.nutriplus.domain.entity.MealPlanGenerationJob;
 import br.com.nutriplus.domain.entity.NutritionProfile;
 import br.com.nutriplus.domain.entity.ProgressReview;
@@ -14,6 +15,7 @@ import br.com.nutriplus.repository.MealPlanGenerationJobRepository;
 import br.com.nutriplus.repository.MealPlanRepository;
 import br.com.nutriplus.repository.NutritionProfileRepository;
 import br.com.nutriplus.repository.ProgressReviewRepository;
+import br.com.nutriplus.util.NutriTime;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -54,7 +56,7 @@ public class PlanRegenerationPolicyService {
     }
 
     private boolean isUnlimitedRegenEnabled() {
-        return featureFlagService.isEnabled("UNLIMITED_PLAN_REGEN");
+        return featureFlagService.isUnlimitedPlanRegenEnabled();
     }
 
     public PlanRegenerationEligibilityResponse getEligibility(User user,
@@ -62,7 +64,7 @@ public class PlanRegenerationPolicyService {
                                                             HealthEligibilityService.EligibilityInfo eligibilityInfo) {
         boolean hasMealPlan = !mealPlanRepository.findByUserIdOrderByCreatedAtDesc(user.getId()).isEmpty();
         ProgressScheduleResponse schedule = progressScheduleService.getScheduleForUser(user.getId(), profile);
-        LocalDate today = LocalDate.now();
+        LocalDate today = NutriTime.today();
         LocalDate lockedUntil = profile.getPlanRegenLockedUntil();
         int daysUntilUnlock = lockedUntil == null || !today.isBefore(lockedUntil)
                 ? 0
@@ -121,7 +123,8 @@ public class PlanRegenerationPolicyService {
                 trackingSummary.planResetAvailable(),
                 trackingSummary.currentPlanStarted(),
                 trackingSummary.currentPlanCheckinCount(),
-                trackingSummary.currentPlanDaysActive()
+                trackingSummary.currentPlanDaysActive(),
+                isUnlimitedRegenEnabled()
         );
     }
 
@@ -193,7 +196,7 @@ public class PlanRegenerationPolicyService {
                 && reason != PlanRegenerationReason.UNLOCKED_REGEN
                 && reason != PlanRegenerationReason.PLAN_RESET
                 && reason != PlanRegenerationReason.HOUSEHOLD_SHARED_PLAN) {
-            int days = (int) ChronoUnit.DAYS.between(LocalDate.now(), profile.getPlanRegenLockedUntil());
+            int days = (int) ChronoUnit.DAYS.between(NutriTime.today(), profile.getPlanRegenLockedUntil());
             throw new BusinessException(
                     days > 0
                             ? "Seu plano segue por mais " + days + " dias. Aguarde a reavaliação na aba Evolução."
@@ -228,9 +231,11 @@ public class PlanRegenerationPolicyService {
             case FIRST_PLAN, GENERATION_RETRY, NUTRITIONIST_BYPASS, PLAN_RESET, HOUSEHOLD_SHARED_PLAN -> { }
         }
 
-        if (reason != PlanRegenerationReason.UNLOCKED_REGEN) {
-            LocalDate lockUntil = LocalDate.now().plusDays(profile.getProgressReviewIntervalDays());
+        if (reason != PlanRegenerationReason.UNLOCKED_REGEN && !isUnlimitedRegenEnabled()) {
+            LocalDate lockUntil = NutriTime.today().plusDays(profile.getProgressReviewIntervalDays());
             profile.setPlanRegenLockedUntil(lockUntil);
+        } else if (isUnlimitedRegenEnabled()) {
+            profile.setPlanRegenLockedUntil(null);
         }
 
         nutritionProfileRepository.save(profile);
@@ -250,7 +255,7 @@ public class PlanRegenerationPolicyService {
 
     private boolean isPlanRegenLocked(NutritionProfile profile) {
         LocalDate lockedUntil = profile.getPlanRegenLockedUntil();
-        return lockedUntil != null && LocalDate.now().isBefore(lockedUntil);
+        return lockedUntil != null && NutriTime.today().isBefore(lockedUntil);
     }
 
     private boolean hasFailedGenerationRetry(Long userId) {
