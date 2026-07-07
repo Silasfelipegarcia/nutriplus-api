@@ -9,5 +9,10 @@ public enum PlanRegenerationReason {
     NUTRITIONIST_BYPASS,
     UNLOCKED_REGEN,
     PLAN_RESET,
-    HOUSEHOLD_SHARED_PLAN
+    HOUSEHOLD_SHARED_PLAN;
+
+    /** Novo plano substitui o anterior — check-ins do dia devem zerar. */
+    public boolean resetsTodayTrackingOnSuccess() {
+        return this != FIRST_PLAN && this != GENERATION_RETRY;
+    }
 }
