@@ -31,6 +31,8 @@ import java.util.List;
 public class GoalTimelineService {
 
     private static final double MAX_SAFE_LOSS_KG_PER_WEEK = 1.0;
+    /** Mesma tolerância do app (plan_target_sync) — perfil vence medição desatualizada. */
+    private static final BigDecimal PROFILE_WEIGHT_TOLERANCE_KG = new BigDecimal("0.4");
     private static final int MIN_DAYS_FOR_RATE = 7;
     private static final int MIN_DAYS_ON_PLAN_FOR_TREND = 3;
     private static final int MIN_DAYS_WITH_INTAKE_FOR_TREND = 3;
@@ -73,14 +75,16 @@ public class GoalTimelineService {
 
         if (profile.getGoal() == Goal.MAINTAIN_WEIGHT) {
             BigDecimal weight = resolveLatestWeight(user.getId(), profile, allMeasurements);
-            List<GoalTimelineWeightPoint> weightHistory = buildWeightHistory(allMeasurements, planStart, weight, planStart);
+            List<GoalTimelineWeightPoint> weightHistory = buildWeightHistory(
+                    allMeasurements, planStart, weight, planStart, profile);
             return maintainResponse(profile, currentPlanId, planStart, previousPlanCount, weightHistory, planEras);
         }
 
         Integer weeks = profile.getGoalTargetWeeks();
         if (weeks == null || weeks <= 0) {
             BigDecimal weight = resolveLatestWeight(user.getId(), profile, allMeasurements);
-            List<GoalTimelineWeightPoint> weightHistory = buildWeightHistory(allMeasurements, planStart, weight, planStart);
+            List<GoalTimelineWeightPoint> weightHistory = buildWeightHistory(
+                    allMeasurements, planStart, weight, planStart, profile);
             return insufficientData(
                     profile,
                     "Defina um prazo em semanas no seu perfil para ver a previsão da meta.",
@@ -133,7 +137,7 @@ public class GoalTimelineService {
         BigDecimal remainingKg = latestWeight.subtract(targetWeight).abs();
 
         List<GoalTimelineWeightPoint> weightHistory = buildWeightHistory(
-                allMeasurements, planStart, startWeight, journeyStart);
+                allMeasurements, planStart, startWeight, journeyStart, profile);
 
         LocalDate projectedFinish = null;
         String paceStatus = "INSUFFICIENT_DATA";
@@ -298,7 +302,8 @@ public class GoalTimelineService {
     private static List<GoalTimelineWeightPoint> buildWeightHistory(List<BodyMeasurementSession> all,
                                                                     LocalDate planStart,
                                                                     BigDecimal planStartWeight,
-                                                                    LocalDate journeyStart) {
+                                                                    LocalDate journeyStart,
+                                                                    NutritionProfile profile) {
         List<GoalTimelineWeightPoint> points = all.stream()
                 .map(session -> new GoalTimelineWeightPoint(
                         session.getMeasuredOn(),
@@ -313,7 +318,42 @@ public class GoalTimelineService {
             points.add(new GoalTimelineWeightPoint(journeyStart, planStartWeight, true));
             points.sort(java.util.Comparator.comparing(GoalTimelineWeightPoint::date));
         }
+        appendProfileWeightWhenOutOfSync(points, planStart, profile);
         return List.copyOf(points);
+    }
+
+    private static void appendProfileWeightWhenOutOfSync(List<GoalTimelineWeightPoint> points,
+                                                         LocalDate planStart,
+                                                         NutritionProfile profile) {
+        if (profile == null) {
+            return;
+        }
+        BigDecimal profileWeight = profile.getCurrentWeightKg();
+        if (profileWeight == null) {
+            return;
+        }
+        LocalDate today = LocalDate.now();
+        if (today.isBefore(planStart)) {
+            return;
+        }
+        BigDecimal lastPlanWeight = points.stream()
+                .filter(GoalTimelineWeightPoint::currentPlanPeriod)
+                .map(GoalTimelineWeightPoint::weightKg)
+                .reduce((first, second) -> second)
+                .orElse(null);
+        if (lastPlanWeight != null && !isWeightOutOfSync(profileWeight, lastPlanWeight)) {
+            return;
+        }
+        for (int i = points.size() - 1; i >= 0; i--) {
+            GoalTimelineWeightPoint point = points.get(i);
+            if (point.currentPlanPeriod() && point.date().equals(today)) {
+                points.set(i, new GoalTimelineWeightPoint(today, profileWeight, true));
+                points.sort(java.util.Comparator.comparing(GoalTimelineWeightPoint::date));
+                return;
+            }
+        }
+        points.add(new GoalTimelineWeightPoint(today, profileWeight, true));
+        points.sort(java.util.Comparator.comparing(GoalTimelineWeightPoint::date));
     }
 
     private static List<GoalTimelinePlanEra> buildPlanEras(List<MealPlan> plansDesc) {
@@ -343,38 +383,67 @@ public class GoalTimelineService {
                                               List<BodyMeasurementSession> all) {
         for (BodyMeasurementSession session : all) {
             if (!session.getMeasuredOn().isBefore(planStart)) {
-                return session.getWeightKg();
+                return preferProfileWeight(profile, session.getWeightKg());
             }
+        }
+        if (profile.getCurrentWeightKg() != null) {
+            return profile.getCurrentWeightKg();
         }
         for (int i = all.size() - 1; i >= 0; i--) {
             if (all.get(i).getMeasuredOn().isBefore(planStart)) {
                 return all.get(i).getWeightKg();
             }
         }
-        return profile.getCurrentWeightKg();
+        return null;
     }
 
     private BigDecimal resolveLatestWeightInPlan(NutritionProfile profile,
                                                  LocalDate planStart,
                                                  List<BodyMeasurementSession> all,
                                                  BigDecimal startWeight) {
+        BigDecimal fromMeasurements = null;
         for (int i = all.size() - 1; i >= 0; i--) {
             if (!all.get(i).getMeasuredOn().isBefore(planStart)) {
-                return all.get(i).getWeightKg();
+                fromMeasurements = all.get(i).getWeightKg();
+                break;
             }
         }
-        return startWeight != null ? startWeight : profile.getCurrentWeightKg();
+        if (fromMeasurements == null) {
+            fromMeasurements = startWeight;
+        }
+        return preferProfileWeight(profile, fromMeasurements);
     }
 
     private BigDecimal resolveLatestWeight(Long userId,
                                            NutritionProfile profile,
                                            List<BodyMeasurementSession> all) {
+        BigDecimal fromMeasurements = null;
         if (!all.isEmpty()) {
-            return all.getLast().getWeightKg();
+            fromMeasurements = all.getLast().getWeightKg();
+        } else {
+            fromMeasurements = measurementRepository.findFirstByUserIdOrderByMeasuredOnDescIdDesc(userId)
+                    .map(BodyMeasurementSession::getWeightKg)
+                    .orElse(null);
         }
-        return measurementRepository.findFirstByUserIdOrderByMeasuredOnDescIdDesc(userId)
-                .map(BodyMeasurementSession::getWeightKg)
-                .orElse(profile.getCurrentWeightKg());
+        return preferProfileWeight(profile, fromMeasurements);
+    }
+
+    static boolean isWeightOutOfSync(BigDecimal profileWeight, BigDecimal measurementWeight) {
+        if (profileWeight == null || measurementWeight == null) {
+            return false;
+        }
+        return profileWeight.subtract(measurementWeight).abs().compareTo(PROFILE_WEIGHT_TOLERANCE_KG) > 0;
+    }
+
+    private static BigDecimal preferProfileWeight(NutritionProfile profile, BigDecimal measurementWeight) {
+        BigDecimal profileWeight = profile.getCurrentWeightKg();
+        if (profileWeight == null) {
+            return measurementWeight;
+        }
+        if (measurementWeight == null || isWeightOutOfSync(profileWeight, measurementWeight)) {
+            return profileWeight;
+        }
+        return measurementWeight;
     }
 
     private BigDecimal resolveActualRate(Goal goal,
