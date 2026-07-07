@@ -119,12 +119,16 @@ public class CheckinService {
         MealPlan plan = plans.getFirst();
         List<Meal> meals = mealLoader.mealsForPlan(plan.getId());
         Map<Long, List<MealItem>> itemsByMeal = mealLoader.itemsByMealId(meals);
+        Set<Long> currentMealIds = meals.stream().map(Meal::getId).collect(Collectors.toSet());
 
         List<DailyMealCheckin> todayCheckins = checkinRepository.findByUserIdAndCheckinDate(user.getId(), today);
-        Map<Long, CheckinStatus> statusByMealId = todayCheckins.stream()
+        List<DailyMealCheckin> planRelevantCheckins = todayCheckins.stream()
+                .filter(c -> c.getMeal() == null || currentMealIds.contains(c.getMeal().getId()))
+                .toList();
+        Map<Long, CheckinStatus> statusByMealId = planRelevantCheckins.stream()
                 .filter(c -> c.getMeal() != null)
                 .collect(Collectors.toMap(c -> c.getMeal().getId(), DailyMealCheckin::getStatus, (a, b) -> b));
-        Map<MealType, CheckinStatus> statusByMealType = todayCheckins.stream()
+        Map<MealType, CheckinStatus> statusByMealType = planRelevantCheckins.stream()
                 .filter(c -> c.getMealType() != null)
                 .collect(Collectors.toMap(DailyMealCheckin::getMealType, DailyMealCheckin::getStatus, (a, b) -> b));
 
@@ -219,6 +223,17 @@ public class CheckinService {
             throw new ResourceNotFoundException("Refeição não encontrada");
         }
         checkinRepository.deleteByUserIdAndCheckinDateAndMealId(user.getId(), today, mealId);
+    }
+
+    /**
+     * Zera marcações do dia civil atual — usado ao concluir geração de um novo plano.
+     */
+    @Transactional
+    @CacheEvict(value = {NutriCacheNames.CHECKINS_TODAY, NutriCacheNames.CHECKINS_STATS, NutriCacheNames.CHECKINS_ADHERENCE}, allEntries = true)
+    public void clearTodayTracking(User user) {
+        LocalDate today = NutriTime.today();
+        checkinRepository.deleteByUserIdAndCheckinDate(user.getId(), today);
+        foodExtraRepository.deleteByUserIdAndEntryDate(user.getId(), today);
     }
 
     @Transactional

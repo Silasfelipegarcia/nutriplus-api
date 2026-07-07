@@ -12,6 +12,7 @@ import br.com.nutriplus.domain.enums.AiRequestStatus;
 import br.com.nutriplus.domain.enums.AiRequestType;
 import br.com.nutriplus.domain.enums.MealPlanGenerationStatus;
 import br.com.nutriplus.domain.enums.MealType;
+import br.com.nutriplus.domain.enums.PlanRegenerationReason;
 import br.com.nutriplus.infrastructure.config.AppProperties;
 import br.com.nutriplus.infrastructure.config.NutriCacheEvictionService;
 import br.com.nutriplus.repository.MealItemRepository;
@@ -61,6 +62,7 @@ public class MealPlanGenerationProcessor {
     private final UserTrainingActivityRepository trainingActivityRepository;
     private final SharedPlanSnapshotBuilder sharedPlanSnapshotBuilder;
     private final HouseholdRepository householdRepository;
+    private final CheckinService checkinService;
 
     public MealPlanGenerationProcessor(MealPlanGenerationJobRepository jobRepository,
                                        UserRepository userRepository,
@@ -79,7 +81,8 @@ public class MealPlanGenerationProcessor {
                                        TrainingService trainingService,
                                        UserTrainingActivityRepository trainingActivityRepository,
                                        SharedPlanSnapshotBuilder sharedPlanSnapshotBuilder,
-                                       HouseholdRepository householdRepository) {
+                                       HouseholdRepository householdRepository,
+                                       CheckinService checkinService) {
         this.jobRepository = jobRepository;
         this.userRepository = userRepository;
         this.nutritionProfileRepository = nutritionProfileRepository;
@@ -98,6 +101,7 @@ public class MealPlanGenerationProcessor {
         this.trainingActivityRepository = trainingActivityRepository;
         this.sharedPlanSnapshotBuilder = sharedPlanSnapshotBuilder;
         this.householdRepository = householdRepository;
+        this.checkinService = checkinService;
     }
 
     public void run(Long jobId, Long userId, long startMs) throws Exception {
@@ -223,6 +227,11 @@ public class MealPlanGenerationProcessor {
         }
 
         saveShoppingList(user, mealPlan, aiResponse.shoppingList(), aiResponse.shoppingGuidance());
+
+        PlanRegenerationReason reason = job.getRegenerationReason();
+        if (reason != null && reason.resetsTodayTrackingOnSuccess()) {
+            checkinService.clearTodayTracking(user);
+        }
 
         job.setStatus(MealPlanGenerationStatus.COMPLETED);
         job.setMealPlan(mealPlan);

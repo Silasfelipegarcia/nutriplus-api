@@ -25,6 +25,13 @@ public interface DailyMealCheckinRepository extends JpaRepository<DailyMealCheck
 
     void deleteByUserIdAndCheckinDateAndMealId(Long userId, LocalDate checkinDate, Long mealId);
 
+    @Modifying
+    @Query("""
+            DELETE FROM DailyMealCheckin c
+            WHERE c.user.id = :userId AND c.checkinDate = :checkinDate
+            """)
+    void deleteByUserIdAndCheckinDate(@Param("userId") Long userId, @Param("checkinDate") LocalDate checkinDate);
+
     @Query("""
             SELECT COUNT(c) FROM DailyMealCheckin c
             WHERE c.user.id = :userId AND c.meal.id IN :mealIds
