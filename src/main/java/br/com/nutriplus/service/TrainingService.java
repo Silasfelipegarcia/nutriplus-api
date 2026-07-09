@@ -93,6 +93,7 @@ public class TrainingService {
         User user = currentUser.get();
         NutritionProfile profile = requireProfile(user.getId());
         boolean wasAthlete = profile.isAthleteModeEnabled();
+        java.math.BigDecimal previousTrainingExtra = profile.getTrainingDailyExtraKcal();
 
         if (Boolean.TRUE.equals(request.athleteModeEnabled()) && !athleteAccessService.hasAthleteAccess(user)) {
             throw new SubscriptionRequiredException("Assine o plano Atleta para ativar o modo atleta.");
@@ -139,6 +140,12 @@ public class TrainingService {
         }
 
         profile = recalculateMacrosForProfile(profile, saved);
+        if (profile.isAthleteModeEnabled()
+                && wasAthlete
+                && trainingExtraChanged(previousTrainingExtra, profile.getTrainingDailyExtraKcal())) {
+            profile.setAthleteRegenEligible(true);
+            profile = nutritionProfileRepository.save(profile);
+        }
         TrainingProfileResponse response = buildResponse(profile, saved, null);
         CoachInsightResponse coachInsight = coachInsightService.trainingReview(profile, response);
         return buildResponse(profile, saved, coachInsight);
@@ -307,6 +314,17 @@ public class TrainingService {
                 .map(a -> toActivityResponse(a, weightKg).caloriesPerWeek())
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         return weekly.divide(BigDecimal.valueOf(7), 0, RoundingMode.HALF_UP);
+    }
+
+    /** Reabre regeração por modo atleta quando o gasto estimado dos treinos muda de forma relevante. */
+    private boolean trainingExtraChanged(BigDecimal previous, BigDecimal current) {
+        if (current == null || current.compareTo(BigDecimal.ZERO) <= 0) {
+            return false;
+        }
+        if (previous == null || previous.compareTo(BigDecimal.ZERO) <= 0) {
+            return true;
+        }
+        return previous.subtract(current).abs().compareTo(BigDecimal.valueOf(15)) > 0;
     }
 
     private SportType parseSport(String raw) {
