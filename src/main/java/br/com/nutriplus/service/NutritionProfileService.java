@@ -42,6 +42,7 @@ public class NutritionProfileService {
     private final SubscriptionService subscriptionService;
     private final HealthEligibilityService healthEligibilityService;
     private final ProgressService progressService;
+    private final HydrationTargetService hydrationTargetService;
 
     public NutritionProfileService(CurrentUser currentUser,
                                    NutritionProfileRepository nutritionProfileRepository,
@@ -52,7 +53,8 @@ public class NutritionProfileService {
                                    ObjectMapper objectMapper,
                                    SubscriptionService subscriptionService,
                                    HealthEligibilityService healthEligibilityService,
-                                   @Lazy ProgressService progressService) {
+                                   @Lazy ProgressService progressService,
+                                   HydrationTargetService hydrationTargetService) {
         this.currentUser = currentUser;
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.trainingService = trainingService;
@@ -63,6 +65,7 @@ public class NutritionProfileService {
         this.subscriptionService = subscriptionService;
         this.healthEligibilityService = healthEligibilityService;
         this.progressService = progressService;
+        this.hydrationTargetService = hydrationTargetService;
     }
 
     @Transactional
@@ -92,6 +95,7 @@ public class NutritionProfileService {
             }
             profile.setPaceWarning(macros.paceWarning());
             profile.setEstimatedWeeklyRateKg(macros.estimatedWeeklyRateKg());
+            hydrationTargetService.syncHydrationTarget(profile);
 
             profile = nutritionProfileRepository.save(profile);
 
@@ -118,7 +122,17 @@ public class NutritionProfileService {
         User user = currentUser.get();
         NutritionProfile profile = nutritionProfileRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Perfil nutricional não encontrado"));
+        profile = ensureHydrationTargetSynced(profile);
         return toProfileResponse(profile, user);
+    }
+
+    private NutritionProfile ensureHydrationTargetSynced(NutritionProfile profile) {
+        Integer computed = hydrationTargetService.computeDailyWaterTargetMl(profile);
+        if (java.util.Objects.equals(profile.getDailyWaterTargetMl(), computed)) {
+            return profile;
+        }
+        profile.setDailyWaterTargetMl(computed);
+        return nutritionProfileRepository.save(profile);
     }
 
     private NutritionProfileResponse toProfileResponse(NutritionProfile profile, User user) {

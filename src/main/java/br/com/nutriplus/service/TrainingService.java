@@ -47,6 +47,7 @@ public class TrainingService {
     private final AthleteAccessService athleteAccessService;
     private final SubscriptionService subscriptionService;
     private final PlanRegenerationPolicyService regenerationPolicyService;
+    private final HydrationTargetService hydrationTargetService;
 
     public TrainingService(CurrentUser currentUser,
                            NutritionProfileRepository nutritionProfileRepository,
@@ -56,7 +57,8 @@ public class TrainingService {
                            CoachInsightService coachInsightService,
                            AthleteAccessService athleteAccessService,
                            SubscriptionService subscriptionService,
-                           PlanRegenerationPolicyService regenerationPolicyService) {
+                           PlanRegenerationPolicyService regenerationPolicyService,
+                           HydrationTargetService hydrationTargetService) {
         this.currentUser = currentUser;
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.activityRepository = activityRepository;
@@ -66,6 +68,7 @@ public class TrainingService {
         this.athleteAccessService = athleteAccessService;
         this.subscriptionService = subscriptionService;
         this.regenerationPolicyService = regenerationPolicyService;
+        this.hydrationTargetService = hydrationTargetService;
     }
 
     @Cacheable(value = NutriCacheNames.SPORT_CATALOG, key = "'catalog'")
@@ -203,6 +206,7 @@ public class TrainingService {
         }
         profile.setPaceWarning(macros.paceWarning());
         profile.setEstimatedWeeklyRateKg(macros.estimatedWeeklyRateKg());
+        hydrationTargetService.syncHydrationTarget(profile);
 
         return nutritionProfileRepository.save(profile);
     }

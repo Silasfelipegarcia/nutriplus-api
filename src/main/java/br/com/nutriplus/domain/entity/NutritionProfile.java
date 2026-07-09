@@ -151,6 +151,9 @@ public class NutritionProfile {
     @Column(name = "estimated_weekly_rate_kg", precision = 4, scale = 2)
     private BigDecimal estimatedWeeklyRateKg;
 
+    @Column(name = "daily_water_target_ml")
+    private Integer dailyWaterTargetMl;
+
     @Column(name = "wake_time")
     private LocalTime wakeTime;
 
@@ -278,6 +281,7 @@ public class NutritionProfile {
         this.targetFatG = builder.targetFatG;
         this.paceWarning = builder.paceWarning;
         this.estimatedWeeklyRateKg = builder.estimatedWeeklyRateKg;
+        this.dailyWaterTargetMl = builder.dailyWaterTargetMl;
         this.wakeTime = builder.wakeTime;
         this.sleepTime = builder.sleepTime;
         this.primaryTrainingTime = builder.primaryTrainingTime;
@@ -645,6 +649,14 @@ public class NutritionProfile {
         this.estimatedWeeklyRateKg = estimatedWeeklyRateKg;
     }
 
+    public Integer getDailyWaterTargetMl() {
+        return dailyWaterTargetMl;
+    }
+
+    public void setDailyWaterTargetMl(Integer dailyWaterTargetMl) {
+        this.dailyWaterTargetMl = dailyWaterTargetMl;
+    }
+
     public LocalTime getWakeTime() {
         return wakeTime;
     }
@@ -888,6 +900,7 @@ public class NutritionProfile {
         private BigDecimal targetFatG;
         private String paceWarning;
         private BigDecimal estimatedWeeklyRateKg;
+        private Integer dailyWaterTargetMl;
         private LocalTime wakeTime;
         private LocalTime sleepTime;
         private LocalTime primaryTrainingTime;
@@ -1121,6 +1134,11 @@ public class NutritionProfile {
 
         public Builder estimatedWeeklyRateKg(BigDecimal estimatedWeeklyRateKg) {
             this.estimatedWeeklyRateKg = estimatedWeeklyRateKg;
+            return this;
+        }
+
+        public Builder dailyWaterTargetMl(Integer dailyWaterTargetMl) {
+            this.dailyWaterTargetMl = dailyWaterTargetMl;
             return this;
         }
 

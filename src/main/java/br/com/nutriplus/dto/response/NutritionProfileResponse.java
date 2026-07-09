@@ -60,6 +60,7 @@ public record NutritionProfileResponse(
         BigDecimal targetCarbsG,
         BigDecimal targetFatG,
         BigDecimal trainingDailyExtraKcal,
+        Integer dailyWaterTargetMl,
         String paceWarning,
         BigDecimal estimatedWeeklyRateKg,
         LocalDateTime updatedAt,

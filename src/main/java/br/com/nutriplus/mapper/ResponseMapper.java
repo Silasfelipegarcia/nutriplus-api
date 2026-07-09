@@ -127,6 +127,7 @@ public class ResponseMapper {
                 profile.getTargetCarbsG(),
                 profile.getTargetFatG(),
                 profile.getTrainingDailyExtraKcal(),
+                profile.getDailyWaterTargetMl(),
                 profile.getPaceWarning(),
                 profile.getEstimatedWeeklyRateKg(),
                 profile.getUpdatedAt(),
