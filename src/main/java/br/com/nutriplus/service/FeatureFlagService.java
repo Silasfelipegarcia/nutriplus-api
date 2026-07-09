@@ -55,8 +55,14 @@ public class FeatureFlagService {
                 .anyMatch(flag -> code.equals(flag.code()) && flag.enabled());
     }
 
+    /**
+     * Lê direto do banco — flag operacional que admins ligam/desligam em runtime.
+     * Não usar {@link #listPublic()} cacheada (TTL 1h por pod sem Redis compartilhado).
+     */
     public boolean isUnlimitedPlanRegenEnabled() {
-        return isEnabled(FeatureFlags.UNLIMITED_PLAN_REGEN);
+        return featureFlagRepository.findByCode(FeatureFlags.UNLIMITED_PLAN_REGEN)
+                .map(AppFeatureFlag::isEnabled)
+                .orElse(false);
     }
 
     @Transactional
