@@ -1,5 +1,6 @@
 package br.com.nutriplus.service;
 
+import br.com.nutriplus.application.user.AdminDeleteUserUseCase;
 import br.com.nutriplus.domain.entity.Nutritionist;
 import br.com.nutriplus.domain.entity.User;
 import br.com.nutriplus.domain.enums.RegistrationSource;
@@ -37,6 +38,7 @@ class AdminAccessServiceTest {
     @Mock private NutritionProfileRepository nutritionProfileRepository;
     @Mock private NutritionistRepository nutritionistRepository;
     @Mock private BetaAccessNotificationService betaAccessNotificationService;
+    @Mock private AdminDeleteUserUseCase adminDeleteUserUseCase;
 
     private AdminAccessService service;
 
@@ -47,7 +49,8 @@ class AdminAccessServiceTest {
                 userRepository,
                 nutritionProfileRepository,
                 nutritionistRepository,
-                betaAccessNotificationService);
+                betaAccessNotificationService,
+                adminDeleteUserUseCase);
     }
 
     @Test
@@ -192,6 +195,27 @@ class AdminAccessServiceTest {
         assertThat(user.isAccessRejected()).isFalse();
         assertThat(user.getAccessRejectionReason()).isNull();
         assertThat(user.isLoginEnabled()).isTrue();
+    }
+
+    @Test
+    void deleteUserDelegatesToUseCase() {
+        User user = patient(10L);
+        when(authorizationService.hasRole(UserRole.ADMIN)).thenReturn(true);
+        when(adminDeleteUserUseCase.requireUser(10L)).thenReturn(user);
+        when(authorizationService.currentUserId()).thenReturn(1L);
+
+        service.deleteUser(10L);
+
+        verify(adminDeleteUserUseCase).execute(user, 1L);
+    }
+
+    @Test
+    void deleteUserRequiresAdmin() {
+        when(authorizationService.hasRole(UserRole.ADMIN)).thenReturn(false);
+
+        assertThatThrownBy(() -> service.deleteUser(10L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("administradores");
     }
 
     private static User patient(long id) {

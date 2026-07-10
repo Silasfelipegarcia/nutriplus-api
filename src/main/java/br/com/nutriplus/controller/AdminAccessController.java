@@ -1,12 +1,17 @@
 package br.com.nutriplus.controller;
 
+import br.com.nutriplus.domain.enums.AdminUserAccessStatus;
+import br.com.nutriplus.domain.enums.RegistrationSource;
+import br.com.nutriplus.domain.enums.UserRole;
 import br.com.nutriplus.dto.request.RejectUserAccessRequest;
 import br.com.nutriplus.dto.request.UpdateLoginEnabledRequest;
 import br.com.nutriplus.dto.request.UpdateUserAdminRequest;
 import br.com.nutriplus.dto.response.AdminAccessSummaryResponse;
 import br.com.nutriplus.dto.response.AdminUserAccessResponse;
+import br.com.nutriplus.dto.response.PagedAdminUserAccessResponse;
 import br.com.nutriplus.service.AdminAccessService;
 import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,6 +41,19 @@ public class AdminAccessController {
         return adminAccessService.listApproved();
     }
 
+    @GetMapping("/users")
+    public PagedAdminUserAccessResponse searchUsers(
+            @RequestParam(required = false) AdminUserAccessStatus status,
+            @RequestParam(required = false) UserRole role,
+            @RequestParam(required = false) RegistrationSource registrationSource,
+            @RequestParam(required = false) Boolean hasNutritionProfile,
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        return adminAccessService.searchUsers(
+                status, role, registrationSource, hasNutritionProfile, search, page, size);
+    }
+
     @GetMapping("/admins")
     public List<AdminUserAccessResponse> admins() {
         return adminAccessService.listAdmins();
@@ -57,5 +75,11 @@ public class AdminAccessController {
     public AdminUserAccessResponse setUserAdmin(@PathVariable Long id,
                                                 @Valid @RequestBody UpdateUserAdminRequest request) {
         return adminAccessService.setUserAdmin(id, request);
+    }
+
+    @DeleteMapping("/users/{id}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteUser(@PathVariable Long id) {
+        adminAccessService.deleteUser(id);
     }
 }

@@ -1,6 +1,8 @@
 package br.com.nutriplus.service;
 
+import br.com.nutriplus.application.user.AdminDeleteUserUseCase;
 import br.com.nutriplus.domain.entity.User;
+import br.com.nutriplus.domain.enums.AdminUserAccessStatus;
 import br.com.nutriplus.domain.enums.RegistrationSource;
 import br.com.nutriplus.domain.enums.UserRole;
 import br.com.nutriplus.dto.request.RejectUserAccessRequest;
@@ -8,12 +10,18 @@ import br.com.nutriplus.dto.request.UpdateLoginEnabledRequest;
 import br.com.nutriplus.dto.request.UpdateUserAdminRequest;
 import br.com.nutriplus.dto.response.AdminAccessSummaryResponse;
 import br.com.nutriplus.dto.response.AdminUserAccessResponse;
+import br.com.nutriplus.dto.response.PagedAdminUserAccessResponse;
 import br.com.nutriplus.exception.BusinessException;
 import br.com.nutriplus.exception.ResourceNotFoundException;
+import br.com.nutriplus.repository.AdminUserSpecifications;
 import br.com.nutriplus.repository.NutritionProfileRepository;
 import br.com.nutriplus.repository.NutritionistRepository;
 import br.com.nutriplus.repository.UserRepository;
 import br.com.nutriplus.security.AuthorizationService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,17 +36,20 @@ public class AdminAccessService {
     private final NutritionProfileRepository nutritionProfileRepository;
     private final NutritionistRepository nutritionistRepository;
     private final BetaAccessNotificationService betaAccessNotificationService;
+    private final AdminDeleteUserUseCase adminDeleteUserUseCase;
 
     public AdminAccessService(AuthorizationService authorizationService,
                               UserRepository userRepository,
                               NutritionProfileRepository nutritionProfileRepository,
                               NutritionistRepository nutritionistRepository,
-                              BetaAccessNotificationService betaAccessNotificationService) {
+                              BetaAccessNotificationService betaAccessNotificationService,
+                              AdminDeleteUserUseCase adminDeleteUserUseCase) {
         this.authorizationService = authorizationService;
         this.userRepository = userRepository;
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.nutritionistRepository = nutritionistRepository;
         this.betaAccessNotificationService = betaAccessNotificationService;
+        this.adminDeleteUserUseCase = adminDeleteUserUseCase;
     }
 
     public AdminAccessSummaryResponse summary() {
@@ -69,6 +80,45 @@ public class AdminAccessService {
         return userRepository.findByLoginEnabledTrueOrderByCreatedAtDesc().stream()
                 .map(this::toResponse)
                 .toList();
+    }
+
+    public PagedAdminUserAccessResponse searchUsers(AdminUserAccessStatus status,
+                                                    UserRole role,
+                                                    RegistrationSource registrationSource,
+                                                    Boolean hasNutritionProfile,
+                                                    String search,
+                                                    int page,
+                                                    int size) {
+        requireAdmin();
+        int safePage = Math.max(page, 0);
+        int safeSize = Math.min(Math.max(size, 1), 100);
+        AdminUserAccessStatus effectiveStatus = status != null ? status : AdminUserAccessStatus.ALL;
+        Sort sort = effectiveStatus == AdminUserAccessStatus.PENDING
+                ? Sort.by(Sort.Direction.ASC, "createdAt")
+                : Sort.by(Sort.Direction.DESC, "createdAt");
+        Specification<User> spec = AdminUserSpecifications.combine(
+                AdminUserSpecifications.withAccessStatus(effectiveStatus),
+                AdminUserSpecifications.withRole(role),
+                AdminUserSpecifications.withRegistrationSource(registrationSource),
+                AdminUserSpecifications.withNutritionProfile(hasNutritionProfile),
+                AdminUserSpecifications.withSearch(search));
+        Page<User> result = userRepository.findAll(spec, PageRequest.of(safePage, safeSize, sort));
+        List<AdminUserAccessResponse> items = result.getContent().stream()
+                .map(this::toResponse)
+                .toList();
+        return new PagedAdminUserAccessResponse(
+                items,
+                result.getNumber(),
+                result.getSize(),
+                result.getTotalElements(),
+                result.getTotalPages());
+    }
+
+    @Transactional
+    public void deleteUser(Long userId) {
+        requireAdmin();
+        User user = adminDeleteUserUseCase.requireUser(userId);
+        adminDeleteUserUseCase.execute(user, authorizationService.currentUserId());
     }
 
     @Transactional

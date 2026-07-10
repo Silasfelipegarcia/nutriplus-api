@@ -75,7 +75,7 @@ class DeleteAccountUseCaseTest {
         assertThrows(InvalidCredentialsException.class, () ->
                 deleteAccountUseCase.execute(patient, new DeleteAccountRequest("errada", "paciente@example.com")));
 
-        verify(userRepository, never()).delete(any());
+        verify(userRepository, never()).delete(any(User.class));
     }
 
     @Test
@@ -90,7 +90,7 @@ class DeleteAccountUseCaseTest {
         assertThrows(BusinessException.class, () ->
                 deleteAccountUseCase.execute(admin, new DeleteAccountRequest("senha123", "admin@example.com")));
 
-        verify(userRepository, never()).delete(any());
+        verify(userRepository, never()).delete(any(User.class));
     }
 
     @Test
@@ -112,6 +112,6 @@ class DeleteAccountUseCaseTest {
                         nutritionistUser,
                         new DeleteAccountRequest("senha123", "nutri@example.com")));
 
-        verify(userRepository, never()).delete(any());
+        verify(userRepository, never()).delete(any(User.class));
     }
 }
