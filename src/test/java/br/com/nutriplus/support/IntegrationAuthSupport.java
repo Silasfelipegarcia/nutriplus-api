@@ -52,6 +52,29 @@ public final class IntegrationAuthSupport {
         return JsonTestSupport.extractStringField(authJson, "token");
     }
 
+    public static String loginAs(MockMvc mockMvc, String email, String password) throws Exception {
+        String loginBody = """
+                {"email":"%s","password":"%s"}
+                """.formatted(email, password);
+
+        String authJson = mockMvc.perform(post("/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(loginBody))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.token").value(notNullValue()))
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        return JsonTestSupport.extractStringField(authJson, "token");
+    }
+
+    public static org.springframework.http.HttpHeaders bearerHeaders(String token) {
+        var headers = new org.springframework.http.HttpHeaders();
+        headers.set("Authorization", "Bearer " + token);
+        return headers;
+    }
+
     public static void registerOnly(MockMvc mockMvc, String name, String email, String password, String cpf)
             throws Exception {
         mockMvc.perform(post("/auth/register")

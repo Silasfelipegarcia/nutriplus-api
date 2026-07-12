@@ -109,9 +109,11 @@ public class TrainingService {
         if (!profile.isAthleteModeEnabled()) {
             profile.setTrainingDailyExtraKcal(null);
             profile.setPrimaryTrainingTime(null);
-            profile.setAthleteHungerJson(null);
         } else {
-            applyAthleteMealPreferences(profile, request);
+            applyAthleteTrainingTime(profile, request);
+        }
+        if (request.athleteHungerByMeal() != null) {
+            profile.setAthleteHungerJson(AthleteHungerJson.toJson(request.athleteHungerByMeal()));
         }
         nutritionProfileRepository.save(profile);
 
@@ -259,10 +261,9 @@ public class TrainingService {
         );
     }
 
-    private void applyAthleteMealPreferences(NutritionProfile profile, TrainingProfileRequest request) {
+    private void applyAthleteTrainingTime(NutritionProfile profile, TrainingProfileRequest request) {
         LocalTime trainingTime = TimeInputNormalizer.parseFlexible(request.primaryTrainingTime());
         profile.setPrimaryTrainingTime(trainingTime);
-        profile.setAthleteHungerJson(AthleteHungerJson.toJson(request.athleteHungerByMeal()));
     }
 
     private String formatTrainingTime(LocalTime time) {

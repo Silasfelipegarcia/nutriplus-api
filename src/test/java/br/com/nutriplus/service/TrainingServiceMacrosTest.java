@@ -60,6 +60,8 @@ class TrainingServiceMacrosTest {
     private SubscriptionService subscriptionService;
     @Mock
     private PlanRegenerationPolicyService regenerationPolicyService;
+    @Mock
+    private HydrationTargetService hydrationTargetService;
 
     @InjectMocks
     private TrainingService trainingService;

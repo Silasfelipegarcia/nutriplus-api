@@ -22,13 +22,25 @@ mvn verify
 
 ## Dev test user (local / dev profile)
 
-With `SPRING_PROFILES_ACTIVE=local,dev`, the API seeds a ready-to-use account on first boot:
+With `SPRING_PROFILES_ACTIVE=local,dev`, the API seeds functional test accounts on first boot.
 
 | Field | Value |
 |-------|-------|
-| Email | `teste@nutriplus.local` |
-| Senha | `Nutri123!` |
-| Persona | Luna (perfil nutricional completo) |
+| Senha (todas) | `Nutri123!` |
+| Catálogo completo | [DEV_TEST_USERS.md](./DEV_TEST_USERS.md) |
+
+**Contas principais:**
+
+| Email | Cenário |
+|-------|---------|
+| `teste@nutriplus.local` | Perfil completo, sem plano — gerar 1º plano |
+| `teste2@nutriplus.local` | Sem perfil — onboarding |
+| `admin@nutriplus.local` | Admin |
+| `plano.bloqueado@nutriplus.local` | Plano ativo + bloqueio 15 dias + correção única |
+| `ciclo.vencido@nutriplus.local` | Reavaliação Evolução disponível (20 dias) |
+| `plano.atleta@nutriplus.local` | Plano Atleta + modo atleta |
+| `persona.bruno@nutriplus.local` | Assistente Bruno |
+| `helena@nutriplus.local` | 68 anos — revisão geriátrica |
 
 Use for manual testing of login → dashboard → gerar plano without re-onboarding.
 

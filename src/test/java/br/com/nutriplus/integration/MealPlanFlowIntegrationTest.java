@@ -43,7 +43,7 @@ class MealPlanFlowIntegrationTest extends AbstractIntegrationTest {
     @Test
     void generateMealPlanThenLatestReturns200() throws Exception {
         when(aiAgentClient.calculateMacros(any(NutritionProfile.class))).thenReturn(mockMacros());
-        when(aiAgentClient.generateMealPlan(any(NutritionProfile.class))).thenReturn(mockMealPlan());
+        when(aiAgentClient.generateMealPlan(any(), any(), any(), any())).thenReturn(mockMealPlan());
 
         String email = "mealplan-" + UUID.randomUUID() + "@nutriplus.test";
         String password = "secret123";
@@ -83,7 +83,10 @@ class MealPlanFlowIntegrationTest extends AbstractIntegrationTest {
         mockMvc.perform(get("/meal-plans/latest").headers(auth))
                 .andExpect(status().isNotFound());
 
-        String generateJson = mockMvc.perform(post("/meal-plans/generate").headers(auth))
+        String generateJson = mockMvc.perform(post("/meal-plans/generate")
+                        .headers(auth)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"reason\":\"FIRST_PLAN\"}"))
                 .andExpect(status().isAccepted())
                 .andExpect(jsonPath("$.status").value("PENDING"))
                 .andExpect(jsonPath("$.jobId").value(notNullValue()))

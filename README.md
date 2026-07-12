@@ -171,8 +171,12 @@ Detalhes de testes e k6: [docs/TESTING.md](docs/TESTING.md).
 
 ## Usuário de teste (local/dev)
 
-| Email | Senha |
-|-------|-------|
-| `teste@nutriplus.local` | `Nutri123!` |
+Senha padrão: `Nutri123!`
 
-Criado automaticamente pelo `DevDataLoader` — ver [docs/TESTING.md](docs/TESTING.md).
+| Email | Cenário |
+|-------|---------|
+| `teste@nutriplus.local` | Perfil completo, sem plano |
+| `teste2@nutriplus.local` | Onboarding do zero |
+| `admin@nutriplus.local` | Admin |
+
+Catálogo completo (planos, personas, ciclo 15 dias): [docs/DEV_TEST_USERS.md](docs/DEV_TEST_USERS.md)

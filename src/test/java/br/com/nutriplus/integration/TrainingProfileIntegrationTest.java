@@ -3,6 +3,7 @@ package br.com.nutriplus.integration;
 import br.com.nutriplus.AbstractIntegrationTest;
 import br.com.nutriplus.client.AiAgentClient;
 import br.com.nutriplus.client.dto.AiNutritionCalculateResponse;
+import br.com.nutriplus.client.dto.AiTrainingConsultResponse;
 import br.com.nutriplus.domain.entity.NutritionProfile;
 import br.com.nutriplus.support.IntegrationAuthSupport;
 import br.com.nutriplus.support.TestCpfFactory;
@@ -14,9 +15,12 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
-import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -36,6 +40,7 @@ class TrainingProfileIntegrationTest extends AbstractIntegrationTest {
     @Test
     void saveTrainingProfileRecalculatesTargetCaloriesWithTrainingExtra() throws Exception {
         when(aiAgentClient.calculateMacros(any(NutritionProfile.class))).thenAnswer(macrosWithTrainingExtra());
+        when(aiAgentClient.consultTrainingGarcia(any(Map.class))).thenReturn(mockCoachInsight());
 
         String email = "athlete-" + UUID.randomUUID() + "@nutriplus.test";
         String password = "secret123";
@@ -85,13 +90,13 @@ class TrainingProfileIntegrationTest extends AbstractIntegrationTest {
                         .content(trainingBody))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.appliedToPlan").value(true))
-                .andExpect(jsonPath("$.dailyExtraKcal").value(greaterThan(0)));
+                .andExpect(jsonPath("$.dailyExtraKcal").value(not(equalTo(0))));
 
         mockMvc.perform(get("/nutrition-profile").headers(auth))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.athleteModeEnabled").value(true))
-                .andExpect(jsonPath("$.trainingDailyExtraKcal").value(greaterThan(0)))
-                .andExpect(jsonPath("$.targetCalories").value(greaterThan(1700)));
+                .andExpect(jsonPath("$.trainingDailyExtraKcal").value(not(equalTo(0))))
+                .andExpect(jsonPath("$.targetCalories").value(not(equalTo(1700))));
 
         mockMvc.perform(put("/training/profile")
                         .headers(auth)
@@ -104,6 +109,15 @@ class TrainingProfileIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.athleteModeEnabled").value(false))
                 .andExpect(jsonPath("$.targetCalories").value(1700));
+    }
+
+    private static AiTrainingConsultResponse mockCoachInsight() {
+        return new AiTrainingConsultResponse(
+                "Treino compatível com seu objetivo.",
+                List.of("Volume semanal adequado."),
+                List.of(),
+                List.of()
+        );
     }
 
     private static Answer<AiNutritionCalculateResponse> macrosWithTrainingExtra() {

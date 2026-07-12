@@ -293,10 +293,10 @@ public class AiAgentClient {
             if (profile.getPrimaryTrainingTime() != null) {
                 body.put("primaryTrainingTime", profile.getPrimaryTrainingTime().toString().substring(0, 5));
             }
-            var hunger = AthleteHungerJson.fromJson(profile.getAthleteHungerJson());
-            if (hunger != null) {
-                body.put("athleteHungerByMeal", hunger);
-            }
+        }
+        var hunger = AthleteHungerJson.fromJson(profile.getAthleteHungerJson());
+        if (hunger != null) {
+            body.put("athleteHungerByMeal", hunger);
         }
         if (profile.getWakeTime() != null) {
             body.put("wakeTime", profile.getWakeTime().toString().substring(0, 5));
