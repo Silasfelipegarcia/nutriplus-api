@@ -7,6 +7,7 @@ import br.com.nutriplus.domain.enums.ProgressReviewStatus;
 import br.com.nutriplus.dto.response.ProgressScheduleResponse;
 import br.com.nutriplus.repository.BodyMeasurementSessionRepository;
 import br.com.nutriplus.repository.ProgressReviewRepository;
+import br.com.nutriplus.util.NutriTime;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
@@ -30,12 +31,12 @@ public class ProgressScheduleService {
 
         LocalDate anchor = resolveAnchorDate(userId, profile);
         LocalDate nextDueOn = anchor.plusDays(intervalDays);
-        LocalDate today = LocalDate.now();
+        LocalDate today = NutriTime.today();
         long daysUntil = ChronoUnit.DAYS.between(today, nextDueOn);
         boolean due = !today.isBefore(nextDueOn);
 
-        LocalDateTime lastReviewAt = reviewRepository.findFirstByUserIdOrderByCreatedAtDesc(userId)
-                .filter(r -> r.getStatus() == ProgressReviewStatus.COMPLETED)
+        LocalDateTime lastReviewAt = reviewRepository
+                .findFirstByUserIdAndStatusOrderByCompletedAtDesc(userId, ProgressReviewStatus.COMPLETED)
                 .map(ProgressReview::getCompletedAt)
                 .orElse(null);
 
@@ -47,19 +48,26 @@ public class ProgressScheduleService {
         return new ProgressScheduleResponse(
                 intervalDays,
                 due,
-                due ? 0 : (int) daysUntil,
+                due ? 0 : (int) Math.max(daysUntil, 0),
                 nextDueOn,
                 lastReviewAt,
                 lastMeasurementOn
         );
     }
 
+    /**
+     * Ciclo de reavaliação:
+     * 1) última análise COMPLETED, ou
+     * 2) baseline = primeira medição (não a última — senão salvar medidas no dia "due" zera o ciclo), ou
+     * 3) criação do perfil.
+     */
     private LocalDate resolveAnchorDate(Long userId, NutritionProfile profile) {
-        return reviewRepository.findFirstByUserIdOrderByCreatedAtDesc(userId)
-                .filter(r -> r.getStatus() == ProgressReviewStatus.COMPLETED && r.getCompletedAt() != null)
+        return reviewRepository
+                .findFirstByUserIdAndStatusOrderByCompletedAtDesc(userId, ProgressReviewStatus.COMPLETED)
+                .filter(r -> r.getCompletedAt() != null)
                 .map(r -> r.getCompletedAt().toLocalDate())
                 .orElseGet(() -> measurementRepository
-                        .findFirstByUserIdOrderByMeasuredOnDescIdDesc(userId)
+                        .findFirstByUserIdOrderByMeasuredOnAscIdAsc(userId)
                         .map(BodyMeasurementSession::getMeasuredOn)
                         .orElseGet(() -> profileCreatedOn(profile)));
     }
@@ -68,6 +76,6 @@ public class ProgressScheduleService {
         if (profile.getCreatedAt() != null) {
             return profile.getCreatedAt().toLocalDate();
         }
-        return LocalDate.now();
+        return NutriTime.today();
     }
 }

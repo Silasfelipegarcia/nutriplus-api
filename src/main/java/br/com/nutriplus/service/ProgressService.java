@@ -272,8 +272,8 @@ public class ProgressService {
 
     public ProgressReviewResponse getLatestReview() {
         User user = currentUser.get();
-        return reviewRepository.findFirstByUserIdOrderByCreatedAtDesc(user.getId())
-                .filter(r -> r.getStatus() == ProgressReviewStatus.COMPLETED)
+        return reviewRepository
+                .findFirstByUserIdAndStatusOrderByCompletedAtDesc(user.getId(), ProgressReviewStatus.COMPLETED)
                 .map(this::toReviewResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("Nenhuma análise de progresso encontrada"));
     }
@@ -318,8 +318,7 @@ public class ProgressService {
         }
 
         ProgressReviewResponse latestReview = reviewRepository
-                .findFirstByUserIdOrderByCreatedAtDesc(user.getId())
-                .filter(r -> r.getStatus() == ProgressReviewStatus.COMPLETED)
+                .findFirstByUserIdAndStatusOrderByCompletedAtDesc(user.getId(), ProgressReviewStatus.COMPLETED)
                 .map(this::toReviewResponse)
                 .orElse(null);
 
@@ -416,16 +415,6 @@ public class ProgressService {
             return true;
         }
         return measuredOn.equals(today) && existingOnDate.isPresent();
-    }
-
-    private LocalDate resolveAnchorDate(Long userId, NutritionProfile profile) {
-        return reviewRepository.findFirstByUserIdOrderByCreatedAtDesc(userId)
-                .filter(r -> r.getStatus() == ProgressReviewStatus.COMPLETED && r.getCompletedAt() != null)
-                .map(r -> r.getCompletedAt().toLocalDate())
-                .orElseGet(() -> measurementRepository
-                        .findFirstByUserIdOrderByMeasuredOnDescIdDesc(userId)
-                        .map(BodyMeasurementSession::getMeasuredOn)
-                        .orElseGet(() -> profileCreatedOn(profile)));
     }
 
     private LocalDate profileCreatedOn(NutritionProfile profile) {
