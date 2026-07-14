@@ -28,6 +28,7 @@ import br.com.nutriplus.repository.UserRepository;
 import br.com.nutriplus.security.CurrentUser;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.cache.annotation.CacheEvict;
@@ -270,14 +271,15 @@ public class ProgressService {
         return trimmed.isEmpty() ? null : trimmed;
     }
 
+    @Transactional(readOnly = true)
     public ProgressReviewResponse getLatestReview() {
         User user = currentUser.get();
-        return reviewRepository
-                .findFirstByUserIdAndStatusOrderByCompletedAtDesc(user.getId(), ProgressReviewStatus.COMPLETED)
+        return findLatestCompletedReview(user.getId())
                 .map(this::toReviewResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("Nenhuma análise de progresso encontrada"));
     }
 
+    @Transactional(readOnly = true)
     public EvolutionReportResponse getEvolutionReport() {
         User user = currentUser.get();
         NutritionProfile profile = requireProfile(user.getId());
@@ -317,8 +319,7 @@ public class ProgressService {
             }
         }
 
-        ProgressReviewResponse latestReview = reviewRepository
-                .findFirstByUserIdAndStatusOrderByCompletedAtDesc(user.getId(), ProgressReviewStatus.COMPLETED)
+        ProgressReviewResponse latestReview = findLatestCompletedReview(user.getId())
                 .map(this::toReviewResponse)
                 .orElse(null);
 
@@ -342,6 +343,12 @@ public class ProgressService {
                 healthReferenceService.buildHealthSnapshot(profile, baseline, latest),
                 HealthReferenceService.HEALTH_DISCLAIMER
         );
+    }
+
+    private Optional<ProgressReview> findLatestCompletedReview(Long userId) {
+        List<ProgressReview> reviews = reviewRepository.findCompletedWithSessionsOrderByCompletedAtDesc(
+                userId, ProgressReviewStatus.COMPLETED, PageRequest.of(0, 1));
+        return reviews.stream().findFirst();
     }
 
     private BodyMeasurementResponse profileSnapshot(NutritionProfile profile, LocalDate measuredOn) {

@@ -65,6 +65,7 @@ public class PatientDossierService {
         this.cpfProtectionService = cpfProtectionService;
     }
 
+    @Transactional(readOnly = true)
     public PatientDossierResponse getDossier(Long patientId) {
         CareRelationship care = authorizationService.requireCareAccessForNutritionistByPatientId(patientId);
         User patient = care.getPatient();
