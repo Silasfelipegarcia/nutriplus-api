@@ -162,7 +162,7 @@ public class PlanRegenerationPolicyService {
             }
             case CYCLE_REVIEW -> {
                 requireMealPlan(user.getId());
-                assertCycleReviewAllowed(user.getId(), reviewId, profile);
+                assertCycleReviewAllowed(user.getId(), reviewId);
             }
             case UNLOCKED_REGEN -> {
                 requireMealPlan(user.getId());
@@ -287,20 +287,16 @@ public class PlanRegenerationPolicyService {
         return review.getCompletedAt().isAfter(LocalDateTime.now().minusMinutes(CYCLE_REVIEW_GRACE_MINUTES));
     }
 
-    private void assertCycleReviewAllowed(Long userId, Long reviewId, NutritionProfile profile) {
+    private void assertCycleReviewAllowed(Long userId, Long reviewId) {
         if (reviewId == null) {
             throw new BusinessException("Informe a reavaliação que autoriza a nova geração.");
         }
         ProgressReview review = reviewRepository.findByIdAndUserId(reviewId, userId)
                 .orElseThrow(() -> new BusinessException("Reavaliação não encontrada."));
+        // Pending window only — schedule.due() is already false once the review completes.
         if (!isPendingCycleReview(review)) {
             throw new BusinessException(
                     "Esta reavaliação não autoriza nova geração. Conclua uma reavaliação com sugestão de mudança.");
-        }
-        ProgressScheduleResponse schedule = progressScheduleService.getScheduleForUser(userId, profile);
-        if (!schedule.due()) {
-            throw new BusinessException(
-                    "A reavaliação periódica ainda não está disponível.");
         }
     }
 }
