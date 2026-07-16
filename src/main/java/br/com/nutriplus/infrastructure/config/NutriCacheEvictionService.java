@@ -50,4 +50,12 @@ public class NutriCacheEvictionService {
                 NutriCacheNames.PROGRESS_SCHEDULE,
                 NutriCacheNames.PROGRESS_MEASUREMENT_LATEST);
     }
+
+    /** Limpa cache de perfil (ex.: após migração que cura plan_synced_at). */
+    public void clearNutritionProfileCache() {
+        Cache cache = cacheManager.getCache(NutriCacheNames.NUTRITION_PROFILE);
+        if (cache != null) {
+            cache.clear();
+        }
+    }
 }
