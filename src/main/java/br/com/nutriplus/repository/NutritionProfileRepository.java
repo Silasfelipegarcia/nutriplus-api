@@ -27,4 +27,11 @@ public interface NutritionProfileRepository extends JpaRepository<NutritionProfi
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = "UPDATE nutrition_profiles SET plan_synced_at = updated_at WHERE id = :id", nativeQuery = true)
     void markPlanSynced(@Param("id") Long id);
+
+    /**
+     * Backfill de meta de água sem tocar em updated_at (GET não pode invalidar plan_synced_at).
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = "UPDATE nutrition_profiles SET daily_water_target_ml = :ml WHERE id = :id", nativeQuery = true)
+    void updateDailyWaterTargetOnly(@Param("id") Long id, @Param("ml") Integer ml);
 }

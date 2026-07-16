@@ -118,6 +118,7 @@ public class NutritionProfileService {
     }
 
     @Cacheable(value = NutriCacheNames.NUTRITION_PROFILE, keyGenerator = "userIdCacheKeyGenerator")
+    @Transactional
     public NutritionProfileResponse get() {
         User user = currentUser.get();
         NutritionProfile profile = nutritionProfileRepository.findByUserId(user.getId())
@@ -128,18 +129,16 @@ public class NutritionProfileService {
 
     private NutritionProfile ensureHydrationTargetSynced(NutritionProfile profile) {
         Integer computed = hydrationTargetService.computeDailyWaterTargetMl(profile);
-        if (java.util.Objects.equals(profile.getDailyWaterTargetMl(), computed)) {
+        if (computed == null || java.util.Objects.equals(profile.getDailyWaterTargetMl(), computed)) {
             return profile;
         }
-        boolean wasPlanSynced = profile.getPlanSyncedAt() != null;
-        profile.setDailyWaterTargetMl(computed);
-        NutritionProfile saved = nutritionProfileRepository.save(profile);
-        // Hidratação não invalida o plano: reatacha plan_synced_at ao updated_at.
-        if (wasPlanSynced) {
-            nutritionProfileRepository.markPlanSynced(saved.getId());
-            return nutritionProfileRepository.findById(saved.getId()).orElse(saved);
-        }
-        return saved;
+        // Native update: não dispara @UpdateTimestamp. Um save() JPA aqui
+        // deixava updated_at > plan_synced_at e o banner "Atualizar plano" grudava.
+        nutritionProfileRepository.updateDailyWaterTargetOnly(profile.getId(), computed);
+        return nutritionProfileRepository.findById(profile.getId()).orElseGet(() -> {
+            profile.setDailyWaterTargetMl(computed);
+            return profile;
+        });
     }
 
     private NutritionProfileResponse toProfileResponse(NutritionProfile profile, User user) {
