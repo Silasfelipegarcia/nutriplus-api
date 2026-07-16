@@ -131,8 +131,15 @@ public class NutritionProfileService {
         if (java.util.Objects.equals(profile.getDailyWaterTargetMl(), computed)) {
             return profile;
         }
+        boolean wasPlanSynced = profile.getPlanSyncedAt() != null;
         profile.setDailyWaterTargetMl(computed);
-        return nutritionProfileRepository.save(profile);
+        NutritionProfile saved = nutritionProfileRepository.save(profile);
+        // Hidratação não invalida o plano: reatacha plan_synced_at ao updated_at.
+        if (wasPlanSynced) {
+            nutritionProfileRepository.markPlanSynced(saved.getId());
+            return nutritionProfileRepository.findById(saved.getId()).orElse(saved);
+        }
+        return saved;
     }
 
     private NutritionProfileResponse toProfileResponse(NutritionProfile profile, User user) {

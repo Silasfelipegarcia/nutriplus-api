@@ -23,7 +23,10 @@ public class NutriCacheEvictionService {
     }
 
     public void evictMealPlanCaches(Long userId) {
-        evictForUser(userId, NutriCacheNames.MEAL_PLAN_LATEST, NutriCacheNames.SHOPPING_LIST_LATEST);
+        evictForUser(userId,
+                NutriCacheNames.MEAL_PLAN_LATEST,
+                NutriCacheNames.SHOPPING_LIST_LATEST,
+                NutriCacheNames.NUTRITION_PROFILE);
     }
 
     public void evictCheckinCaches(Long userId) {

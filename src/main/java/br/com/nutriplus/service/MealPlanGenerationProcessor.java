@@ -63,6 +63,7 @@ public class MealPlanGenerationProcessor {
     private final SharedPlanSnapshotBuilder sharedPlanSnapshotBuilder;
     private final HouseholdRepository householdRepository;
     private final CheckinService checkinService;
+    private final HydrationTargetService hydrationTargetService;
 
     public MealPlanGenerationProcessor(MealPlanGenerationJobRepository jobRepository,
                                        UserRepository userRepository,
@@ -82,7 +83,8 @@ public class MealPlanGenerationProcessor {
                                        UserTrainingActivityRepository trainingActivityRepository,
                                        SharedPlanSnapshotBuilder sharedPlanSnapshotBuilder,
                                        HouseholdRepository householdRepository,
-                                       CheckinService checkinService) {
+                                       CheckinService checkinService,
+                                       HydrationTargetService hydrationTargetService) {
         this.jobRepository = jobRepository;
         this.userRepository = userRepository;
         this.nutritionProfileRepository = nutritionProfileRepository;
@@ -102,6 +104,7 @@ public class MealPlanGenerationProcessor {
         this.sharedPlanSnapshotBuilder = sharedPlanSnapshotBuilder;
         this.householdRepository = householdRepository;
         this.checkinService = checkinService;
+        this.hydrationTargetService = hydrationTargetService;
     }
 
     public void run(Long jobId, Long userId, long startMs) throws Exception {
@@ -353,6 +356,10 @@ public class MealPlanGenerationProcessor {
         }
         profile.setPaceWarning(macros.paceWarning());
         profile.setEstimatedWeeklyRateKg(macros.estimatedWeeklyRateKg());
+        Integer waterTarget = hydrationTargetService.computeDailyWaterTargetMl(profile);
+        if (waterTarget != null) {
+            profile.setDailyWaterTargetMl(waterTarget);
+        }
         return nutritionProfileRepository.save(profile);
     }
 }
