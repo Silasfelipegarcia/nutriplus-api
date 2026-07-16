@@ -16,6 +16,7 @@ public record ProgressReviewResponse(
         Boolean planChangeSuggested,
         String planChangeRationale,
         String keepPlanMessage,
-        String confidence
+        String confidence,
+        CycleBehaviorSignalsResponse cycleBehavior
 ) {
 }

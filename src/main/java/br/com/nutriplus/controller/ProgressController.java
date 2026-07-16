@@ -1,7 +1,9 @@
 package br.com.nutriplus.controller;
 
+import br.com.nutriplus.dto.request.BioimpedanceExtractRequest;
 import br.com.nutriplus.dto.request.BodyMeasurementRequest;
 import br.com.nutriplus.dto.request.ProgressReviewRequest;
+import br.com.nutriplus.dto.response.BioimpedanceExtractResponse;
 import br.com.nutriplus.dto.response.BodyMeasurementResponse;
 import br.com.nutriplus.dto.response.EvolutionReportResponse;
 import br.com.nutriplus.dto.response.ProgressReviewResponse;
@@ -37,6 +39,11 @@ public class ProgressController {
     @GetMapping("/measurements/latest")
     public BodyMeasurementResponse latestMeasurement() {
         return progressService.getLatestMeasurement();
+    }
+
+    @PostMapping("/bioimpedance/extract")
+    public BioimpedanceExtractResponse extractBioimpedance(@Valid @RequestBody BioimpedanceExtractRequest request) {
+        return progressService.extractBioimpedance(request);
     }
 
     @PostMapping("/reviews")

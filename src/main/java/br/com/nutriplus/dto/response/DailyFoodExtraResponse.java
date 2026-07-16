@@ -7,6 +7,7 @@ public record DailyFoodExtraResponse(
         String description,
         int estimatedCalories,
         BigDecimal estimatedCarbsG,
-        String impactMessage
+        String impactMessage,
+        Long mealId
 ) {
 }

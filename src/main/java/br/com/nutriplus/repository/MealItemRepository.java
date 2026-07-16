@@ -7,10 +7,13 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 public interface MealItemRepository extends JpaRepository<MealItem, Long> {
 
     List<MealItem> findByMealIdOrderByIdAsc(Long mealId);
+
+    Optional<MealItem> findByIdAndMeal_Id(Long id, Long mealId);
 
     @Query("SELECT mi FROM MealItem mi WHERE mi.meal.id IN :mealIds ORDER BY mi.meal.id ASC, mi.id ASC")
     List<MealItem> findByMealIds(@Param("mealIds") Collection<Long> mealIds);

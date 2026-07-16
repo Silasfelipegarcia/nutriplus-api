@@ -112,6 +112,7 @@ sequenceDiagram
 | POST | `/progress/measurements` | Salva sessão de medidas |
 | GET | `/progress/measurements/latest` | Última sessão (formulário pré-preenchido) |
 | POST | `/progress/reviews` | Gera análise (última + anterior). Body opcional: `physicalDiscomforts`, `positiveChanges`, `generalNotes` |
+| POST | `/progress/bioimpedance/extract` | Lê PDF/foto do laudo (base64); devolve campos + `missingFields` (não grava) |
 | GET | `/progress/reviews/latest` | Última análise concluída |
 
 ## Agente

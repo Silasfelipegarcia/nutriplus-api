@@ -1,10 +1,12 @@
 package br.com.nutriplus.client;
 
+import br.com.nutriplus.client.dto.AiBioimpedanceExtractResponse;
 import br.com.nutriplus.client.dto.AiFoodExtraEstimateResponse;
 import br.com.nutriplus.client.dto.AiTrainingConsultResponse;
 import br.com.nutriplus.client.dto.AiMealPlanGenerateResponse;
 import br.com.nutriplus.client.dto.AiNutritionCalculateResponse;
 import br.com.nutriplus.client.dto.AiProgressAnalyzeResponse;
+import br.com.nutriplus.client.dto.AiSubstitutionResponse;
 import br.com.nutriplus.domain.entity.BodyMeasurementSession;
 import br.com.nutriplus.domain.entity.NutritionProfile;
 import br.com.nutriplus.domain.entity.UserTrainingActivity;
@@ -116,7 +118,7 @@ public class AiAgentClient {
                                                      BodyMeasurementSession current,
                                                      BodyMeasurementSession previous,
                                                      Integer weekAdherencePercent) {
-        return analyzeProgress(profile, current, previous, weekAdherencePercent, null, null, null);
+        return analyzeProgress(profile, current, previous, weekAdherencePercent, null, null, null, null);
     }
 
     public AiProgressAnalyzeResponse analyzeProgress(NutritionProfile profile,
@@ -126,6 +128,18 @@ public class AiAgentClient {
                                                      String physicalDiscomforts,
                                                      String positiveChanges,
                                                      String generalNotes) {
+        return analyzeProgress(profile, current, previous, weekAdherencePercent,
+                physicalDiscomforts, positiveChanges, generalNotes, null);
+    }
+
+    public AiProgressAnalyzeResponse analyzeProgress(NutritionProfile profile,
+                                                     BodyMeasurementSession current,
+                                                     BodyMeasurementSession previous,
+                                                     Integer weekAdherencePercent,
+                                                     String physicalDiscomforts,
+                                                     String positiveChanges,
+                                                     String generalNotes,
+                                                     Object cycleBehavior) {
         Map<String, Object> body = new HashMap<>();
         body.put("agentId", profile.getAgentPersona().toAgentId());
         body.put("goal", profile.getGoal().name());
@@ -143,6 +157,9 @@ public class AiAgentClient {
         }
         if (generalNotes != null && !generalNotes.isBlank()) {
             body.put("generalNotes", generalNotes);
+        }
+        if (cycleBehavior != null) {
+            body.put("cycleBehavior", cycleBehavior);
         }
         return post("/api/v1/progress/analyze", body, AiProgressAnalyzeResponse.class);
     }
@@ -179,8 +196,40 @@ public class AiAgentClient {
         return post("/api/v1/food-extra/estimate", body, AiFoodExtraEstimateResponse.class);
     }
 
+    public AiSubstitutionResponse generateSubstitutions(NutritionProfile profile,
+                                                        String foodName,
+                                                        BigDecimal quantityG,
+                                                        BigDecimal targetCalories,
+                                                        BigDecimal targetProteinG) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("foodName", foodName);
+        body.put("quantityG", quantityG);
+        body.put("dietaryPreference", profile.getDietaryPreference().name());
+        body.put("restriction", profile.getRestriction().name());
+        if (profile.getAgentPersona() != null) {
+            body.put("agentId", profile.getAgentPersona().toAgentId());
+        }
+        if (targetCalories != null) {
+            body.put("targetCalories", targetCalories);
+        }
+        if (targetProteinG != null) {
+            body.put("targetProteinG", targetProteinG);
+        }
+        return post("/api/v1/substitutions/generate", body, AiSubstitutionResponse.class);
+    }
+
     public AiTrainingConsultResponse consultTrainingGarcia(Map<String, Object> body) {
         return post("/api/v1/training/consult", body, AiTrainingConsultResponse.class);
+    }
+
+    public AiBioimpedanceExtractResponse extractBioimpedance(String agentId,
+                                                             String mimeType,
+                                                             String contentBase64) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("agentId", agentId);
+        body.put("mimeType", mimeType);
+        body.put("contentBase64", contentBase64);
+        return post("/api/v1/bioimpedance/extract", body, AiBioimpedanceExtractResponse.class);
     }
 
     private Map<String, Object> sessionToMap(BodyMeasurementSession session) {

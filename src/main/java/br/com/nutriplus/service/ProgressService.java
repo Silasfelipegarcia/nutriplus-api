@@ -1,8 +1,13 @@
 package br.com.nutriplus.service;
 
+import br.com.nutriplus.application.shared.BioimpedanceDocumentValidator;
 import br.com.nutriplus.client.AiAgentClient;
+import br.com.nutriplus.client.dto.AiBioimpedanceExtractResponse;
 import br.com.nutriplus.client.dto.AiProgressAnalyzeResponse;
 import br.com.nutriplus.domain.entity.BodyMeasurementSession;
+import br.com.nutriplus.domain.entity.DailyFoodExtra;
+import br.com.nutriplus.domain.entity.Meal;
+import br.com.nutriplus.domain.entity.MealItemSwapEvent;
 import br.com.nutriplus.domain.entity.Nutritionist;
 import br.com.nutriplus.domain.entity.NutritionProfile;
 import br.com.nutriplus.domain.entity.ProgressReview;
@@ -11,9 +16,12 @@ import br.com.nutriplus.domain.enums.CalculationMethod;
 import br.com.nutriplus.domain.enums.ProgressReviewStatus;
 import br.com.nutriplus.domain.enums.EvolutionMetricStatus;
 import br.com.nutriplus.domain.enums.ProgressTrend;
+import br.com.nutriplus.dto.request.BioimpedanceExtractRequest;
 import br.com.nutriplus.dto.request.BodyMeasurementRequest;
 import br.com.nutriplus.dto.request.ProgressReviewRequest;
+import br.com.nutriplus.dto.response.BioimpedanceExtractResponse;
 import br.com.nutriplus.dto.response.BodyMeasurementResponse;
+import br.com.nutriplus.dto.response.CycleBehaviorSignalsResponse;
 import br.com.nutriplus.dto.response.EvolutionReportResponse;
 import br.com.nutriplus.dto.response.EvolutionMetricResponse;
 import br.com.nutriplus.dto.response.ProgressReviewResponse;
@@ -21,7 +29,10 @@ import br.com.nutriplus.dto.response.ProgressScheduleResponse;
 import br.com.nutriplus.exception.BusinessException;
 import br.com.nutriplus.exception.ResourceNotFoundException;
 import br.com.nutriplus.repository.BodyMeasurementSessionRepository;
+import br.com.nutriplus.repository.DailyFoodExtraRepository;
+import br.com.nutriplus.repository.MealItemSwapEventRepository;
 import br.com.nutriplus.repository.MealPlanRepository;
+import br.com.nutriplus.repository.MealRepository;
 import br.com.nutriplus.repository.NutritionProfileRepository;
 import br.com.nutriplus.repository.ProgressReviewRepository;
 import br.com.nutriplus.repository.UserRepository;
@@ -38,9 +49,15 @@ import br.com.nutriplus.infrastructure.config.NutriCacheNames;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ProgressService {
@@ -57,6 +74,9 @@ public class ProgressService {
     private final EvolutionReportBuilder evolutionReportBuilder;
     private final HealthReferenceService healthReferenceService;
     private final ProgressScheduleService progressScheduleService;
+    private final DailyFoodExtraRepository foodExtraRepository;
+    private final MealItemSwapEventRepository swapEventRepository;
+    private final MealRepository mealRepository;
 
     public ProgressService(CurrentUser currentUser,
                            NutritionProfileRepository nutritionProfileRepository,
@@ -69,7 +89,10 @@ public class ProgressService {
                            ObjectMapper objectMapper,
                            EvolutionReportBuilder evolutionReportBuilder,
                            HealthReferenceService healthReferenceService,
-                           ProgressScheduleService progressScheduleService) {
+                           ProgressScheduleService progressScheduleService,
+                           DailyFoodExtraRepository foodExtraRepository,
+                           MealItemSwapEventRepository swapEventRepository,
+                           MealRepository mealRepository) {
         this.currentUser = currentUser;
         this.nutritionProfileRepository = nutritionProfileRepository;
         this.measurementRepository = measurementRepository;
@@ -82,6 +105,9 @@ public class ProgressService {
         this.evolutionReportBuilder = evolutionReportBuilder;
         this.healthReferenceService = healthReferenceService;
         this.progressScheduleService = progressScheduleService;
+        this.foodExtraRepository = foodExtraRepository;
+        this.swapEventRepository = swapEventRepository;
+        this.mealRepository = mealRepository;
     }
 
     @Cacheable(value = NutriCacheNames.PROGRESS_SCHEDULE, keyGenerator = "userIdCacheKeyGenerator")
@@ -100,7 +126,8 @@ public class ProgressService {
             keyGenerator = "userIdCacheKeyGenerator")
     public BodyMeasurementResponse saveMeasurement(BodyMeasurementRequest request) {
         User user = currentUser.get();
-        return saveMeasurementForUser(user.getId(), request);
+        CalculationMethod method = resolveCalculationMethod(request.calculationMethod());
+        return saveMeasurementForUser(user.getId(), request, method, null);
     }
 
     @Transactional
@@ -198,6 +225,18 @@ public class ProgressService {
                 .orElseThrow(() -> new ResourceNotFoundException("Nenhuma medição registrada"));
     }
 
+    public BioimpedanceExtractResponse extractBioimpedance(BioimpedanceExtractRequest request) {
+        User user = currentUser.get();
+        NutritionProfile profile = requireProfile(user.getId());
+        String mime = BioimpedanceDocumentValidator.normalizeMime(request.mimeType());
+        String contentBase64 = BioimpedanceDocumentValidator.cleanBase64(request.contentBase64());
+        String agentId = profile.getAgentPersona() != null
+                ? profile.getAgentPersona().toAgentId()
+                : "luna";
+        AiBioimpedanceExtractResponse ai = aiAgentClient.extractBioimpedance(agentId, mime, contentBase64);
+        return toBioimpedanceResponse(ai);
+    }
+
     @Transactional
     public ProgressReviewResponse generateReview(ProgressReviewRequest request) {
         User user = currentUser.get();
@@ -229,6 +268,10 @@ public class ProgressService {
         }
         review = reviewRepository.save(review);
 
+        CycleBehaviorSignalsResponse cycleBehavior = buildCycleBehaviorSignals(
+                user.getId(),
+                schedule.intervalDays());
+
         try {
             AiProgressAnalyzeResponse ai = aiAgentClient.analyzeProgress(
                     profile,
@@ -237,7 +280,8 @@ public class ProgressService {
                     review.getWeekAdherencePercent(),
                     review.getPhysicalDiscomforts(),
                     review.getPositiveChanges(),
-                    review.getGeneralNotes()
+                    review.getGeneralNotes(),
+                    cycleBehavior
             );
             review.setTrend(ProgressTrend.valueOf(ai.trend()));
             review.setSummary(ai.summary());
@@ -260,7 +304,95 @@ public class ProgressService {
         }
 
         review = reviewRepository.save(review);
-        return toReviewResponse(review);
+        return toReviewResponse(review, cycleBehavior);
+    }
+
+    private CycleBehaviorSignalsResponse buildCycleBehaviorSignals(Long userId, int intervalDays) {
+        int days = Math.max(intervalDays, 1);
+        LocalDate end = LocalDate.now();
+        LocalDate start = end.minusDays(days - 1L);
+        LocalDateTime swapFrom = start.atStartOfDay();
+
+        List<DailyFoodExtra> extras = foodExtraRepository
+                .findByUserIdAndEntryDateBetweenOrderByEntryDateAscCreatedAtAsc(userId, start, end);
+        List<MealItemSwapEvent> swaps = swapEventRepository
+                .findByUserIdAndCreatedAtGreaterThanEqual(userId, swapFrom);
+
+        int extraCalories = extras.stream().mapToInt(DailyFoodExtra::getEstimatedCalories).sum();
+        int daysWithExtras = (int) extras.stream().map(DailyFoodExtra::getEntryDate).distinct().count();
+
+        Map<Long, String> mealTypeById = new HashMap<>();
+        List<Long> mealIds = extras.stream()
+                .map(DailyFoodExtra::getMealId)
+                .filter(id -> id != null)
+                .distinct()
+                .toList();
+        if (!mealIds.isEmpty()) {
+            for (Meal meal : mealRepository.findAllById(mealIds)) {
+                mealTypeById.put(meal.getId(), meal.getMealType() != null ? meal.getMealType().name() : "OTHER");
+            }
+        }
+
+        Map<String, Integer> extrasByMealType = new LinkedHashMap<>();
+        for (DailyFoodExtra extra : extras) {
+            String key = extra.getMealId() == null
+                    ? "DAY"
+                    : mealTypeById.getOrDefault(extra.getMealId(), "OTHER");
+            extrasByMealType.merge(key, 1, Integer::sum);
+        }
+
+        Map<String, Long> descriptionCounts = extras.stream()
+                .collect(Collectors.groupingBy(
+                        e -> e.getDescription().trim().toLowerCase(Locale.ROOT),
+                        Collectors.counting()));
+        List<String> topDescriptions = descriptionCounts.entrySet().stream()
+                .sorted(Map.Entry.<String, Long>comparingByValue().reversed())
+                .limit(3)
+                .map(Map.Entry::getKey)
+                .toList();
+
+        String highlight = buildBehaviorHighlight(extrasByMealType, swaps.size(), daysWithExtras);
+        return new CycleBehaviorSignalsResponse(
+                extraCalories,
+                extras.size(),
+                daysWithExtras,
+                swaps.size(),
+                extrasByMealType,
+                topDescriptions,
+                highlight);
+    }
+
+    private String buildBehaviorHighlight(Map<String, Integer> extrasByMealType,
+                                          int swapsCount,
+                                          int daysWithExtras) {
+        String topMeal = extrasByMealType.entrySet().stream()
+                .filter(e -> !"DAY".equals(e.getKey()))
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse(null);
+        List<String> parts = new ArrayList<>();
+        if (topMeal != null && extrasByMealType.getOrDefault(topMeal, 0) >= 2) {
+            parts.add(mealTypeLabel(topMeal) + " reforçado em " + extrasByMealType.get(topMeal) + " dias");
+        } else if (daysWithExtras > 0) {
+            parts.add(daysWithExtras + " dia(s) com extras");
+        }
+        if (swapsCount > 0) {
+            parts.add(swapsCount + " troca(s) equivalentes");
+        }
+        if (parts.isEmpty()) {
+            return "Sem extras ou trocas significativos neste ciclo.";
+        }
+        return String.join(" · ", parts);
+    }
+
+    private String mealTypeLabel(String mealType) {
+        return switch (mealType) {
+            case "BREAKFAST" -> "Café";
+            case "LUNCH" -> "Almoço";
+            case "DINNER" -> "Jantar";
+            case "AFTERNOON_SNACK", "SNACK" -> "Lanche";
+            default -> "Refeição";
+        };
     }
 
     private static String trimToNull(String value) {
@@ -274,8 +406,12 @@ public class ProgressService {
     @Transactional(readOnly = true)
     public ProgressReviewResponse getLatestReview() {
         User user = currentUser.get();
+        ProgressScheduleResponse schedule = getSchedule();
+        CycleBehaviorSignalsResponse cycleBehavior = buildCycleBehaviorSignals(
+                user.getId(),
+                schedule.intervalDays());
         return findLatestCompletedReview(user.getId())
-                .map(this::toReviewResponse)
+                .map(review -> toReviewResponse(review, cycleBehavior))
                 .orElseThrow(() -> new ResourceNotFoundException("Nenhuma análise de progresso encontrada"));
     }
 
@@ -320,7 +456,7 @@ public class ProgressService {
         }
 
         ProgressReviewResponse latestReview = findLatestCompletedReview(user.getId())
-                .map(this::toReviewResponse)
+                .map(review -> toReviewResponse(review, null))
                 .orElse(null);
 
         return new EvolutionReportResponse(
@@ -431,6 +567,40 @@ public class ProgressService {
         return LocalDate.now();
     }
 
+    private CalculationMethod resolveCalculationMethod(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return null;
+        }
+        try {
+            return CalculationMethod.valueOf(raw.trim().toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new BusinessException("Método de cálculo inválido.");
+        }
+    }
+
+    private BioimpedanceExtractResponse toBioimpedanceResponse(AiBioimpedanceExtractResponse ai) {
+        return new BioimpedanceExtractResponse(
+                ai.measuredOn(),
+                ai.weightKg(),
+                ai.bodyFatPercent(),
+                ai.muscleMassKg(),
+                ai.waistCm(),
+                ai.hipCm(),
+                ai.chestCm(),
+                ai.neckCm(),
+                ai.armRightCm(),
+                ai.armLeftCm(),
+                ai.thighRightCm(),
+                ai.thighLeftCm(),
+                ai.manualBmrKcal(),
+                ai.calculationMethod(),
+                ai.foundFields() != null ? ai.foundFields() : java.util.List.of(),
+                ai.missingFields() != null ? ai.missingFields() : java.util.List.of(),
+                ai.confidence(),
+                ai.notesForUser()
+        );
+    }
+
     private BodyMeasurementResponse toResponse(BodyMeasurementSession s) {
         return new BodyMeasurementResponse(
                 s.getId(),
@@ -451,6 +621,11 @@ public class ProgressService {
     }
 
     private ProgressReviewResponse toReviewResponse(ProgressReview review) {
+        return toReviewResponse(review, null);
+    }
+
+    private ProgressReviewResponse toReviewResponse(ProgressReview review,
+                                                    CycleBehaviorSignalsResponse cycleBehavior) {
         List<String> recommendations = List.of();
         if (review.getRecommendations() != null && !review.getRecommendations().isBlank()) {
             try {
@@ -473,7 +648,8 @@ public class ProgressService {
                 review.getPlanChangeSuggested(),
                 review.getPlanChangeRationale(),
                 review.getKeepPlanMessage(),
-                review.getConfidence()
+                review.getConfidence(),
+                cycleBehavior
         );
     }
 }

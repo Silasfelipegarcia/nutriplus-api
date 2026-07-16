@@ -14,6 +14,8 @@ public interface MealRepository extends JpaRepository<Meal, Long> {
 
     List<Meal> findByMealPlanIdOrderBySortOrderAsc(Long mealPlanId);
 
+    boolean existsByIdAndMealPlan_User_Id(Long id, Long userId);
+
     @Query("""
             SELECT m FROM Meal m
             JOIN FETCH m.mealPlan p

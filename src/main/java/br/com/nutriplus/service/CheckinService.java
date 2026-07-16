@@ -90,6 +90,7 @@ public class CheckinService {
         this.trainingService = trainingService;
     }
 
+    @Transactional(readOnly = true)
     @Cacheable(value = NutriCacheNames.CHECKINS_TODAY, keyGenerator = "userDateCacheKeyGenerator")
     public TodayCheckinsResponse getToday() {
         User user = currentUser.get();
@@ -175,12 +176,12 @@ public class CheckinService {
     public TodayMealCheckinResponse saveCheckin(MealCheckinRequest request) {
         User user = currentUser.get();
         LocalDate today = NutriTime.today();
+        if (!mealRepository.existsByIdAndMealPlan_User_Id(request.mealId(), user.getId())) {
+            throw new ResourceNotFoundException("Refeição não encontrada");
+        }
         Meal meal = mealRepository.findById(request.mealId())
                 .orElseThrow(() -> new ResourceNotFoundException("Refeição não encontrada"));
 
-        if (!meal.getMealPlan().getUser().getId().equals(user.getId())) {
-            throw new ResourceNotFoundException("Refeição não encontrada");
-        }
         if (request.status() == CheckinStatus.PENDING) {
             throw new IllegalArgumentException("Status PENDING não pode ser salvo; use DELETE para desmarcar.");
         }
@@ -217,9 +218,7 @@ public class CheckinService {
     public void deleteCheckin(Long mealId) {
         User user = currentUser.get();
         LocalDate today = NutriTime.today();
-        Meal meal = mealRepository.findById(mealId)
-                .orElseThrow(() -> new ResourceNotFoundException("Refeição não encontrada"));
-        if (!meal.getMealPlan().getUser().getId().equals(user.getId())) {
+        if (!mealRepository.existsByIdAndMealPlan_User_Id(mealId, user.getId())) {
             throw new ResourceNotFoundException("Refeição não encontrada");
         }
         checkinRepository.deleteByUserIdAndCheckinDateAndMealId(user.getId(), today, mealId);
@@ -244,6 +243,14 @@ public class CheckinService {
         NutritionProfile profile = nutritionProfileRepository.findByUserId(user.getId())
                 .orElseThrow(() -> new ResourceNotFoundException("Perfil nutricional não encontrado"));
 
+        Long mealId = null;
+        if (request.mealId() != null) {
+            if (!mealRepository.existsByIdAndMealPlan_User_Id(request.mealId(), user.getId())) {
+                throw new ResourceNotFoundException("Refeição não encontrada");
+            }
+            mealId = request.mealId();
+        }
+
         TodayCheckinsResponse snapshot = getToday();
         AiFoodExtraEstimateResponse estimate = aiAgentClient.estimateFoodExtra(
                 profile,
@@ -261,9 +268,20 @@ public class CheckinService {
                 request.description().trim(),
                 estimate.estimatedCalories(),
                 estimate.estimatedCarbsG(),
-                estimate.impactMessage()));
+                estimate.impactMessage(),
+                mealId));
 
         return toExtraResponse(saved);
+    }
+
+    @Transactional
+    @CacheEvict(value = {NutriCacheNames.CHECKINS_TODAY, NutriCacheNames.CHECKINS_ADHERENCE}, allEntries = true)
+    public void deleteFoodExtra(Long extraId) {
+        User user = currentUser.get();
+        int deleted = foodExtraRepository.deleteByIdAndUserId(extraId, user.getId());
+        if (deleted == 0) {
+            throw new ResourceNotFoundException("Extra não encontrado");
+        }
     }
 
     public CoachInsightResponse getBalanceCoachInsight() {
@@ -595,7 +613,8 @@ public class CheckinService {
                 extra.getDescription(),
                 extra.getEstimatedCalories(),
                 extra.getEstimatedCarbsG(),
-                extra.getImpactMessage());
+                extra.getImpactMessage(),
+                extra.getMealId());
     }
 
     private Integer targetCalories(NutritionProfile profile) {

@@ -34,6 +34,9 @@ public class DailyFoodExtra {
     @Column(name = "estimated_carbs_g", precision = 8, scale = 1)
     private BigDecimal estimatedCarbsG;
 
+    @Column(name = "meal_id")
+    private Long mealId;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -42,21 +45,31 @@ public class DailyFoodExtra {
     }
 
     public DailyFoodExtra(User user, LocalDate entryDate, String description, int estimatedCalories,
-                          BigDecimal estimatedCarbsG, String impactMessage) {
+                          BigDecimal estimatedCarbsG, String impactMessage, Long mealId) {
         this.user = user;
         this.entryDate = entryDate;
         this.description = description;
         this.estimatedCalories = estimatedCalories;
         this.estimatedCarbsG = estimatedCarbsG;
         this.impactMessage = impactMessage;
+        this.mealId = mealId;
+    }
+
+    public DailyFoodExtra(User user, LocalDate entryDate, String description, int estimatedCalories,
+                          BigDecimal estimatedCarbsG, String impactMessage) {
+        this(user, entryDate, description, estimatedCalories, estimatedCarbsG, impactMessage, null);
     }
 
     public DailyFoodExtra(User user, LocalDate entryDate, String description, int estimatedCalories, String impactMessage) {
-        this(user, entryDate, description, estimatedCalories, null, impactMessage);
+        this(user, entryDate, description, estimatedCalories, null, impactMessage, null);
     }
 
     public Long getId() {
         return id;
+    }
+
+    public User getUser() {
+        return user;
     }
 
     public LocalDate getEntryDate() {
@@ -77,5 +90,9 @@ public class DailyFoodExtra {
 
     public BigDecimal getEstimatedCarbsG() {
         return estimatedCarbsG;
+    }
+
+    public Long getMealId() {
+        return mealId;
     }
 }

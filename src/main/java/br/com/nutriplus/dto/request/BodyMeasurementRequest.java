@@ -19,6 +19,40 @@ public record BodyMeasurementRequest(
         BigDecimal armLeftCm,
         BigDecimal thighRightCm,
         BigDecimal thighLeftCm,
-        String notes
+        String notes,
+        /** Quando preenchido (ex.: BIOIMPEDANCE após laudo), atualiza o perfil. */
+        String calculationMethod
 ) {
+    public BodyMeasurementRequest(
+            LocalDate measuredOn,
+            BigDecimal weightKg,
+            BigDecimal bodyFatPercent,
+            BigDecimal muscleMassKg,
+            BigDecimal waistCm,
+            BigDecimal hipCm,
+            BigDecimal chestCm,
+            BigDecimal neckCm,
+            BigDecimal armRightCm,
+            BigDecimal armLeftCm,
+            BigDecimal thighRightCm,
+            BigDecimal thighLeftCm,
+            String notes
+    ) {
+        this(
+                measuredOn,
+                weightKg,
+                bodyFatPercent,
+                muscleMassKg,
+                waistCm,
+                hipCm,
+                chestCm,
+                neckCm,
+                armRightCm,
+                armLeftCm,
+                thighRightCm,
+                thighLeftCm,
+                notes,
+                null
+        );
+    }
 }

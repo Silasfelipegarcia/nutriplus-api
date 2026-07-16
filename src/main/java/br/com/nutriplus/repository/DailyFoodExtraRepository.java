@@ -29,4 +29,11 @@ public interface DailyFoodExtraRepository extends JpaRepository<DailyFoodExtra, 
             WHERE e.user.id = :userId AND e.entryDate = :entryDate
             """)
     void deleteByUserIdAndEntryDate(@Param("userId") Long userId, @Param("entryDate") LocalDate entryDate);
+
+    @Modifying(clearAutomatically = true)
+    @Query("""
+            DELETE FROM DailyFoodExtra e
+            WHERE e.id = :id AND e.user.id = :userId
+            """)
+    int deleteByIdAndUserId(@Param("id") Long id, @Param("userId") Long userId);
 }

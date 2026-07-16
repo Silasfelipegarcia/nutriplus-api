@@ -182,7 +182,8 @@ public class PatientDossierService {
                 review.getPlanChangeSuggested(),
                 review.getPlanChangeRationale(),
                 review.getKeepPlanMessage(),
-                review.getConfidence()
+                review.getConfidence(),
+                null
         );
     }
 }
