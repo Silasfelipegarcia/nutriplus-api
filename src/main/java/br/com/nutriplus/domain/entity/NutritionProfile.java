@@ -124,6 +124,10 @@ public class NutritionProfile {
     @Column(name = "plan_regen_locked_until")
     private LocalDate planRegenLockedUntil;
 
+    /** Momento em que o perfil ficou alinhado ao plano gerado (evita pending falso após save de política). */
+    @Column(name = "plan_synced_at")
+    private LocalDateTime planSyncedAt;
+
     @Column(name = "training_daily_extra_kcal", precision = 8, scale = 2)
     private BigDecimal trainingDailyExtraKcal;
 
@@ -272,6 +276,7 @@ public class NutritionProfile {
         this.lastAthleteRegenAt = builder.lastAthleteRegenAt;
         this.athleteRegenEligible = builder.athleteRegenEligible;
         this.planRegenLockedUntil = builder.planRegenLockedUntil;
+        this.planSyncedAt = builder.planSyncedAt;
         this.trainingDailyExtraKcal = builder.trainingDailyExtraKcal;
         this.bmrKcal = builder.bmrKcal;
         this.tdeeKcal = builder.tdeeKcal;
@@ -575,6 +580,14 @@ public class NutritionProfile {
 
     public void setPlanRegenLockedUntil(LocalDate planRegenLockedUntil) {
         this.planRegenLockedUntil = planRegenLockedUntil;
+    }
+
+    public LocalDateTime getPlanSyncedAt() {
+        return planSyncedAt;
+    }
+
+    public void setPlanSyncedAt(LocalDateTime planSyncedAt) {
+        this.planSyncedAt = planSyncedAt;
     }
 
     public BigDecimal getTrainingDailyExtraKcal() {
@@ -891,6 +904,7 @@ public class NutritionProfile {
         private LocalDateTime lastAthleteRegenAt;
         private boolean athleteRegenEligible;
         private LocalDate planRegenLockedUntil;
+        private LocalDateTime planSyncedAt;
         private BigDecimal trainingDailyExtraKcal;
         private BigDecimal bmrKcal;
         private BigDecimal tdeeKcal;
@@ -1089,6 +1103,11 @@ public class NutritionProfile {
 
         public Builder planRegenLockedUntil(LocalDate planRegenLockedUntil) {
             this.planRegenLockedUntil = planRegenLockedUntil;
+            return this;
+        }
+
+        public Builder planSyncedAt(LocalDateTime planSyncedAt) {
+            this.planSyncedAt = planSyncedAt;
             return this;
         }
 

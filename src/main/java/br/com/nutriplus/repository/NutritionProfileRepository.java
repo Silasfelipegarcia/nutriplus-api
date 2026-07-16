@@ -19,4 +19,12 @@ public interface NutritionProfileRepository extends JpaRepository<NutritionProfi
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(value = "UPDATE nutrition_profiles SET created_at = :createdAt WHERE id = :id", nativeQuery = true)
     void backdateCreatedAt(@Param("id") Long id, @Param("createdAt") LocalDateTime createdAt);
+
+    /**
+     * Marca o perfil como alinhado ao plano gerado, copiando updated_at
+     * para evitar pending falso quando a política salva o perfil após criar o plano.
+     */
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query(value = "UPDATE nutrition_profiles SET plan_synced_at = updated_at WHERE id = :id", nativeQuery = true)
+    void markPlanSynced(@Param("id") Long id);
 }

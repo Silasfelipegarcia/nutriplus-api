@@ -131,6 +131,7 @@ public class ResponseMapper {
                 profile.getPaceWarning(),
                 profile.getEstimatedWeeklyRateKg(),
                 profile.getUpdatedAt(),
+                profile.getPlanSyncedAt(),
                 profile.isAthleteModeEnabled(),
                 formatTime(profile.getWakeTime()),
                 formatTime(profile.getSleepTime()),

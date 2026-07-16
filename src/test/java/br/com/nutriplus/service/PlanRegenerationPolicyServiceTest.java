@@ -1,5 +1,6 @@
 package br.com.nutriplus.service;
 
+import br.com.nutriplus.domain.entity.MealPlanGenerationJob;
 import br.com.nutriplus.domain.entity.NutritionProfile;
 import br.com.nutriplus.domain.entity.ProgressReview;
 import br.com.nutriplus.domain.entity.User;
@@ -60,7 +61,7 @@ class PlanRegenerationPolicyServiceTest {
                 planResetService
         );
         user = org.mockito.Mockito.mock(User.class);
-        org.mockito.Mockito.when(user.getId()).thenReturn(1L);
+        org.mockito.Mockito.lenient().when(user.getId()).thenReturn(1L);
         profile = NutritionProfile.builder()
                 .user(user)
                 .progressReviewIntervalDays(15)
@@ -140,5 +141,25 @@ class PlanRegenerationPolicyServiceTest {
 
         assertThrows(BusinessException.class, () -> service.assertAllowed(
                 user, profile, PlanRegenerationReason.CYCLE_REVIEW, 7L));
+    }
+
+    @Test
+    void onGenerationCompletedClearsAthleteEligibilityAndMarksPlanSynced() {
+        profile = NutritionProfile.builder()
+                .id(99L)
+                .user(user)
+                .progressReviewIntervalDays(15)
+                .athleteRegenEligible(true)
+                .build();
+        MealPlanGenerationJob job = mock(MealPlanGenerationJob.class);
+        when(job.getRegenerationReason()).thenReturn(PlanRegenerationReason.CYCLE_REVIEW);
+        when(job.getProgressReviewId()).thenReturn(null);
+        when(featureFlagService.isUnlimitedPlanRegenEnabled()).thenReturn(false);
+
+        service.onGenerationCompleted(user, profile, job);
+
+        org.junit.jupiter.api.Assertions.assertFalse(profile.isAthleteRegenEligible());
+        org.mockito.Mockito.verify(nutritionProfileRepository).save(profile);
+        org.mockito.Mockito.verify(nutritionProfileRepository).markPlanSynced(99L);
     }
 }

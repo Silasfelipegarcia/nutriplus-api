@@ -64,6 +64,7 @@ public record NutritionProfileResponse(
         String paceWarning,
         BigDecimal estimatedWeeklyRateKg,
         LocalDateTime updatedAt,
+        LocalDateTime planSyncedAt,
         boolean athleteModeEnabled,
         String wakeTime,
         String sleepTime,

@@ -214,10 +214,7 @@ public class PlanRegenerationPolicyService {
         }
 
         switch (reason) {
-            case ATHLETE_SWITCH -> {
-                profile.setAthleteRegenEligible(false);
-                profile.setLastAthleteRegenAt(LocalDateTime.now());
-            }
+            case ATHLETE_SWITCH -> profile.setLastAthleteRegenAt(LocalDateTime.now());
             case ONE_TIME_CORRECTION -> profile.setOneTimeCorrectionUsedAt(LocalDateTime.now());
             case CYCLE_REVIEW -> {
                 if (job.getProgressReviewId() != null) {
@@ -231,6 +228,9 @@ public class PlanRegenerationPolicyService {
             case FIRST_PLAN, GENERATION_RETRY, NUTRITIONIST_BYPASS, PLAN_RESET, HOUSEHOLD_SHARED_PLAN -> { }
         }
 
+        // Plano gerado já reflete perfil/treino atuais; só reabre após nova mudança de atleta/treino.
+        profile.setAthleteRegenEligible(false);
+
         if (reason != PlanRegenerationReason.UNLOCKED_REGEN && !isUnlimitedRegenEnabled()) {
             LocalDate lockUntil = NutriTime.today().plusDays(profile.getProgressReviewIntervalDays());
             profile.setPlanRegenLockedUntil(lockUntil);
@@ -239,6 +239,7 @@ public class PlanRegenerationPolicyService {
         }
 
         nutritionProfileRepository.save(profile);
+        nutritionProfileRepository.markPlanSynced(profile.getId());
     }
 
     @Transactional
