@@ -10,7 +10,8 @@ import java.util.Optional;
 
 public interface NutritionistRepository extends JpaRepository<Nutritionist, Long> {
 
-    Optional<Nutritionist> findByUserId(Long userId);
+    @Query("SELECT n FROM Nutritionist n JOIN FETCH n.user WHERE n.user.id = :userId")
+    Optional<Nutritionist> findByUserId(@Param("userId") Long userId);
 
     @Query("""
             SELECT n FROM Nutritionist n
@@ -25,6 +26,7 @@ public interface NutritionistRepository extends JpaRepository<Nutritionist, Long
 
     List<Nutritionist> findByMarketplaceVisibleTrueAndCrnVerifiedTrueOrderByCreatedAtDesc();
 
+    @Query("SELECT n FROM Nutritionist n JOIN FETCH n.user WHERE n.crnVerified = false ORDER BY n.createdAt ASC")
     List<Nutritionist> findByCrnVerifiedFalseOrderByCreatedAtAsc();
 
     long countByCrnVerifiedFalse();

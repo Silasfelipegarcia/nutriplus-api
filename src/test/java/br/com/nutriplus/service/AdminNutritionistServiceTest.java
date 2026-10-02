@@ -13,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -78,5 +79,27 @@ class AdminNutritionistServiceTest {
         assertThat(nutritionist.isCrnVerified()).isFalse();
         assertThat(nutritionist.isMarketplaceVisible()).isFalse();
         verify(betaAccessNotificationService).notifyNutritionistVerificationRejected(user, "CRN inválido");
+    }
+
+    @Test
+    void listPendingOmitsCpfWhenDecryptFails() {
+        User user = User.builder()
+                .id(18L)
+                .name("Ana")
+                .email("ana@nutriplus.test")
+                .role(UserRole.NUTRITIONIST)
+                .build();
+        Nutritionist nutritionist = Nutritionist.createFor(user, "CRN-1", "bio", "esp", 7900, 30);
+        user.setCpfEncrypted("not-valid-ciphertext");
+
+        when(authorizationService.hasRole(UserRole.ADMIN)).thenReturn(true);
+        when(nutritionistRepository.findByCrnVerifiedFalseOrderByCreatedAtAsc()).thenReturn(List.of(nutritionist));
+        when(cpfProtectionService.maskFromEncrypted("not-valid-ciphertext")).thenReturn(null);
+
+        var pending = service.listPendingVerification();
+
+        assertThat(pending).hasSize(1);
+        assertThat(pending.getFirst().name()).isEqualTo("Ana");
+        assertThat(pending.getFirst().cpfMasked()).isNull();
     }
 }

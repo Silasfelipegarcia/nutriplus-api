@@ -192,12 +192,14 @@ public class CareService {
         return new CareContactResponse(phone, "https://wa.me/" + digits);
     }
 
+    @Transactional(readOnly = true)
     public List<CareRelationshipResponse> listMyCareAsPatient() {
         User patient = currentUser.get();
         return careRelationshipRepository.findByPatientIdOrderByUpdatedAtDesc(patient.getId())
                 .stream().map(proMapper::toCare).toList();
     }
 
+    @Transactional(readOnly = true)
     public List<CareRelationshipResponse> listCaseload() {
         Nutritionist nutritionist = authorizationService.requireNutritionist();
         return careRelationshipRepository.findByNutritionistIdOrderByUpdatedAtDesc(nutritionist.getId())

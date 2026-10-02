@@ -16,6 +16,34 @@ public final class IntegrationAuthSupport {
     private IntegrationAuthSupport() {
     }
 
+    public static String registerNutritionistAndLogin(
+            MockMvc mockMvc,
+            UserRepository userRepository,
+            String name,
+            String email,
+            String password,
+            String cpf,
+            String crn
+    ) throws Exception {
+        String body = """
+                {"name":"%s","email":"%s","password":"%s","cpf":"%s","contactPhone":"11999999999","crn":"%s","bio":"Bio de teste","specialties":"Emagrecimento"}
+                """.formatted(name, email, password, cpf, crn);
+
+        mockMvc.perform(post("/auth/register/nutritionist")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.email").value(email))
+                .andExpect(jsonPath("$.loginEnabled").value(false));
+
+        var user = userRepository.findByEmail(email).orElseThrow();
+        user.setLoginEnabled(true);
+        user.setLoginEnabledAt(LocalDateTime.now());
+        userRepository.save(user);
+
+        return loginAs(mockMvc, email, password);
+    }
+
     public static String registerAndLogin(
             MockMvc mockMvc,
             UserRepository userRepository,

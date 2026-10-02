@@ -36,6 +36,7 @@ public class AdminNutritionistService {
         this.betaAccessNotificationService = betaAccessNotificationService;
     }
 
+    @Transactional(readOnly = true)
     public List<NutritionistPendingResponse> listPendingVerification() {
         requireAdmin();
         return nutritionistRepository.findByCrnVerifiedFalseOrderByCreatedAtAsc().stream()

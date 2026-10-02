@@ -130,6 +130,7 @@ public class NutritionistProService {
         );
     }
 
+    @Transactional(readOnly = true)
     public NutritionistPublicResponse getMyProfile() {
         return proMapper.toProfile(authorizationService.requireNutritionist());
     }

@@ -2,6 +2,7 @@ package br.com.nutriplus.repository;
 
 import br.com.nutriplus.domain.entity.CareRelationship;
 import br.com.nutriplus.domain.enums.CareRelationshipStatus;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
@@ -12,11 +13,13 @@ public interface CareRelationshipRepository extends JpaRepository<CareRelationsh
 
     Optional<CareRelationship> findByPatientIdAndNutritionistId(Long patientId, Long nutritionistId);
 
+    @EntityGraph(attributePaths = {"patient", "nutritionist.user"})
     List<CareRelationship> findByNutritionistIdOrderByUpdatedAtDesc(Long nutritionistId);
 
     List<CareRelationship> findByNutritionistIdAndStatusInOrderByUpdatedAtDesc(
             Long nutritionistId, List<CareRelationshipStatus> statuses);
 
+    @EntityGraph(attributePaths = {"patient", "nutritionist.user"})
     List<CareRelationship> findByPatientIdOrderByUpdatedAtDesc(Long patientId);
 
     @Query("SELECT cr FROM CareRelationship cr WHERE cr.patient.id = :patientId AND cr.status = 'ACTIVE'")
